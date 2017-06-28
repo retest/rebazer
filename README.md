@@ -1,2 +1,14 @@
 # rebazer
-Helper Service to handle PullRequests on Bitbucket.                  Rebase PullRequests against target to steamline commit history.                 Merge if PullRequest is rebased, approved and build is green.
+
+Helper service to handle PullRequests on Bitbucket.
+Rebase PullRequests against target to streamline commit history.
+Merge the PullRequest if it's rebased, approved and the build is green.
+
+
+## Open tasks
+
+* Comment PR with info about merge conflicts.
+* On merge conflict don't try to rebase as as long there are no changes on branch.
+* Run git garbage collection separate in aggressive mode every 10-20 rebases.
+* Implement some tests.
+

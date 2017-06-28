@@ -87,13 +87,11 @@ public class RebaseService {
 					+ repo.status().call().getChanged().stream().map(l -> l.toString()).reduce("\n", String::concat));
 			repo.rebase().setOperation(Operation.ABORT).call();
 			repo.reset().setMode(ResetType.HARD).call();
-			// TODO comment PR with info about merge conflict
 		}
 
 		repo.checkout().setName("origin/develop").call();
 		repo.branchDelete().setForce(true).setBranchNames(pullRequest.getSource()).call();
-		repo.gc().call(); // TODO run separate in aggressive mode every 10-20
-							// rebases
+		repo.gc().call();
 	}
 
 }
