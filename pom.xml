@@ -63,4 +63,16 @@
 		</plugins>
 	</build>
 
+	<organization>
+		<name>ReTest GmbH</name>
+		<url>https://retest.de/</url>
+	</organization>
+
+	<licenses>
+		<license>
+			<name>AGPL V.3.0 or any later version</name>
+			<url>https://www.gnu.org/licenses/agpl-3.0.txt</url>
+		</license>
+	</licenses>
+
 </project>
