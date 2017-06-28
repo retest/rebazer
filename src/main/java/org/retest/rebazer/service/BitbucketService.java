@@ -27,7 +27,7 @@ public class BitbucketService {
 	@Autowired
 	RebaseService rebaseService;
 
-	@Scheduled(fixedDelay = 5000)
+	@Scheduled(fixedDelay = 60 * 1000)
 	public void pollBitbucket() {
 		final List<PullRequest> allPullRequests = getAllPullRequestIds();
 
