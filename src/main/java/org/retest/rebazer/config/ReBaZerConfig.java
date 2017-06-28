@@ -8,14 +8,18 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.client.RestOperations;
 
+import lombok.Getter;
+
 @Configuration
 public class ReBaZerConfig {
 
+	@Getter
 	@Value("${rebazer.repo.user}")
-	String username;
+	String user;
 
+	@Getter
 	@Value("${rebazer.repo.pass}")
-	String password;
+	String pass;
 
 	@Value("${rebazer.repo.team}")
 	String team;
@@ -28,7 +32,7 @@ public class ReBaZerConfig {
 
 	@Bean
 	public RestOperations restOperations(RestTemplateBuilder restTemplateBuilder) {
-		return restTemplateBuilder.basicAuthorization(username, password).build();
+		return restTemplateBuilder.basicAuthorization(user, pass).build();
 	}
 
 	public String getApiBaseUrl() {
@@ -41,14 +45,6 @@ public class ReBaZerConfig {
 
 	public File getWorkspace() {
 		return new File(workspace);
-	}
-
-	public String getUserName() {
-		return username;
-	}
-
-	public String getPassword() {
-		return password;
 	}
 
 }

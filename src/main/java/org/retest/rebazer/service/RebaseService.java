@@ -26,7 +26,7 @@ public class RebaseService {
 	private final Git repo;
 
 	public RebaseService(@Autowired ReBaZerConfig config) {
-		credentialsProvider = new UsernamePasswordCredentialsProvider(config.getUserName(), config.getPassword());
+		credentialsProvider = new UsernamePasswordCredentialsProvider(config.getUser(), config.getPass());
 
 		final File repoFolder = new File(config.getWorkspace(), "repo");
 		Git repo = null;
