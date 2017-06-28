@@ -10,13 +10,24 @@ import org.springframework.web.client.RestOperations;
 public class ReBaZerConfig {
 
 	@Value("${rebazer.repo.user}")
-	private String username;
+	String username;
 
 	@Value("${rebazer.repo.pass}")
-	private String password;
+	String password;
+
+	@Value("${rebazer.repo.team}")
+	String team;
+
+	@Value("${rebazer.repo.repo}")
+	String repo;
 
 	@Bean
 	public RestOperations restOperations(RestTemplateBuilder restTemplateBuilder) {
 		return restTemplateBuilder.basicAuthorization(username, password).build();
 	}
+
+	public String getApiBaseUrl() {
+		return "https://api.bitbucket.org/2.0/repositories/" + team + "/" + repo + "/";
+	}
+
 }

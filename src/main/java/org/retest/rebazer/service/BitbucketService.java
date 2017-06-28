@@ -3,9 +3,9 @@ package org.retest.rebazer.service;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.retest.rebazer.config.ReBaZerConfig;
 import org.retest.rebazer.domain.PullRequest;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestOperations;
@@ -22,10 +22,10 @@ public class BitbucketService {
 	RestOperations restOperations;
 
 	@Autowired
-	RebaseService rebaseService;
+	ReBaZerConfig config;
 
-	@Value("${rebazer.repo.url}")
-	String baseUrl;
+	@Autowired
+	RebaseService rebaseService;
 
 	@Scheduled(fixedDelay = 5000)
 	public void pollBitbucket() {
@@ -70,7 +70,8 @@ public class BitbucketService {
 
 	private void merge(PullRequest pullRequest) {
 		logger.warn("merge " + pullRequest);
-		restOperations.postForObject(baseUrl + "/pullrequests/" + pullRequest.getId() + "/merge", null, Object.class);
+		restOperations.postForObject(config.getApiBaseUrl() + "/pullrequests/" + pullRequest.getId() + "/merge", null,
+				Object.class);
 	}
 
 	private boolean greenBuildExists(PullRequest pullRequest) {
@@ -92,7 +93,7 @@ public class BitbucketService {
 	}
 
 	private DocumentContext jsonPathForPath(String string) {
-		final String json = restOperations.getForObject(baseUrl + "/" + string, String.class);
+		final String json = restOperations.getForObject(config.getApiBaseUrl() + "/" + string, String.class);
 		return JsonPath.parse(json);
 	}
 
