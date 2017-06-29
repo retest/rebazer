@@ -3,6 +3,7 @@ Version: [[version]]
 Section: misc
 Priority: low
 Architecture: all
-Description: [[description]]
-Maintainer: Johannes Dillmann <johannes.dillmann@retest.de>
 Depends: default-jre | default-jre-headless
+Maintainer: Johannes Dillmann <johannes.dillmann@retest.de>
+Description: [[description]]
+Homepage: https://github.com/retest/rebazer
