@@ -35,7 +35,6 @@ public class RebaseService {
 			repo = tryToOpenExistingRepoAndCheckRemote(repoFolder, config.getRepoUrl());
 			if (repo == null) {
 				try {
-					logger.warn("Remove repo with wrong remote URL!");
 					FileUtils.deleteDirectory(repoFolder);
 				} catch (final IOException e) {
 					throw new RuntimeException(e);
@@ -46,20 +45,26 @@ public class RebaseService {
 			repo = cloneNewRepo(repoFolder, config.getRepoUrl(), credentialsProvider);
 		}
 		this.repo = repo;
+		cleanUp();
 	}
 
-	@SneakyThrows
 	private static Git tryToOpenExistingRepoAndCheckRemote(File repoFolder, String expectedRepoUrl) {
-		final Git repo = Git.open(repoFolder);
-		if (check(repo, expectedRepoUrl)) {
-			return repo;
-		} else {
+		try {
+			final Git repo = Git.open(repoFolder);
+			if (originIsRepoUrl(repo, expectedRepoUrl)) {
+				return repo;
+			} else {
+				logger.error("Repo has wrong remote URL!");
+				return null;
+			}
+		} catch (final Exception e) {
+			logger.error("Exception while open repo!", e);
 			return null;
 		}
 	}
 
 	@SneakyThrows
-	private static boolean check(Git repo, String expectedRepoUrl) {
+	private static boolean originIsRepoUrl(Git repo, String expectedRepoUrl) {
 		return repo.remoteList().call().stream().anyMatch(r -> r.getName().equals("origin")
 				&& r.getURIs().stream().anyMatch(url -> url.toString().equals(expectedRepoUrl)));
 	}
@@ -73,25 +78,38 @@ public class RebaseService {
 
 	@SneakyThrows
 	public synchronized void rebase(PullRequest pullRequest) {
-		logger.warn("rebase " + pullRequest);
-
-		repo.fetch().setCredentialsProvider(credentialsProvider).setRemoveDeletedRefs(true).call();
-		repo.checkout().setName("origin/" + pullRequest.getSource()).call();
-		repo.checkout().setCreateBranch(true).setName(pullRequest.getSource()).call();
-
+		logger.info("rebase " + pullRequest);
 		try {
-			repo.rebase().setUpstream("origin/" + pullRequest.getDestination()).call();
-			repo.push().setCredentialsProvider(credentialsProvider).setForce(true).call();
-		} catch (final WrongRepositoryStateException e) {
-			logger.error("merge conflict for " + pullRequest + " "
-					+ repo.status().call().getChanged().stream().map(l -> l.toString()).reduce("\n", String::concat));
-			repo.rebase().setOperation(Operation.ABORT).call();
-			repo.reset().setMode(ResetType.HARD).call();
-		}
 
-		repo.checkout().setName("origin/develop").call();
-		repo.branchDelete().setForce(true).setBranchNames(pullRequest.getSource()).call();
-		repo.gc().call();
+			repo.fetch().setCredentialsProvider(credentialsProvider).setRemoveDeletedRefs(true).call();
+			repo.checkout().setCreateBranch(true).setName(pullRequest.getSource())
+					.setStartPoint("origin/" + pullRequest.getSource()).call();
+
+			try {
+				repo.rebase().setUpstream("origin/" + pullRequest.getDestination()).call();
+				repo.push().setCredentialsProvider(credentialsProvider).setForce(true).call();
+			} catch (final WrongRepositoryStateException e) {
+				logger.warn("merge conflict for " + pullRequest + " " + repo.status().call().getChanged().stream()
+						.map(l -> l.toString()).reduce("\n", String::concat));
+				repo.rebase().setOperation(Operation.ABORT).call();
+			}
+
+		} finally {
+			cleanUp();
+		}
+	}
+
+	@SneakyThrows
+	private void cleanUp() {
+		repo.clean().setCleanDirectories(true).setForce(true).setIgnore(false).call();
+		repo.reset().setMode(ResetType.HARD).call();
+		repo.checkout().setName("remotes/origin/develop").call();
+
+		final String[] localBranches = repo.branchList().call().stream()
+				.filter(r -> r.getName().startsWith("refs/heads/")).map(r -> r.getName()).toArray(String[]::new);
+		repo.branchDelete().setForce(true).setBranchNames(localBranches).call();
+
+		repo.gc().setPrunePreserved(true).setExpire(null).call();
 	}
 
 }

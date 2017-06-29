@@ -9,6 +9,6 @@ Merge the PullRequest if it's rebased, approved and the build is green.
 
 * Comment PR with info about merge conflicts.
 * On merge conflict don't try to rebase as as long there are no changes on branch.
-* Run git garbage collection separate in aggressive mode every 10-20 rebases.
+* Run git garbage collection only every 20-50 rebases.
 * Implement some tests.
 
