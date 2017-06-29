@@ -1,0 +1,7 @@
+LOG=/var/log/rebazer/rebazer.log
+
+WORKSPACE=/var/lib/rebazer
+TEAM=your_company
+REPO=the_repo_name
+USER=service_user
+PASS=dont_use_this_pass_at_home

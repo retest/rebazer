@@ -1,0 +1,3 @@
+#!/bin/sh
+
+adduser --system [[name]] --group --home /var/lib/[[name]]
