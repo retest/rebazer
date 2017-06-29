@@ -1,0 +1,10 @@
+[Unit]
+Description=ReTest ReBaZer
+
+[Service]
+ExecStart=/usr/bin/rebazer
+Type=simple
+User=rebazer
+
+[Install]
+WantedBy=multi-user.target

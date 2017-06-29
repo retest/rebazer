@@ -1,0 +1,10 @@
+#!/bin/bash
+
+if [ -f /etc/default/rebazer ]; then
+   source /etc/default/rebazer
+fi
+
+REBAZER_ARGS="--rebazer.workspace=${WORKSPACE} --rebazer.repo.team=${TEAM} --rebazer.repo.repo=${REPO} "
+REBAZER_ARGS+="--rebazer.repo.user=${USER} --rebazer.repo.pass=${PASS}"
+
+/usr/bin/java -jar /usr/share/rebazer/rebazer*.jar ${REBAZER_ARGS} 2>&1 >> ${LOG}
