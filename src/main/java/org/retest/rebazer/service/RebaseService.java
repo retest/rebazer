@@ -16,11 +16,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Service
 public class RebaseService {
-
-	private static final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(RebaseService.class);
 
 	private final CredentialsProvider credentialsProvider;
 	private final Git repo;
@@ -54,11 +54,11 @@ public class RebaseService {
 			if (originIsRepoUrl(repo, expectedRepoUrl)) {
 				return repo;
 			} else {
-				logger.error("Repo has wrong remote URL!");
+				log.error("Repo has wrong remote URL!");
 				return null;
 			}
 		} catch (final Exception e) {
-			logger.error("Exception while open repo!", e);
+			log.error("Exception while open repo!", e);
 			return null;
 		}
 	}
@@ -71,14 +71,14 @@ public class RebaseService {
 
 	@SneakyThrows
 	private static Git cloneNewRepo(File repoFolder, String gitRepoUrl, CredentialsProvider credentialsProvider) {
-		logger.info("Checkout repo, this can take some time!");
+		log.info("Checkout repo, this can take some time!");
 		return Git.cloneRepository().setURI(gitRepoUrl).setCredentialsProvider(credentialsProvider)
 				.setDirectory(repoFolder).call();
 	}
 
 	@SneakyThrows
 	public synchronized void rebase(PullRequest pullRequest) {
-		logger.info("rebase " + pullRequest);
+		log.info("rebase " + pullRequest);
 		try {
 
 			repo.fetch().setCredentialsProvider(credentialsProvider).setRemoveDeletedRefs(true).call();
@@ -89,7 +89,7 @@ public class RebaseService {
 				repo.rebase().setUpstream("origin/" + pullRequest.getDestination()).call();
 				repo.push().setCredentialsProvider(credentialsProvider).setForce(true).call();
 			} catch (final WrongRepositoryStateException e) {
-				logger.warn("merge conflict for " + pullRequest + " " + repo.status().call().getChanged().stream()
+				log.warn("merge conflict for " + pullRequest + " " + repo.status().call().getChanged().stream()
 						.map(l -> l.toString()).reduce("\n", String::concat));
 				repo.rebase().setOperation(Operation.ABORT).call();
 			}
