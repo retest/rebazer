@@ -13,10 +13,11 @@ import org.springframework.web.client.RestOperations;
 import com.jayway.jsonpath.DocumentContext;
 import com.jayway.jsonpath.JsonPath;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 @Service
 public class BitbucketService {
-
-	private static final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(BitbucketService.class);
 
 	@Autowired
 	RestOperations restOperations;
@@ -32,14 +33,14 @@ public class BitbucketService {
 		final List<PullRequest> allPullRequests = getAllPullRequestIds();
 
 		for (final PullRequest pullRequest : allPullRequests) {
-			logger.debug("processing " + pullRequest);
+			log.debug("processing " + pullRequest);
 
 			if (!greenBuildExists(pullRequest)) {
-				logger.info("waiting for green builds " + pullRequest);
+				log.info("waiting for green builds " + pullRequest);
 			} else if (rebaseNeeded(pullRequest)) {
 				rebaseService.rebase(pullRequest);
 			} else if (!isApproved(pullRequest)) {
-				logger.warn("approval required " + pullRequest);
+				log.warn("approval required " + pullRequest);
 			} else {
 				merge(pullRequest);
 			}
@@ -69,7 +70,7 @@ public class BitbucketService {
 	}
 
 	private void merge(PullRequest pullRequest) {
-		logger.warn("merge " + pullRequest);
+		log.warn("merge " + pullRequest);
 		restOperations.postForObject(config.getApiBaseUrl() + "/pullrequests/" + pullRequest.getId() + "/merge", null,
 				Object.class);
 	}
