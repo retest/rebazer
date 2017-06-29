@@ -1,5 +1,5 @@
 #!/bin/sh
 
 systemctl daemon-reload 
-systemctl start rebazer.service 
-systemctl enable rebazer.service
+systemctl start [[name]].service 
+systemctl enable [[name]].service
