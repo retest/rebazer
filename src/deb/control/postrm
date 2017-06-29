@@ -1,0 +1,4 @@
+#!/bin/sh
+
+delgroup [[name]]
+deluser [[name]]
