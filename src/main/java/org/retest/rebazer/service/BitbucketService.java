@@ -1,7 +1,9 @@
 package org.retest.rebazer.service;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.retest.rebazer.config.ReBaZerConfig;
 import org.retest.rebazer.domain.PullRequest;
@@ -70,9 +72,13 @@ public class BitbucketService {
 	}
 
 	private void merge(PullRequest pullRequest) {
-		log.warn("merge " + pullRequest);
-		restOperations.postForObject(config.getApiBaseUrl() + "/pullrequests/" + pullRequest.getId() + "/merge", null,
-				Object.class);
+		log.warn("Merging pull request " + pullRequest);
+		Map<String, Object> request = new HashMap<>();
+		request.put("close_source_branch", true);
+		request.put("message", "Branch merged by ReBaZer");
+		request.put("merge_strategy",  "merge_commit");
+		
+		restOperations.postForObject(config.getApiBaseUrl() + "/pullrequests/" + pullRequest.getId() + "/merge", request, Object.class);
 	}
 
 	private boolean greenBuildExists(PullRequest pullRequest) {
