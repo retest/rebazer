@@ -73,12 +73,15 @@ public class BitbucketService {
 
 	private void merge(PullRequest pullRequest) {
 		log.warn("Merging pull request " + pullRequest);
+		String message = String.format("Merged in %s (pull request #%d) by ReBaZer", pullRequest.getSource(),
+				pullRequest.getId());
 		Map<String, Object> request = new HashMap<>();
 		request.put("close_source_branch", true);
-		request.put("message", "Branch merged by ReBaZer");
-		request.put("merge_strategy",  "merge_commit");
-		
-		restOperations.postForObject(config.getApiBaseUrl() + "/pullrequests/" + pullRequest.getId() + "/merge", request, Object.class);
+		request.put("message", message);
+		request.put("merge_strategy", "merge_commit");
+
+		restOperations.postForObject(config.getApiBaseUrl() + "/pullrequests/" + pullRequest.getId() + "/merge",
+				request, Object.class);
 	}
 
 	private boolean greenBuildExists(PullRequest pullRequest) {
