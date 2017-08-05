@@ -63,7 +63,16 @@ public class BitbucketService {
 	}
 
 	private String getLastCommonCommitId(PullRequest pullRequest) {
-		final DocumentContext jp = jsonPathForPath("pullrequests/" + pullRequest.getId() + "/commits");
+		DocumentContext jp = jsonPathForPath("pullrequests/" + pullRequest.getId() + "/commits");
+
+		final int pageLength = jp.read("$.pagelen");
+		final int size = jp.read("$.size");
+		final int lastPage = (pageLength + size - 1) / pageLength;
+
+		if (lastPage > 1) {
+			jp = jsonPathForPath("pullrequests/" + pullRequest.getId() + "/commits?page=" + lastPage);
+		}
+
 		final List<String> commitIds = jp.read("$.values[*].hash");
 		final List<String> parentIds = jp.read("$.values[*].parents[0].hash");
 
