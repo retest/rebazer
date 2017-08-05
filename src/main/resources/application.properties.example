@@ -1,0 +1,8 @@
+spring.main.web-environment=false
+
+rebazer.workspace = ./rebazer-workspace
+
+rebazer.repo.team = your_company
+rebazer.repo.repo = the_repo_name
+rebazer.repo.user = service_user
+rebazer.repo.pass = dont_use_this_pass_at_home
