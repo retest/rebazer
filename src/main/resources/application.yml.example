@@ -1,0 +1,14 @@
+spring:
+  main:
+    web-environment: false
+
+rebazer:
+  team: your_company
+  user: service_user
+  pass: dont_use_this_pass_at_home
+  workspace: ./rebazer-workspace
+  repos:
+    - name: the_repo_name
+      branch: master
+    - name: the_other_repo_name
+      branch: master
