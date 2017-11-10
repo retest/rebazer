@@ -133,4 +133,10 @@ public class BitbucketService {
 		return JsonPath.parse(json);
 	}
 
+	private void addComment(PullRequest pullRequest) {
+		Map<String, String> request = new HashMap<>();
+		request.put("content", "This pull request needs some manual love ...");
+		bitbucketLegacyTemplate.postForObject(pullRequest.getUrl() + "/comments", request, String.class);
+	}
+
 }
