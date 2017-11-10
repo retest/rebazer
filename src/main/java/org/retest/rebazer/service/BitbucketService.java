@@ -5,7 +5,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.retest.rebazer.config.ReBaZerConfig;
+import org.retest.rebazer.config.RebazerProperties;
+import org.retest.rebazer.config.RebazerProperties.Repository;
 import org.retest.rebazer.domain.PullRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -28,7 +29,7 @@ public class BitbucketService {
 	ReBaZerConfig config;
 
 	@Autowired
-	RebaseService rebaseService;
+	private RebazerProperties config;
 
 	@Scheduled(fixedDelay = 60 * 1000)
 	public void pollBitbucket() {
