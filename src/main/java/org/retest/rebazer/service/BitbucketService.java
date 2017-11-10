@@ -59,27 +59,28 @@ public class BitbucketService {
 	}
 
 	private boolean isApproved(PullRequest pullRequest) {
-		final DocumentContext jp = jsonPathForPath("pullrequests/" + pullRequest.getId());
+		final DocumentContext jp = jsonPathForPath(pullRequest.getUrl());
 		return jp.<List<Boolean>>read("$.participants[*].approved").stream().anyMatch(approved -> approved);
 	}
 
 	private boolean rebaseNeeded(PullRequest pullRequest) {
-		return !getLastCommonCommitId(pullRequest).equals(getHeadOfBranch(pullRequest.getDestination()));
+		return !getLastCommonCommitId(pullRequest).equals(getHeadOfBranch(pullRequest));
 	}
 
-	private String getHeadOfBranch(String branch) {
-		return jsonPathForPath("refs/branches/" + branch).read("$.target.hash");
+	private String getHeadOfBranch(PullRequest pullRequest) {
+		String url = "/repositories/" + config.getTeam() + "/" + pullRequest.getRepo() + "/";
+		return jsonPathForPath(url + "refs/branches/" + pullRequest.getDestination()).read("$.target.hash");
 	}
 
 	private String getLastCommonCommitId(PullRequest pullRequest) {
-		DocumentContext jp = jsonPathForPath("pullrequests/" + pullRequest.getId() + "/commits");
+		DocumentContext jp = jsonPathForPath(pullRequest.getUrl() + "/commits");
 
 		final int pageLength = jp.read("$.pagelen");
 		final int size = jp.read("$.size");
 		final int lastPage = (pageLength + size - 1) / pageLength;
 
 		if (lastPage > 1) {
-			jp = jsonPathForPath("pullrequests/" + pullRequest.getId() + "/commits?page=" + lastPage);
+			jp = jsonPathForPath(pullRequest.getUrl() + "/commits?page=" + lastPage);
 		}
 
 		final List<String> commitIds = jp.read("$.values[*].hash");
@@ -102,12 +103,14 @@ public class BitbucketService {
 	}
 
 	private boolean greenBuildExists(PullRequest pullRequest) {
-		final DocumentContext jp = jsonPathForPath("pullrequests/" + pullRequest.getId() + "/statuses");
+		final DocumentContext jp = jsonPathForPath(pullRequest.getUrl() + "/statuses");
 		return jp.<List<String>>read("$.values[*].state").stream().anyMatch(s -> s.equals("SUCCESSFUL"));
 	}
 
-	private List<PullRequest> getAllPullRequestIds() {
-		final DocumentContext jp = jsonPathForPath("pullrequests");
+	private List<PullRequest> getAllPullRequestIds(Repository repo) {
+		final String urlPath = "/repositories/" + config.getTeam() + "/" + repo.getName() + "/pullrequests";
+
+		final DocumentContext jp = jsonPathForPath(urlPath);
 		final List<PullRequest> results = new ArrayList<>();
 
 		for (Integer i = 0; i < (int) jp.read("$.size"); i++) {
