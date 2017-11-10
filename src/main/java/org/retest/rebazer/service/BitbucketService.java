@@ -117,7 +117,13 @@ public class BitbucketService {
 			final Integer id = jp.read("$.values[" + i + "].id");
 			final String source = jp.read("$.values[" + i + "].source.branch.name");
 			final String destination = jp.read("$.values[" + i + "].destination.branch.name");
-			results.add(new PullRequest(id, source, destination));
+			results.add(PullRequest.builder() //
+					.id(id) //
+					.repo(repo.getName()) //
+					.source(source) //
+					.destination(destination) //
+					.url(urlPath + "/" + id) //
+					.build()); //
 		}
 		return results;
 	}
