@@ -10,9 +10,9 @@ import org.eclipse.jgit.api.ResetCommand.ResetType;
 import org.eclipse.jgit.api.errors.WrongRepositoryStateException;
 import org.eclipse.jgit.transport.CredentialsProvider;
 import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider;
-import org.retest.rebazer.config.ReBaZerConfig;
+import org.retest.rebazer.config.RebazerProperties;
+import org.retest.rebazer.config.RebazerProperties.Repository;
 import org.retest.rebazer.domain.PullRequest;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import lombok.SneakyThrows;
@@ -22,30 +22,34 @@ import lombok.extern.slf4j.Slf4j;
 @Service
 public class RebaseService {
 
-	private final CredentialsProvider credentialsProvider;
-	private final Git repo;
+	public RebaseService(RebazerProperties config) {
+		final CredentialsProvider credentials = new UsernamePasswordCredentialsProvider(config.getUser(),
+				config.getPass());
 
-	public RebaseService(@Autowired ReBaZerConfig config) {
-		credentialsProvider = new UsernamePasswordCredentialsProvider(config.getUser(), config.getPass());
+		config.getRepos().forEach(repo -> {
+			final File repoFolder = new File(config.getWorkspace(), repo.getName());
+			Git localRepo = null;
+			final String repoUrl = "https://bitbucket.org/" + config.getTeam() + "/" + repo.getName() + ".git";
+			repo.setUrl(repoUrl);
+			repo.setCredentials(credentials);
 
-		final File repoFolder = new File(config.getWorkspace(), "repo");
-		Git repo = null;
-
-		if (repoFolder.exists()) {
-			repo = tryToOpenExistingRepoAndCheckRemote(repoFolder, config.getRepoUrl());
-			if (repo == null) {
-				try {
-					FileUtils.deleteDirectory(repoFolder);
-				} catch (final IOException e) {
-					throw new RuntimeException(e);
+			if (repoFolder.exists()) {
+				localRepo = tryToOpenExistingRepoAndCheckRemote(repoFolder, repoUrl);
+				if (localRepo == null) {
+					try {
+						FileUtils.deleteDirectory(repoFolder);
+					} catch (final IOException e) {
+						throw new RuntimeException(e);
+					}
 				}
 			}
-		}
-		if (repo == null) {
-			repo = cloneNewRepo(repoFolder, config.getRepoUrl(), credentialsProvider);
-		}
-		this.repo = repo;
-		cleanUp();
+			if (localRepo == null) {
+				localRepo = cloneNewRepo(repoFolder, repoUrl, credentials);
+			}
+			repo.setGit(localRepo);
+			cleanUp(repo);
+		});
+
 	}
 
 	private static Git tryToOpenExistingRepoAndCheckRemote(File repoFolder, String expectedRepoUrl) {
@@ -71,45 +75,69 @@ public class RebaseService {
 
 	@SneakyThrows
 	private static Git cloneNewRepo(File repoFolder, String gitRepoUrl, CredentialsProvider credentialsProvider) {
-		log.info("Checkout repo, this can take some time!");
+		log.info("Cloning repository {} to folder {} ...", gitRepoUrl, repoFolder);
 		return Git.cloneRepository().setURI(gitRepoUrl).setCredentialsProvider(credentialsProvider)
 				.setDirectory(repoFolder).call();
 	}
 
 	@SneakyThrows
-	public synchronized void rebase(PullRequest pullRequest) {
+	public synchronized void rebase(Repository repo, PullRequest pullRequest) {
 		log.info("rebase " + pullRequest);
 		try {
-
-			repo.fetch().setCredentialsProvider(credentialsProvider).setRemoveDeletedRefs(true).call();
-			repo.checkout().setCreateBranch(true).setName(pullRequest.getSource())
+			Git repository = repo.getGit();
+			CredentialsProvider credentials = repo.getCredentials();
+			repository.fetch().setCredentialsProvider(credentials).setRemoveDeletedRefs(true).call();
+			repository.checkout().setCreateBranch(true).setName(pullRequest.getSource())
 					.setStartPoint("origin/" + pullRequest.getSource()).call();
 
 			try {
-				repo.rebase().setUpstream("origin/" + pullRequest.getDestination()).call();
-				repo.push().setCredentialsProvider(credentialsProvider).setForce(true).call();
+				repository.rebase().setUpstream("origin/" + pullRequest.getDestination()).call();
+				repository.push().setCredentialsProvider(credentials).setForce(true).call();
 			} catch (final WrongRepositoryStateException e) {
-				log.warn("merge conflict for " + pullRequest + " " + repo.status().call().getChanged().stream()
+				log.warn("merge conflict for " + pullRequest + " " + repository.status().call().getChanged().stream()
 						.map(l -> l.toString()).reduce("\n", String::concat));
-				repo.rebase().setOperation(Operation.ABORT).call();
+				repository.rebase().setOperation(Operation.ABORT).call();
 			}
 
 		} finally {
-			cleanUp();
+			cleanUp(repo);
 		}
 	}
 
 	@SneakyThrows
-	private void cleanUp() {
-		repo.clean().setCleanDirectories(true).setForce(true).setIgnore(false).call();
-		repo.reset().setMode(ResetType.HARD).call();
-		repo.checkout().setName("remotes/origin/develop").call();
+	private void cleanUp(Repository repo) {
+		Git repository = repo.getGit();
 
-		final String[] localBranches = repo.branchList().call().stream()
-				.filter(r -> r.getName().startsWith("refs/heads/")).map(r -> r.getName()).toArray(String[]::new);
-		repo.branchDelete().setForce(true).setBranchNames(localBranches).call();
+		repository.clean() //
+				.setCleanDirectories(true) //
+				.setForce(true) //
+				.setIgnore(false) //
+				.call(); //
 
-		repo.gc().setPrunePreserved(true).setExpire(null).call();
+		repository.reset() //
+				.setMode(ResetType.HARD) //
+				.call(); //
+
+		repository.checkout() //
+				.setName("remotes/origin/" + repo.getBranch()) //
+				.call(); //
+
+		final String[] localBranches = repository.branchList() //
+				.call().stream() //
+				.filter(r -> r.getName() //
+						.startsWith("refs/heads/")) //
+				.map(r -> r.getName()) //
+				.toArray(String[]::new); //
+
+		repository.branchDelete() //
+				.setForce(true) //
+				.setBranchNames(localBranches) //
+				.call(); //
+
+		repository.gc() //
+				.setPrunePreserved(true) //
+				.setExpire(null) //
+				.call(); //
 	}
 
 }
