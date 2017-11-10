@@ -11,7 +11,7 @@ import org.retest.rebazer.domain.PullRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestOperations;
+import org.springframework.web.client.RestTemplate;
 
 import com.jayway.jsonpath.DocumentContext;
 import com.jayway.jsonpath.JsonPath;
@@ -23,10 +23,10 @@ import lombok.extern.slf4j.Slf4j;
 public class BitbucketService {
 
 	@Autowired
-	RestOperations restOperations;
+	private RestTemplate bitbucketTemplate;
 
 	@Autowired
-	ReBaZerConfig config;
+	private RestTemplate bitbucketLegacyTemplate;
 
 	@Autowired
 	private RebazerProperties config;
@@ -90,8 +90,7 @@ public class BitbucketService {
 		request.put("message", message);
 		request.put("merge_strategy", "merge_commit");
 
-		restOperations.postForObject(config.getApiBaseUrl() + "/pullrequests/" + pullRequest.getId() + "/merge",
-				request, Object.class);
+		bitbucketTemplate.postForObject(pullRequest.getUrl() + "/merge", request, Object.class);
 	}
 
 	private boolean greenBuildExists(PullRequest pullRequest) {
@@ -112,8 +111,8 @@ public class BitbucketService {
 		return results;
 	}
 
-	private DocumentContext jsonPathForPath(String string) {
-		final String json = restOperations.getForObject(config.getApiBaseUrl() + "/" + string, String.class);
+	private DocumentContext jsonPathForPath(String urlPath) {
+		final String json = bitbucketTemplate.getForObject(urlPath, String.class);
 		return JsonPath.parse(json);
 	}
 
