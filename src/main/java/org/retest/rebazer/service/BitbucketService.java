@@ -39,21 +39,23 @@ public class BitbucketService {
 
 	@Scheduled(fixedDelay = 60 * 1000)
 	public void pollBitbucket() {
-		final List<PullRequest> allPullRequests = getAllPullRequestIds();
 
-		for (final PullRequest pullRequest : allPullRequests) {
-			log.debug("processing " + pullRequest);
-
-			if (!greenBuildExists(pullRequest)) {
-				log.info("waiting for green builds " + pullRequest);
-			} else if (rebaseNeeded(pullRequest)) {
-				rebaseService.rebase(pullRequest);
-			} else if (!isApproved(pullRequest)) {
-				log.warn("approval required " + pullRequest);
-			} else {
-				merge(pullRequest);
-			}
-		}
+		config.getRepos().forEach(repo -> {
+			log.info("Processing repository: {}", repo.getName());
+			getAllPullRequestIds(repo).forEach(pullRequest -> {
+				log.info("Processing " + pullRequest);
+				if (!greenBuildExists(pullRequest)) {
+					log.info("Waiting for green builds on " + pullRequest);
+				} else if (rebaseNeeded(pullRequest)) {
+					log.info("Waiting for rebase on " + pullRequest);
+					rebaseService.rebase(repo, pullRequest);
+				} else if (!isApproved(pullRequest)) {
+					log.warn("Waiting for approval on " + pullRequest);
+				} else {
+					merge(pullRequest);
+				}
+			});
+		});
 	}
 
 	private boolean isApproved(PullRequest pullRequest) {
