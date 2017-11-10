@@ -31,6 +31,12 @@ public class BitbucketService {
 	@Autowired
 	private RebazerProperties config;
 
+	private RebaseService rebaseService;
+
+	public BitbucketService(RebaseService rebaseService) {
+		this.rebaseService = rebaseService;
+	}
+
 	@Scheduled(fixedDelay = 60 * 1000)
 	public void pollBitbucket() {
 		final List<PullRequest> allPullRequests = getAllPullRequestIds();
