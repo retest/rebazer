@@ -1,6 +1,6 @@
 target/
 rebazer-workspace/
-*.properties
+*.yml
 
 ### STS ###
 .apt_generated

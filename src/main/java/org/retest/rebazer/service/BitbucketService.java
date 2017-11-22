@@ -5,12 +5,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.retest.rebazer.config.ReBaZerConfig;
+import org.retest.rebazer.config.RebazerProperties;
+import org.retest.rebazer.config.RebazerProperties.Repository;
 import org.retest.rebazer.domain.PullRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestOperations;
+import org.springframework.web.client.RestTemplate;
 
 import com.jayway.jsonpath.DocumentContext;
 import com.jayway.jsonpath.JsonPath;
@@ -22,55 +23,64 @@ import lombok.extern.slf4j.Slf4j;
 public class BitbucketService {
 
 	@Autowired
-	RestOperations restOperations;
+	private RestTemplate bitbucketTemplate;
 
 	@Autowired
-	ReBaZerConfig config;
+	private RestTemplate bitbucketLegacyTemplate;
 
 	@Autowired
-	RebaseService rebaseService;
+	private RebazerProperties config;
+
+	private RebaseService rebaseService;
+
+	public BitbucketService(RebaseService rebaseService) {
+		this.rebaseService = rebaseService;
+	}
 
 	@Scheduled(fixedDelay = 60 * 1000)
 	public void pollBitbucket() {
-		final List<PullRequest> allPullRequests = getAllPullRequestIds();
 
-		for (final PullRequest pullRequest : allPullRequests) {
-			log.debug("processing " + pullRequest);
-
-			if (!greenBuildExists(pullRequest)) {
-				log.info("waiting for green builds " + pullRequest);
-			} else if (rebaseNeeded(pullRequest)) {
-				rebaseService.rebase(pullRequest);
-			} else if (!isApproved(pullRequest)) {
-				log.warn("approval required " + pullRequest);
-			} else {
-				merge(pullRequest);
-			}
-		}
+		config.getRepos().forEach(repo -> {
+			log.info("Processing repository: {}", repo.getName());
+			getAllPullRequestIds(repo).forEach(pullRequest -> {
+				log.info("Processing " + pullRequest);
+				if (!greenBuildExists(pullRequest)) {
+					log.info("Waiting for green builds on " + pullRequest);
+				} else if (rebaseNeeded(pullRequest)) {
+					log.info("Waiting for rebase on " + pullRequest);
+					rebaseService.rebase(repo, pullRequest);
+				} else if (!isApproved(pullRequest)) {
+					log.warn("Waiting for approval on " + pullRequest);
+				} else {
+					merge(pullRequest);
+				}
+			});
+		});
 	}
 
 	private boolean isApproved(PullRequest pullRequest) {
-		final DocumentContext jp = jsonPathForPath("pullrequests/" + pullRequest.getId());
+		final DocumentContext jp = jsonPathForPath(pullRequest.getUrl());
 		return jp.<List<Boolean>>read("$.participants[*].approved").stream().anyMatch(approved -> approved);
 	}
 
 	private boolean rebaseNeeded(PullRequest pullRequest) {
-		return !getLastCommonCommitId(pullRequest).equals(getHeadOfBranch(pullRequest.getDestination()));
+		return !getLastCommonCommitId(pullRequest).equals(getHeadOfBranch(pullRequest));
 	}
 
-	private String getHeadOfBranch(String branch) {
-		return jsonPathForPath("refs/branches/" + branch).read("$.target.hash");
+	private String getHeadOfBranch(PullRequest pullRequest) {
+		String url = "/repositories/" + config.getTeam() + "/" + pullRequest.getRepo() + "/";
+		return jsonPathForPath(url + "refs/branches/" + pullRequest.getDestination()).read("$.target.hash");
 	}
 
 	private String getLastCommonCommitId(PullRequest pullRequest) {
-		DocumentContext jp = jsonPathForPath("pullrequests/" + pullRequest.getId() + "/commits");
+		DocumentContext jp = jsonPathForPath(pullRequest.getUrl() + "/commits");
 
 		final int pageLength = jp.read("$.pagelen");
 		final int size = jp.read("$.size");
 		final int lastPage = (pageLength + size - 1) / pageLength;
 
 		if (lastPage > 1) {
-			jp = jsonPathForPath("pullrequests/" + pullRequest.getId() + "/commits?page=" + lastPage);
+			jp = jsonPathForPath(pullRequest.getUrl() + "/commits?page=" + lastPage);
 		}
 
 		final List<String> commitIds = jp.read("$.values[*].hash");
@@ -89,31 +99,44 @@ public class BitbucketService {
 		request.put("message", message);
 		request.put("merge_strategy", "merge_commit");
 
-		restOperations.postForObject(config.getApiBaseUrl() + "/pullrequests/" + pullRequest.getId() + "/merge",
-				request, Object.class);
+		bitbucketTemplate.postForObject(pullRequest.getUrl() + "/merge", request, Object.class);
 	}
 
 	private boolean greenBuildExists(PullRequest pullRequest) {
-		final DocumentContext jp = jsonPathForPath("pullrequests/" + pullRequest.getId() + "/statuses");
+		final DocumentContext jp = jsonPathForPath(pullRequest.getUrl() + "/statuses");
 		return jp.<List<String>>read("$.values[*].state").stream().anyMatch(s -> s.equals("SUCCESSFUL"));
 	}
 
-	private List<PullRequest> getAllPullRequestIds() {
-		final DocumentContext jp = jsonPathForPath("pullrequests");
+	private List<PullRequest> getAllPullRequestIds(Repository repo) {
+		final String urlPath = "/repositories/" + config.getTeam() + "/" + repo.getName() + "/pullrequests";
+
+		final DocumentContext jp = jsonPathForPath(urlPath);
 		final List<PullRequest> results = new ArrayList<>();
 
 		for (Integer i = 0; i < (int) jp.read("$.size"); i++) {
 			final Integer id = jp.read("$.values[" + i + "].id");
 			final String source = jp.read("$.values[" + i + "].source.branch.name");
 			final String destination = jp.read("$.values[" + i + "].destination.branch.name");
-			results.add(new PullRequest(id, source, destination));
+			results.add(PullRequest.builder() //
+					.id(id) //
+					.repo(repo.getName()) //
+					.source(source) //
+					.destination(destination) //
+					.url(urlPath + "/" + id) //
+					.build()); //
 		}
 		return results;
 	}
 
-	private DocumentContext jsonPathForPath(String string) {
-		final String json = restOperations.getForObject(config.getApiBaseUrl() + "/" + string, String.class);
+	private DocumentContext jsonPathForPath(String urlPath) {
+		final String json = bitbucketTemplate.getForObject(urlPath, String.class);
 		return JsonPath.parse(json);
+	}
+
+	private void addComment(PullRequest pullRequest) {
+		Map<String, String> request = new HashMap<>();
+		request.put("content", "This pull request needs some manual love ...");
+		bitbucketLegacyTemplate.postForObject(pullRequest.getUrl() + "/comments", request, String.class);
 	}
 
 }
