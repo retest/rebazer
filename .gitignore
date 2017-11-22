@@ -1,6 +1,5 @@
 target/
 rebazer-workspace/
-*.properties
 *.yml
 
 ### STS ###
