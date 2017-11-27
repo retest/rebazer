@@ -1,10 +1,8 @@
 package org.retest.rebazer.service;
 
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -38,13 +36,13 @@ public class BitbucketService {
 
 	private RebaseService rebaseService;
 
-	private Map<Integer, Date> doNotRebase = new HashMap<Integer, Date>();
+	private Map<Integer, Date> pullrequestUpdateStates = new HashMap<Integer, Date>();
 
 	public BitbucketService(RebaseService rebaseService) {
 		this.rebaseService = rebaseService;
 	}
 
-	@Scheduled(fixedDelay = 60 * 1000)
+	@Scheduled(fixedDelay = 10 * 1000)
 	public void pollBitbucket() {
 
 		config.getRepos().forEach(repo -> {
@@ -54,26 +52,21 @@ public class BitbucketService {
 				if (!greenBuildExists(pullRequest)) {
 					log.info("Waiting for green builds on " + pullRequest);
 				} else if (rebaseNeeded(pullRequest)) {
-					Iterator<Map.Entry<Integer, Date>> entries = doNotRebase.entrySet().iterator();
-					while (entries.hasNext() || doNotRebase.isEmpty()) {
-						if (doNotRebase.isEmpty()) {
-							log.info("Waiting for rebase on " + pullRequest);
-							rebaseService.rebase(repo, pullRequest);
-							doNotRebase.put(pullRequest.getId(), pullRequest.getLastUpdate());
-						} else {
-							Map.Entry<Integer, Date> entry = entries.next();
-							if ((!entry.getKey().equals(pullRequest.getId()))
-									&& (!entry.getValue().equals(pullRequest.getLastUpdate()))) {
-								log.info("Waiting for rebase on " + pullRequest);
-								rebaseService.rebase(repo, pullRequest);
-								doNotRebase.put(pullRequest.getId(), pullRequest.getLastUpdate());
-							}
-						}
+					if ((!pullrequestUpdateStates.containsKey(pullRequest.getId())) || (pullrequestUpdateStates.isEmpty())) {
+						log.info("Waiting for rebase on " + pullRequest);
+						rebaseService.rebase(repo, pullRequest);
+						pullrequestUpdateStates.put(pullRequest.getId(), pullRequest.getLastUpdate());
+					} else if (!pullrequestUpdateStates.get(pullRequest.getId()).equals(pullRequest.getLastUpdate())) {
+						log.info("Waiting for rebase on " + pullRequest);
+						rebaseService.rebase(repo, pullRequest);
+						pullrequestUpdateStates.replace(pullRequest.getId(), pullrequestUpdateStates.get(pullRequest.getId()),
+								pullRequest.getLastUpdate());
 					}
 				} else if (!isApproved(pullRequest)) {
 					log.warn("Waiting for approval on " + pullRequest);
 				} else {
 					merge(pullRequest);
+					pullrequestUpdateStates.remove(pullRequest.getId(), pullRequest.getLastUpdate());
 				}
 			});
 		});
@@ -163,7 +156,8 @@ public class BitbucketService {
 	}
 
 	private Date parseDate(String targetDate) {
-		FastDateFormat dateFormatter = FastDateFormat.getInstance("yyyy-MM-dd'T'HH:mm:ss.SSSSSS'+'HH:mm", Locale.GERMANY);
+		FastDateFormat dateFormatter = FastDateFormat.getInstance("yyyy-MM-dd'T'HH:mm:ss.SSSSSS'+'HH:mm",
+				Locale.GERMANY);
 		Date parsedDate;
 		try {
 			parsedDate = dateFormatter.parse(targetDate);
