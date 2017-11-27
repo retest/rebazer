@@ -21,6 +21,10 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Service
 public class RebaseService {
+	
+	private static final int CLEANUP_COUNTDOWN_DEFAULT = 20;
+	
+	private volatile int cleanupCountdown = CLEANUP_COUNTDOWN_DEFAULT;
 
 	public RebaseService(RebazerProperties config) {
 		final CredentialsProvider credentials = new UsernamePasswordCredentialsProvider(config.getUser(),
@@ -93,6 +97,7 @@ public class RebaseService {
 			try {
 				repository.rebase().setUpstream("origin/" + pullRequest.getDestination()).call();
 				repository.push().setCredentialsProvider(credentials).setForce(true).call();
+				cleanupCountdown--;
 			} catch (final WrongRepositoryStateException e) {
 				log.warn("merge conflict for " + pullRequest + " " + repository.status().call().getChanged().stream()
 						.map(l -> l.toString()).reduce("\n", String::concat));
@@ -100,7 +105,10 @@ public class RebaseService {
 			}
 
 		} finally {
-			cleanUp(repo);
+			if (cleanupCountdown == 0) {
+				cleanupCountdown = CLEANUP_COUNTDOWN_DEFAULT;
+				cleanUp(repo);
+			}
 		}
 	}
 
