@@ -1,7 +1,10 @@
 package org.retest.rebazer.service;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -32,6 +35,10 @@ public class BitbucketService {
 	private RebazerProperties config;
 
 	private RebaseService rebaseService;
+	
+	private Map<Integer, Date> doNotRebase = new HashMap<Integer, Date>();
+	
+	Iterator<Map.Entry<Integer, Date>> entries = doNotRebase.entrySet().iterator();
 
 	public BitbucketService(RebaseService rebaseService) {
 		this.rebaseService = rebaseService;
@@ -47,8 +54,14 @@ public class BitbucketService {
 				if (!greenBuildExists(pullRequest)) {
 					log.info("Waiting for green builds on " + pullRequest);
 				} else if (rebaseNeeded(pullRequest)) {
-					log.info("Waiting for rebase on " + pullRequest);
-					rebaseService.rebase(repo, pullRequest);
+					while (entries.hasNext()) {
+						Map.Entry<Integer, Date> entry = entries.next();
+						if ((entry.getKey().equals(pullRequest.getId())==false) && (entry.getValue().equals(pullRequest.getLastUpdate())==false)) {
+							log.info("Waiting for rebase on " + pullRequest);
+							rebaseService.rebase(repo, pullRequest);
+							doNotRebase.put(pullRequest.getId(), pullRequest.getLastUpdate());
+						}
+					}
 				} else if (!isApproved(pullRequest)) {
 					log.warn("Waiting for approval on " + pullRequest);
 				} else {
@@ -117,12 +130,14 @@ public class BitbucketService {
 			final Integer id = jp.read("$.values[" + i + "].id");
 			final String source = jp.read("$.values[" + i + "].source.branch.name");
 			final String destination = jp.read("$.values[" + i + "].destination.branch.name");
+			final Date lastUpdate = parseDate(jp.read("$.values[" + i + "].updated_on"));
 			results.add(PullRequest.builder() //
 					.id(id) //
 					.repo(repo.getName()) //
 					.source(source) //
 					.destination(destination) //
 					.url(urlPath + "/" + id) //
+					.lastUpdate(lastUpdate) //
 					.build()); //
 		}
 		return results;
@@ -137,6 +152,19 @@ public class BitbucketService {
 		Map<String, String> request = new HashMap<>();
 		request.put("content", "This pull request needs some manual love ...");
 		bitbucketLegacyTemplate.postForObject(pullRequest.getUrl() + "/comments", request, String.class);
+	}
+	
+	private Date parseDate(String targetDate) {
+		SimpleDateFormat dateFormatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSSSS'+'HH:mm");
+		Date parsedDate;
+		try {
+			parsedDate = dateFormatter.parse(targetDate);
+			System.out.println(parsedDate);
+			return parsedDate;
+		} catch (Exception e) {
+			log.info("Date could not be parsed " + e.getMessage());
+		}
+		return null;
 	}
 
 }
