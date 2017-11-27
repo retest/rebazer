@@ -1,13 +1,10 @@
 package org.retest.rebazer.service;
 
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 
-import org.apache.commons.lang3.time.FastDateFormat;
 import org.retest.rebazer.config.RebazerProperties;
 import org.retest.rebazer.config.RebazerProperties.Repository;
 import org.retest.rebazer.domain.PullRequest;
@@ -36,7 +33,7 @@ public class BitbucketService {
 
 	private RebaseService rebaseService;
 
-	private Map<Integer, Date> pullrequestUpdateStates = new HashMap<Integer, Date>();
+	private Map<Integer, String> pullrequestUpdateStates = new HashMap<>();
 
 	public BitbucketService(RebaseService rebaseService) {
 		this.rebaseService = rebaseService;
@@ -44,32 +41,35 @@ public class BitbucketService {
 
 	@Scheduled(fixedDelay = 10 * 1000)
 	public void pollBitbucket() {
-
 		config.getRepos().forEach(repo -> {
 			log.info("Processing repository: {}", repo.getName());
-			getAllPullRequestIds(repo).forEach(pullRequest -> {
-				log.info("Processing " + pullRequest);
-				if (!greenBuildExists(pullRequest)) {
-					log.info("Waiting for green builds on " + pullRequest);
-				} else if (rebaseNeeded(pullRequest)) {
-					if ((!pullrequestUpdateStates.containsKey(pullRequest.getId())) || (pullrequestUpdateStates.isEmpty())) {
-						log.info("Waiting for rebase on " + pullRequest);
-						rebaseService.rebase(repo, pullRequest);
-						pullrequestUpdateStates.put(pullRequest.getId(), pullRequest.getLastUpdate());
-					} else if (!pullrequestUpdateStates.get(pullRequest.getId()).equals(pullRequest.getLastUpdate())) {
-						log.info("Waiting for rebase on " + pullRequest);
-						rebaseService.rebase(repo, pullRequest);
-						pullrequestUpdateStates.replace(pullRequest.getId(), pullrequestUpdateStates.get(pullRequest.getId()),
-								pullRequest.getLastUpdate());
-					}
-				} else if (!isApproved(pullRequest)) {
-					log.warn("Waiting for approval on " + pullRequest);
-				} else {
-					merge(pullRequest);
-					pullrequestUpdateStates.remove(pullRequest.getId(), pullRequest.getLastUpdate());
-				}
-			});
+			getAllPullRequestIds(repo).forEach(pullRequest -> handlePR(repo, pullRequest));
 		});
+	}
+
+	private void handlePR(Repository repo, PullRequest pullRequest) {
+		log.info("Processing " + pullRequest);
+		if (isChangedSinceLastRun(pullRequest)) {
+			if (!greenBuildExists(pullRequest)) {
+				log.info("Waiting for green builds on " + pullRequest);
+			} else if (rebaseNeeded(pullRequest)) {
+				log.info("Waiting for rebase on " + pullRequest);
+				rebaseService.rebase(repo, pullRequest);
+				pullrequestUpdateStates.put(pullRequest.getId(), pullRequest.getLastUpdate());
+			} else if (!isApproved(pullRequest)) {
+				log.warn("Waiting for approval on " + pullRequest);
+			} else {
+				merge(pullRequest);
+				pullrequestUpdateStates.remove(pullRequest.getId(), pullRequest.getLastUpdate());
+			}
+		} else {
+			log.info("PR{} is unchanged since last run, last change at {}", pullRequest,
+					pullrequestUpdateStates.get(pullRequest.getId()));
+		}
+	}
+
+	private boolean isChangedSinceLastRun(PullRequest pullRequest) {
+		return !pullRequest.getLastUpdate().equals(pullrequestUpdateStates.get(pullRequest.getId()));
 	}
 
 	private boolean isApproved(PullRequest pullRequest) {
@@ -123,15 +123,17 @@ public class BitbucketService {
 
 	private List<PullRequest> getAllPullRequestIds(Repository repo) {
 		final String urlPath = "/repositories/" + config.getTeam() + "/" + repo.getName() + "/pullrequests";
-
 		final DocumentContext jp = jsonPathForPath(urlPath);
-		final List<PullRequest> results = new ArrayList<>();
+		return parsePullRequestsJson(repo, urlPath, jp);
+	}
 
+	static List<PullRequest> parsePullRequestsJson(Repository repo, final String urlPath, final DocumentContext jp) {
+		final List<PullRequest> results = new ArrayList<>();
 		for (Integer i = 0; i < (int) jp.read("$.size"); i++) {
 			final Integer id = jp.read("$.values[" + i + "].id");
 			final String source = jp.read("$.values[" + i + "].source.branch.name");
 			final String destination = jp.read("$.values[" + i + "].destination.branch.name");
-			final Date lastUpdate = parseDate(jp.read("$.values[" + i + "].updated_on"));
+			final String lastUpdate = jp.read("$.values[" + i + "].updated_on");
 			results.add(PullRequest.builder() //
 					.id(id) //
 					.repo(repo.getName()) //
@@ -153,20 +155,6 @@ public class BitbucketService {
 		Map<String, String> request = new HashMap<>();
 		request.put("content", "This pull request needs some manual love ...");
 		bitbucketLegacyTemplate.postForObject(pullRequest.getUrl() + "/comments", request, String.class);
-	}
-
-	private Date parseDate(String targetDate) {
-		FastDateFormat dateFormatter = FastDateFormat.getInstance("yyyy-MM-dd'T'HH:mm:ss.SSSSSS'+'HH:mm",
-				Locale.GERMANY);
-		Date parsedDate;
-		try {
-			parsedDate = dateFormatter.parse(targetDate);
-			System.out.println(parsedDate);
-			return parsedDate;
-		} catch (Exception e) {
-			log.info("Date could not be parsed " + e.getMessage());
-		}
-		return null;
 	}
 
 }
