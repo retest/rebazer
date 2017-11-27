@@ -1,5 +1,7 @@
 package org.retest.rebazer.domain;
 
+import java.util.Date;
+
 import lombok.Builder;
 import lombok.Data;
 
@@ -12,6 +14,7 @@ public class PullRequest {
 	private final String source;
 	private final String destination;
 	private final String url;
+	private final Date lastUpdate;
 
 	@Override
 	public String toString() {
