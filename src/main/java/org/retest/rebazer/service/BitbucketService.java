@@ -35,10 +35,8 @@ public class BitbucketService {
 	private RebazerProperties config;
 
 	private RebaseService rebaseService;
-	
+
 	private Map<Integer, Date> doNotRebase = new HashMap<Integer, Date>();
-	
-	Iterator<Map.Entry<Integer, Date>> entries = doNotRebase.entrySet().iterator();
 
 	public BitbucketService(RebaseService rebaseService) {
 		this.rebaseService = rebaseService;
@@ -54,12 +52,20 @@ public class BitbucketService {
 				if (!greenBuildExists(pullRequest)) {
 					log.info("Waiting for green builds on " + pullRequest);
 				} else if (rebaseNeeded(pullRequest)) {
-					while (entries.hasNext()) {
-						Map.Entry<Integer, Date> entry = entries.next();
-						if ((entry.getKey().equals(pullRequest.getId())==false) && (entry.getValue().equals(pullRequest.getLastUpdate())==false)) {
+					Iterator<Map.Entry<Integer, Date>> entries = doNotRebase.entrySet().iterator();
+					while (entries.hasNext() || doNotRebase.isEmpty()) {
+						if (doNotRebase.isEmpty()) {
 							log.info("Waiting for rebase on " + pullRequest);
 							rebaseService.rebase(repo, pullRequest);
 							doNotRebase.put(pullRequest.getId(), pullRequest.getLastUpdate());
+						} else {
+							Map.Entry<Integer, Date> entry = entries.next();
+							if ((!entry.getKey().equals(pullRequest.getId()))
+									&& (!entry.getValue().equals(pullRequest.getLastUpdate()))) {
+								log.info("Waiting for rebase on " + pullRequest);
+								rebaseService.rebase(repo, pullRequest);
+								doNotRebase.put(pullRequest.getId(), pullRequest.getLastUpdate());
+							}
 						}
 					}
 				} else if (!isApproved(pullRequest)) {
@@ -153,7 +159,7 @@ public class BitbucketService {
 		request.put("content", "This pull request needs some manual love ...");
 		bitbucketLegacyTemplate.postForObject(pullRequest.getUrl() + "/comments", request, String.class);
 	}
-	
+
 	private Date parseDate(String targetDate) {
 		SimpleDateFormat dateFormatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSSSS'+'HH:mm");
 		Date parsedDate;
