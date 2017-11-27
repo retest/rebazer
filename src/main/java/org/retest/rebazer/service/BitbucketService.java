@@ -6,8 +6,10 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
+import org.apache.commons.lang3.time.FastDateFormat;
 import org.retest.rebazer.config.RebazerProperties;
 import org.retest.rebazer.config.RebazerProperties.Repository;
 import org.retest.rebazer.domain.PullRequest;
@@ -161,7 +163,7 @@ public class BitbucketService {
 	}
 
 	private Date parseDate(String targetDate) {
-		SimpleDateFormat dateFormatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSSSS'+'HH:mm");
+		FastDateFormat dateFormatter = FastDateFormat.getInstance("yyyy-MM-dd'T'HH:mm:ss.SSSSSS'+'HH:mm", Locale.GERMANY);
 		Date parsedDate;
 		try {
 			parsedDate = dateFormatter.parse(targetDate);
