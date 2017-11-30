@@ -3,6 +3,10 @@ Description=ReTest ReBaZer
 
 [Service]
 ExecStart=/usr/bin/rebazer
+StandardOutput=syslog
+StandardError=syslog
+SyslogIdentifier=rebazer
+
 Type=simple
 User=rebazer
 

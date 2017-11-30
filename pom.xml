@@ -136,6 +136,18 @@
 								</data>
 
 								<data>
+									<src>${basedir}/src/deb/etc/rsyslog.d/${project.artifactId}.conf</src>
+									<type>file</type>
+									<mapper>
+										<type>perm</type>
+										<prefix>/etc/rsyslog.d</prefix>
+										<user>root</user>
+										<group>root</group>
+										<filemode>644</filemode>
+									</mapper>
+								</data>
+
+								<data>
 									<src>${basedir}/src/deb/logrotate/${project.artifactId}</src>
 									<type>file</type>
 									<mapper>
