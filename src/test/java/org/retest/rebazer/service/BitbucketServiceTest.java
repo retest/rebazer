@@ -19,7 +19,7 @@ public class BitbucketServiceTest {
 	RestTemplate bitbucketLegacyTemplate;
 	RebazerProperties config;
 	RebaseService rebaseService;
-	Map<Integer, String> pullrequestUpdateStates;
+	Map<Integer, String> pullRequestUpdateStates;
 
 	BitbucketService cut;
 
@@ -29,9 +29,9 @@ public class BitbucketServiceTest {
 		bitbucketLegacyTemplate = mock(RestTemplate.class);
 		config = mock(RebazerProperties.class);
 		rebaseService = mock(RebaseService.class);
-		pullrequestUpdateStates = new HashMap<>();
+		pullRequestUpdateStates = new HashMap<>();
 		cut = new BitbucketService(bitbucketTemplate, bitbucketLegacyTemplate, config, rebaseService,
-				pullrequestUpdateStates);
+				pullRequestUpdateStates);
 	}
 
 	@Test
@@ -40,7 +40,7 @@ public class BitbucketServiceTest {
 		when(pr.getId()).thenReturn(1);
 		String timestamp = "2017-11-30T09:05:28+00:00";
 		when(pr.getLastUpdate()).thenReturn(timestamp);
-		pullrequestUpdateStates.put(1, timestamp);
+		pullRequestUpdateStates.put(1, timestamp);
 
 		assertThat(cut.isChangedSinceLastRun(pr)).isFalse();
 	}
@@ -52,7 +52,7 @@ public class BitbucketServiceTest {
 		String timestampLastUpdate = "2017-11-30T10:05:28+00:00";
 		when(pr.getLastUpdate()).thenReturn(timestampLastUpdate);
 		String timestampUpdateStates = "2017-11-30T09:05:28+00:00";
-		pullrequestUpdateStates.put(1, timestampUpdateStates);
+		pullRequestUpdateStates.put(1, timestampUpdateStates);
 
 		assertThat(cut.isChangedSinceLastRun(pr)).isTrue();
 	}

@@ -33,7 +33,7 @@ public class BitbucketService {
 
 	private RebaseService rebaseService;
 
-	private Map<Integer, String> pullrequestUpdateStates = new HashMap<>();
+	private Map<Integer, String> pullRequestUpdateStates = new HashMap<>();
 
 	public BitbucketService(RebaseService rebaseService) {
 		this.rebaseService = rebaseService;
@@ -42,12 +42,12 @@ public class BitbucketService {
     /**
      * Testing only.
      */
-    BitbucketService(RestTemplate bitbucketTemplate, RestTemplate bitbucketLegacyTemplate, RebazerProperties config, RebaseService rebaseService, Map<Integer, String> pullrequestUpdateStates) {
+    BitbucketService(RestTemplate bitbucketTemplate, RestTemplate bitbucketLegacyTemplate, RebazerProperties config, RebaseService rebaseService, Map<Integer, String> pullRequestUpdateStates) {
         this.bitbucketTemplate = bitbucketTemplate;
         this.bitbucketLegacyTemplate = bitbucketLegacyTemplate;
         this.config = config;
         this.rebaseService = rebaseService;
-        this.pullrequestUpdateStates = pullrequestUpdateStates;
+        this.pullRequestUpdateStates = pullRequestUpdateStates;
     }
 
 	@Scheduled(fixedDelay = 10 * 1000)
@@ -66,21 +66,21 @@ public class BitbucketService {
 			} else if (rebaseNeeded(pullRequest)) {
 				log.info("Waiting for rebase on " + pullRequest);
 				rebaseService.rebase(repo, pullRequest);
-				pullrequestUpdateStates.put(pullRequest.getId(), pullRequest.getLastUpdate());
+				pullRequestUpdateStates.put(pullRequest.getId(), pullRequest.getLastUpdate());
 			} else if (!isApproved(pullRequest)) {
 				log.warn("Waiting for approval on " + pullRequest);
 			} else {
 				merge(pullRequest);
-				pullrequestUpdateStates.remove(pullRequest.getId(), pullRequest.getLastUpdate());
+				pullRequestUpdateStates.remove(pullRequest.getId(), pullRequest.getLastUpdate());
 			}
 		} else {
 			log.info("PR{} is unchanged since last run, last change at {}", pullRequest,
-					pullrequestUpdateStates.get(pullRequest.getId()));
+					pullRequestUpdateStates.get(pullRequest.getId()));
 		}
 	}
 
 	boolean isChangedSinceLastRun(PullRequest pullRequest) {
-		return !pullRequest.getLastUpdate().equals(pullrequestUpdateStates.get(pullRequest.getId()));
+		return !pullRequest.getLastUpdate().equals(pullRequestUpdateStates.get(pullRequest.getId()));
 	}
 
 	private boolean isApproved(PullRequest pullRequest) {
