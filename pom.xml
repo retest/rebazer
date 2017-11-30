@@ -18,7 +18,7 @@
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>1.5.4.RELEASE</version>
+		<version>1.5.9.RELEASE</version>
 		<relativePath />
 	</parent>
 
@@ -132,6 +132,30 @@
 										<user>root</user>
 										<group>root</group>
 										<filemode>644</filemode>
+									</mapper>
+								</data>
+
+								<data>
+									<src>${basedir}/src/deb/etc/rsyslog.d/${project.artifactId}.conf</src>
+									<type>file</type>
+									<mapper>
+										<type>perm</type>
+										<prefix>/etc/rsyslog.d</prefix>
+										<user>root</user>
+										<group>root</group>
+										<filemode>644</filemode>
+									</mapper>
+								</data>
+
+								<data>
+									<src>${basedir}/src/main/resources/application.yml</src>
+									<type>file</type>
+									<mapper>
+										<type>perm</type>
+										<prefix>/etc/${project.artifactId}</prefix>
+										<user>${project.artifactId}</user>
+										<group>${project.artifactId}</group>
+										<filemode>600</filemode>
 									</mapper>
 								</data>
 
