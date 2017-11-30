@@ -148,6 +148,18 @@
 								</data>
 
 								<data>
+									<src>${basedir}/src/main/resources/application.yml</src>
+									<type>file</type>
+									<mapper>
+										<type>perm</type>
+										<prefix>/etc/${project.artifactId}</prefix>
+										<user>${project.artifactId}</user>
+										<group>${project.artifactId}</group>
+										<filemode>600</filemode>
+									</mapper>
+								</data>
+
+								<data>
 									<src>${basedir}/src/deb/logrotate/${project.artifactId}</src>
 									<type>file</type>
 									<mapper>
