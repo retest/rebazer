@@ -79,7 +79,7 @@ public class BitbucketService {
 		}
 	}
 
-	private boolean isChangedSinceLastRun(PullRequest pullRequest) {
+	boolean isChangedSinceLastRun(PullRequest pullRequest) {
 		return !pullRequest.getLastUpdate().equals(pullrequestUpdateStates.get(pullRequest.getId()));
 	}
 
