@@ -38,6 +38,17 @@ public class BitbucketService {
 	public BitbucketService(RebaseService rebaseService) {
 		this.rebaseService = rebaseService;
 	}
+	
+    /**
+     * Testing only.
+     */
+    BitbucketService(RestTemplate bitbucketTemplate, RestTemplate bitbucketLegacyTemplate, RebazerProperties config, RebaseService rebaseService, Map<Integer, String> pullrequestUpdateStates) {
+        this.bitbucketTemplate = bitbucketTemplate;
+        this.bitbucketLegacyTemplate = bitbucketLegacyTemplate;
+        this.config = config;
+        this.rebaseService = rebaseService;
+        this.pullrequestUpdateStates = pullrequestUpdateStates;
+    }
 
 	@Scheduled(fixedDelay = 10 * 1000)
 	public void pollBitbucket() {
