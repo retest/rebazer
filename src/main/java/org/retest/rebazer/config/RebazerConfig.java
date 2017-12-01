@@ -13,12 +13,12 @@ import lombok.Data;
 @Configuration
 @ConfigurationProperties("rebazer")
 public class RebazerConfig {
-	private String team;
-	private String user;
-	private String pass;
-	private String workspace;
-	private List<Repository> repos;
-	private int cleanupCountdown;
+	private final String team;
+	private final String user;
+	private final String pass;
+	private final String workspace;
+	private final List<Repository> repos;
+	private final int garbageCollectionCountdown;
 
 	@Data
 	public static class Repository {
