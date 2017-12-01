@@ -10,8 +10,8 @@ import org.eclipse.jgit.api.ResetCommand.ResetType;
 import org.eclipse.jgit.api.errors.WrongRepositoryStateException;
 import org.eclipse.jgit.transport.CredentialsProvider;
 import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider;
-import org.retest.rebazer.config.RebazerProperties;
-import org.retest.rebazer.config.RebazerProperties.Repository;
+import org.retest.rebazer.config.RebazerConfig;
+import org.retest.rebazer.config.RebazerConfig.Repository;
 import org.retest.rebazer.domain.PullRequest;
 import org.springframework.stereotype.Service;
 
@@ -26,7 +26,7 @@ public class RebaseService {
 	
 	private volatile int cleanupCountdown = CLEANUP_COUNTDOWN_DEFAULT;
 
-	public RebaseService(RebazerProperties config) {
+	public RebaseService(RebazerConfig config) {
 		final CredentialsProvider credentials = new UsernamePasswordCredentialsProvider(config.getUser(),
 				config.getPass());
 

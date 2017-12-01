@@ -5,8 +5,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.retest.rebazer.config.RebazerProperties;
-import org.retest.rebazer.config.RebazerProperties.Repository;
+import org.retest.rebazer.config.RebazerConfig;
+import org.retest.rebazer.config.RebazerConfig.Repository;
 import org.retest.rebazer.domain.PullRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -29,7 +29,7 @@ public class BitbucketService {
 	private RestTemplate bitbucketLegacyTemplate;
 
 	@Autowired
-	private RebazerProperties config;
+	private RebazerConfig config;
 
 	private RebaseService rebaseService;
 
@@ -42,7 +42,7 @@ public class BitbucketService {
     /**
      * Testing only.
      */
-    BitbucketService(RestTemplate bitbucketTemplate, RestTemplate bitbucketLegacyTemplate, RebazerProperties config, RebaseService rebaseService, Map<Integer, String> pullRequestUpdateStates) {
+    BitbucketService(RestTemplate bitbucketTemplate, RestTemplate bitbucketLegacyTemplate, RebazerConfig config, RebaseService rebaseService, Map<Integer, String> pullRequestUpdateStates) {
         this.bitbucketTemplate = bitbucketTemplate;
         this.bitbucketLegacyTemplate = bitbucketLegacyTemplate;
         this.config = config;

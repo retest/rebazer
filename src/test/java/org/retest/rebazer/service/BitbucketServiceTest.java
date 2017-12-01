@@ -9,7 +9,7 @@ import java.util.Map;
 
 import org.junit.Before;
 import org.junit.Test;
-import org.retest.rebazer.config.RebazerProperties;
+import org.retest.rebazer.config.RebazerConfig;
 import org.retest.rebazer.domain.PullRequest;
 import org.springframework.web.client.RestTemplate;
 
@@ -23,7 +23,7 @@ public class BitbucketServiceTest {
 	public void setUp() {
 		RestTemplate bitbucketTemplate = mock(RestTemplate.class);
 		RestTemplate bitbucketLegacyTemplate = mock(RestTemplate.class);
-		RebazerProperties config = mock(RebazerProperties.class);
+		RebazerConfig config = mock(RebazerConfig.class);
 		RebaseService rebaseService = mock(RebaseService.class);
 		pullRequestUpdateStates = new HashMap<>();
 		cut = new BitbucketService(bitbucketTemplate, bitbucketLegacyTemplate, config, rebaseService,
