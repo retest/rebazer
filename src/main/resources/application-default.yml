@@ -1,0 +1,3 @@
+rebazer:
+  # Number of rebases until clean up (e.g. Git GC).
+  cleanupCountdown: 20
