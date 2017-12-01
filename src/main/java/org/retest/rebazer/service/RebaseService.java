@@ -7,6 +7,7 @@ import org.apache.commons.io.FileUtils;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.RebaseCommand.Operation;
 import org.eclipse.jgit.api.ResetCommand.ResetType;
+import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.api.errors.WrongRepositoryStateException;
 import org.eclipse.jgit.transport.CredentialsProvider;
 import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider;
@@ -24,11 +25,11 @@ public class RebaseService {
 	
 	private final RebazerConfig config;
 	
-	private volatile int cleanupCountdown;
+	private volatile int currentGcCountdown;
 
 	public RebaseService(RebazerConfig config) {
 		this.config = config;
-		cleanupCountdown = config.getCleanupCountdown();
+		currentGcCountdown = config.getGarbageCollectionCountdown();
 		
 		final CredentialsProvider credentials = new UsernamePasswordCredentialsProvider(config.getUser(),
 				config.getPass());
@@ -100,18 +101,13 @@ public class RebaseService {
 			try {
 				repository.rebase().setUpstream("origin/" + pullRequest.getDestination()).call();
 				repository.push().setCredentialsProvider(credentials).setForce(true).call();
-				cleanupCountdown--;
 			} catch (final WrongRepositoryStateException e) {
 				log.warn("merge conflict for " + pullRequest + " " + repository.status().call().getChanged().stream()
 						.map(l -> l.toString()).reduce("\n", String::concat));
 				repository.rebase().setOperation(Operation.ABORT).call();
 			}
-
 		} finally {
-			if (cleanupCountdown == 0) {
-				cleanupCountdown = config.getCleanupCountdown();
-				cleanUp(repo);
-			}
+			cleanUp( repo );
 		}
 	}
 
@@ -145,10 +141,18 @@ public class RebaseService {
 				.setBranchNames(localBranches) //
 				.call(); //
 
-		repository.gc() //
-				.setPrunePreserved(true) //
-				.setExpire(null) //
-				.call(); //
+		triggerGc( repository );
+	}
+
+	private void triggerGc( Git repository ) throws GitAPIException {
+		currentGcCountdown--;
+		if (currentGcCountdown == 0) {
+			currentGcCountdown = config.getGarbageCollectionCountdown();
+			repository.gc() //
+					.setPrunePreserved(true) //
+					.setExpire(null) //
+					.call(); //
+		}
 	}
 
 }
