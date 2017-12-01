@@ -22,11 +22,14 @@ import lombok.extern.slf4j.Slf4j;
 @Service
 public class RebaseService {
 	
-	private static final int CLEANUP_COUNTDOWN_DEFAULT = 20;
+	private final RebazerConfig config;
 	
-	private volatile int cleanupCountdown = CLEANUP_COUNTDOWN_DEFAULT;
+	private volatile int cleanupCountdown;
 
 	public RebaseService(RebazerConfig config) {
+		this.config = config;
+		cleanupCountdown = config.getCleanupCountdown();
+		
 		final CredentialsProvider credentials = new UsernamePasswordCredentialsProvider(config.getUser(),
 				config.getPass());
 
@@ -106,7 +109,7 @@ public class RebaseService {
 
 		} finally {
 			if (cleanupCountdown == 0) {
-				cleanupCountdown = CLEANUP_COUNTDOWN_DEFAULT;
+				cleanupCountdown = config.getCleanupCountdown();
 				cleanUp(repo);
 			}
 		}

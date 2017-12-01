@@ -7,6 +7,8 @@ rebazer:
   user: service_user
   pass: dont_use_this_pass_at_home
   workspace: ./rebazer-workspace
+  # Number of rebases until clean up (e.g. Git GC).
+  cleanupCountdown: 20
   repos:
     - name: the_repo_name
       branch: master
