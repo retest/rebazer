@@ -7,7 +7,10 @@ import org.apache.commons.io.FileUtils;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.RebaseCommand.Operation;
 import org.eclipse.jgit.api.ResetCommand.ResetType;
+import org.eclipse.jgit.api.errors.CannotDeleteCurrentBranchException;
+import org.eclipse.jgit.api.errors.CheckoutConflictException;
 import org.eclipse.jgit.api.errors.GitAPIException;
+import org.eclipse.jgit.api.errors.NotMergedException;
 import org.eclipse.jgit.api.errors.WrongRepositoryStateException;
 import org.eclipse.jgit.transport.CredentialsProvider;
 import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider;
@@ -114,7 +117,13 @@ public class RebaseService {
 	@SneakyThrows
 	private void cleanUp(Repository repo) {
 		Git repository = repo.getGit();
+		resetAndRemoveUntrackedFiles( repository );
+		repository.checkout().setName("remotes/origin/" + repo.getBranch()).call();
+		removeAllLocalBranches( repository );
+		triggerGc( repository );
+	}
 
+	private void resetAndRemoveUntrackedFiles( Git repository ) throws GitAPIException, CheckoutConflictException {
 		repository.clean() //
 				.setCleanDirectories(true) //
 				.setForce(true) //
@@ -124,11 +133,10 @@ public class RebaseService {
 		repository.reset() //
 				.setMode(ResetType.HARD) //
 				.call(); //
+	}
 
-		repository.checkout() //
-				.setName("remotes/origin/" + repo.getBranch()) //
-				.call(); //
-
+	private void removeAllLocalBranches( Git repository )
+			throws GitAPIException, NotMergedException, CannotDeleteCurrentBranchException {
 		final String[] localBranches = repository.branchList() //
 				.call().stream() //
 				.filter(r -> r.getName() //
@@ -140,8 +148,6 @@ public class RebaseService {
 				.setForce(true) //
 				.setBranchNames(localBranches) //
 				.call(); //
-
-		triggerGc( repository );
 	}
 
 	private void triggerGc( Git repository ) throws GitAPIException {
