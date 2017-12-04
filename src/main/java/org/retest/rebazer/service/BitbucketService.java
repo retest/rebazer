@@ -60,7 +60,7 @@ public class BitbucketService {
 
 	private void handlePR(Repository repo, PullRequest pullRequest) {
 		log.info("Processing " + pullRequest);
-		if (isChangedSinceLastRun(pullRequest)) {
+		if (hasChangedSinceLastRun(pullRequest)) {
 			if (!greenBuildExists(pullRequest)) {
 				log.info("Waiting for green builds on " + pullRequest);
 				pullRequestUpdateStates.put(pullRequest.getId(), pullRequest.getLastUpdate());
@@ -81,7 +81,7 @@ public class BitbucketService {
 		}
 	}
 
-	boolean isChangedSinceLastRun(PullRequest pullRequest) {
+	boolean hasChangedSinceLastRun(PullRequest pullRequest) {
 		return !pullRequest.getLastUpdate().equals(pullRequestUpdateStates.get(pullRequest.getId()));
 	}
 
