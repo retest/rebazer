@@ -15,20 +15,16 @@ import org.springframework.web.client.RestTemplate;
 
 public class BitbucketServiceTest {
 
-	RestTemplate bitbucketTemplate;
-	RestTemplate bitbucketLegacyTemplate;
-	RebazerProperties config;
-	RebaseService rebaseService;
 	Map<Integer, String> pullRequestUpdateStates;
 
 	BitbucketService cut;
 
 	@Before
 	public void setUp() {
-		bitbucketTemplate = mock(RestTemplate.class);
-		bitbucketLegacyTemplate = mock(RestTemplate.class);
-		config = mock(RebazerProperties.class);
-		rebaseService = mock(RebaseService.class);
+		RestTemplate bitbucketTemplate = mock(RestTemplate.class);
+		RestTemplate bitbucketLegacyTemplate = mock(RestTemplate.class);
+		RebazerProperties config = mock(RebazerProperties.class);
+		RebaseService rebaseService = mock(RebaseService.class);
 		pullRequestUpdateStates = new HashMap<>();
 		cut = new BitbucketService(bitbucketTemplate, bitbucketLegacyTemplate, config, rebaseService,
 				pullRequestUpdateStates);
@@ -46,7 +42,7 @@ public class BitbucketServiceTest {
 	}
 
 	@Test
-	public void hasChangedSinceLastRun_should_return_true_if_pullrequest_changed() throws Exception {
+	public void hasChangedSinceLastRun_should_return_true_if_pullrequest_did_change() throws Exception {
 		PullRequest pr = mock(PullRequest.class);
 		when(pr.getId()).thenReturn(1);
 		String timestampLastUpdate = "2017-11-30T10:05:28+00:00";
