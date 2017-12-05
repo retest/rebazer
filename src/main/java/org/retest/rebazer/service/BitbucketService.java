@@ -52,10 +52,12 @@ public class BitbucketService {
 
 	@Scheduled(fixedDelay = 10 * 1000)
 	public void pollBitbucket() {
-		config.getRepos().forEach(repo -> {
-			log.info("Processing repository: {}", repo.getName());
-			getAllPullRequests(repo).forEach(pullRequest -> handlePR(repo, pullRequest));
-		});
+		for (Repository repo : config.getRepos()) {
+			log.debug("Processing {}.", repo);
+			for (PullRequest pr : getAllPullRequests(repo)) {
+				handlePR(repo, pr);
+			}
+		}
 	}
 
 	private void handlePR(Repository repo, PullRequest pullRequest) {
