@@ -54,7 +54,7 @@ public class BitbucketService {
 	public void pollBitbucket() {
 		config.getRepos().forEach(repo -> {
 			log.info("Processing repository: {}", repo.getName());
-			getAllPullRequestIds(repo).forEach(pullRequest -> handlePR(repo, pullRequest));
+			getAllPullRequests(repo).forEach(pullRequest -> handlePR(repo, pullRequest));
 		});
 	}
 
@@ -134,7 +134,7 @@ public class BitbucketService {
 		return jp.<List<String>>read("$.values[*].state").stream().anyMatch(s -> s.equals("SUCCESSFUL"));
 	}
 
-	private List<PullRequest> getAllPullRequestIds(Repository repo) {
+	private List<PullRequest> getAllPullRequests(Repository repo) {
 		final String urlPath = "/repositories/" + config.getTeam() + "/" + repo.getName() + "/pullrequests";
 		final DocumentContext jp = jsonPathForPath(urlPath);
 		return parsePullRequestsJson(repo, urlPath, jp);
