@@ -67,15 +67,14 @@ public class BitbucketService {
 			return;
 		}
 		
+		pullRequestUpdateStates.put(pullRequest.getId(), pullRequest.getLastUpdate());
+		
 		if (!greenBuildExists(pullRequest)) {
 			log.debug("Waiting for green build of {}.", pullRequest);
-			pullRequestUpdateStates.put(pullRequest.getId(), pullRequest.getLastUpdate());
 		} else if (!isApproved(pullRequest)) {
 			log.debug("Waiting for approval of {}.", pullRequest);
-			pullRequestUpdateStates.put(pullRequest.getId(), pullRequest.getLastUpdate());
 		} else if (rebaseNeeded(pullRequest)) {
 			rebaseService.rebase(repo, pullRequest);
-			pullRequestUpdateStates.put(pullRequest.getId(), pullRequest.getLastUpdate());
 		} else {
 			merge(pullRequest);
 			pullRequestUpdateStates.remove(pullRequest.getId());
