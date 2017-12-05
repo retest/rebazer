@@ -7,11 +7,15 @@ import org.apache.commons.io.FileUtils;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.RebaseCommand.Operation;
 import org.eclipse.jgit.api.ResetCommand.ResetType;
+import org.eclipse.jgit.api.errors.CannotDeleteCurrentBranchException;
+import org.eclipse.jgit.api.errors.CheckoutConflictException;
+import org.eclipse.jgit.api.errors.GitAPIException;
+import org.eclipse.jgit.api.errors.NotMergedException;
 import org.eclipse.jgit.api.errors.WrongRepositoryStateException;
 import org.eclipse.jgit.transport.CredentialsProvider;
 import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider;
-import org.retest.rebazer.config.RebazerProperties;
-import org.retest.rebazer.config.RebazerProperties.Repository;
+import org.retest.rebazer.config.RebazerConfig;
+import org.retest.rebazer.config.RebazerConfig.Repository;
 import org.retest.rebazer.domain.PullRequest;
 import org.springframework.stereotype.Service;
 
@@ -21,8 +25,15 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Service
 public class RebaseService {
+	
+	private final RebazerConfig config;
+	
+	private volatile int currentGcCountdown;
 
-	public RebaseService(RebazerProperties config) {
+	public RebaseService(RebazerConfig config) {
+		this.config = config;
+		currentGcCountdown = config.getGarbageCollectionCountdown();
+		
 		final CredentialsProvider credentials = new UsernamePasswordCredentialsProvider(config.getUser(),
 				config.getPass());
 
@@ -98,16 +109,21 @@ public class RebaseService {
 						.map(l -> l.toString()).reduce("\n", String::concat));
 				repository.rebase().setOperation(Operation.ABORT).call();
 			}
-
 		} finally {
-			cleanUp(repo);
+			cleanUp( repo );
 		}
 	}
 
 	@SneakyThrows
 	private void cleanUp(Repository repo) {
 		Git repository = repo.getGit();
+		resetAndRemoveUntrackedFiles( repository );
+		repository.checkout().setName("remotes/origin/" + repo.getBranch()).call();
+		removeAllLocalBranches( repository );
+		triggerGc( repository );
+	}
 
+	private void resetAndRemoveUntrackedFiles( Git repository ) throws GitAPIException, CheckoutConflictException {
 		repository.clean() //
 				.setCleanDirectories(true) //
 				.setForce(true) //
@@ -117,11 +133,10 @@ public class RebaseService {
 		repository.reset() //
 				.setMode(ResetType.HARD) //
 				.call(); //
+	}
 
-		repository.checkout() //
-				.setName("remotes/origin/" + repo.getBranch()) //
-				.call(); //
-
+	private void removeAllLocalBranches( Git repository )
+			throws GitAPIException, NotMergedException, CannotDeleteCurrentBranchException {
 		final String[] localBranches = repository.branchList() //
 				.call().stream() //
 				.filter(r -> r.getName() //
@@ -133,11 +148,17 @@ public class RebaseService {
 				.setForce(true) //
 				.setBranchNames(localBranches) //
 				.call(); //
+	}
 
-		repository.gc() //
-				.setPrunePreserved(true) //
-				.setExpire(null) //
-				.call(); //
+	private void triggerGc( Git repository ) throws GitAPIException {
+		currentGcCountdown--;
+		if (currentGcCountdown == 0) {
+			currentGcCountdown = config.getGarbageCollectionCountdown();
+			repository.gc() //
+					.setPrunePreserved(true) //
+					.setExpire(null) //
+					.call(); //
+		}
 	}
 
 }
