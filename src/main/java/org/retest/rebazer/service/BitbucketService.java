@@ -140,10 +140,11 @@ public class BitbucketService {
 		return parsePullRequestsJson(repo, urlPath, jp);
 	}
 
-	static List<PullRequest> parsePullRequestsJson(Repository repo, final String urlPath, final DocumentContext jp) {
-		final List<PullRequest> results = new ArrayList<>();
-		for (Integer i = 0; i < (int) jp.read("$.size"); i++) {
-			final Integer id = jp.read("$.values[" + i + "].id");
+	private static List<PullRequest> parsePullRequestsJson(Repository repo, final String urlPath, final DocumentContext jp) {
+		int numPullRequests = (int) jp.read("$.size");
+		final List<PullRequest> results = new ArrayList<>(numPullRequests);
+		for (int i = 0; i < numPullRequests; i++) {
+			final int id = jp.read("$.values[" + i + "].id");
 			final String source = jp.read("$.values[" + i + "].source.branch.name");
 			final String destination = jp.read("$.values[" + i + "].destination.branch.name");
 			final String lastUpdate = jp.read("$.values[" + i + "].updated_on");
