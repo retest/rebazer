@@ -60,23 +60,25 @@ public class BitbucketService {
 
 	private void handlePR(Repository repo, PullRequest pullRequest) {
 		log.debug("Processing {}.", pullRequest);
-		if (hasChangedSinceLastRun(pullRequest)) {
-			if (!greenBuildExists(pullRequest)) {
-				log.debug("Waiting for green build of {}.", pullRequest);
-				pullRequestUpdateStates.put(pullRequest.getId(), pullRequest.getLastUpdate());
-			} else if (rebaseNeeded(pullRequest)) {
-				rebaseService.rebase(repo, pullRequest);
-				pullRequestUpdateStates.put(pullRequest.getId(), pullRequest.getLastUpdate());
-			} else if (!isApproved(pullRequest)) {
-				log.debug("Waiting for approval of {}.", pullRequest);
-				pullRequestUpdateStates.put(pullRequest.getId(), pullRequest.getLastUpdate());
-			} else {
-				merge(pullRequest);
-				pullRequestUpdateStates.remove(pullRequest.getId());
-			}
-		} else {
+		
+		if (!hasChangedSinceLastRun(pullRequest)) {
 			log.debug("{} is unchanged since last run (last change: {}).", pullRequest,
 					pullRequestUpdateStates.get(pullRequest.getId()));
+			return;
+		}
+		
+		if (!greenBuildExists(pullRequest)) {
+			log.debug("Waiting for green build of {}.", pullRequest);
+			pullRequestUpdateStates.put(pullRequest.getId(), pullRequest.getLastUpdate());
+		} else if (rebaseNeeded(pullRequest)) {
+			rebaseService.rebase(repo, pullRequest);
+			pullRequestUpdateStates.put(pullRequest.getId(), pullRequest.getLastUpdate());
+		} else if (!isApproved(pullRequest)) {
+			log.debug("Waiting for approval of {}.", pullRequest);
+			pullRequestUpdateStates.put(pullRequest.getId(), pullRequest.getLastUpdate());
+		} else {
+			merge(pullRequest);
+			pullRequestUpdateStates.remove(pullRequest.getId());
 		}
 	}
 
