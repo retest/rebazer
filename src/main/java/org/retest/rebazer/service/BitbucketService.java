@@ -33,29 +33,56 @@ public class BitbucketService {
 
 	private RebaseService rebaseService;
 
+	private Map<Integer, String> pullRequestUpdateStates = new HashMap<>();
+
 	public BitbucketService(RebaseService rebaseService) {
 		this.rebaseService = rebaseService;
 	}
+	
+    /**
+     * Testing only.
+     */
+    BitbucketService(RestTemplate bitbucketTemplate, RestTemplate bitbucketLegacyTemplate, RebazerProperties config, RebaseService rebaseService, Map<Integer, String> pullRequestUpdateStates) {
+        this.bitbucketTemplate = bitbucketTemplate;
+        this.bitbucketLegacyTemplate = bitbucketLegacyTemplate;
+        this.config = config;
+        this.rebaseService = rebaseService;
+        this.pullRequestUpdateStates = pullRequestUpdateStates;
+    }
 
-	@Scheduled(fixedDelay = 60 * 1000)
+	@Scheduled(fixedDelay = 10 * 1000)
 	public void pollBitbucket() {
-
 		config.getRepos().forEach(repo -> {
 			log.info("Processing repository: {}", repo.getName());
-			getAllPullRequestIds(repo).forEach(pullRequest -> {
-				log.info("Processing " + pullRequest);
-				if (!greenBuildExists(pullRequest)) {
-					log.info("Waiting for green builds on " + pullRequest);
-				} else if (rebaseNeeded(pullRequest)) {
-					log.info("Waiting for rebase on " + pullRequest);
-					rebaseService.rebase(repo, pullRequest);
-				} else if (!isApproved(pullRequest)) {
-					log.warn("Waiting for approval on " + pullRequest);
-				} else {
-					merge(pullRequest);
-				}
-			});
+			getAllPullRequestIds(repo).forEach(pullRequest -> handlePR(repo, pullRequest));
 		});
+	}
+
+	private void handlePR(Repository repo, PullRequest pullRequest) {
+		log.info("Processing " + pullRequest);
+		if (hasChangedSinceLastRun(pullRequest)) {
+			if (!greenBuildExists(pullRequest)) {
+				log.info("Waiting for green builds on " + pullRequest);
+				pullRequestUpdateStates.put(pullRequest.getId(), pullRequest.getLastUpdate());
+			} else if (rebaseNeeded(pullRequest)) {
+				log.info("Waiting for rebase on " + pullRequest);
+				rebaseService.rebase(repo, pullRequest);
+				pullRequestUpdateStates.put(pullRequest.getId(), pullRequest.getLastUpdate());
+			} else if (!isApproved(pullRequest)) {
+				log.warn("Waiting for approval on " + pullRequest);
+				pullRequestUpdateStates.put(pullRequest.getId(), pullRequest.getLastUpdate());
+			} else {
+				merge(pullRequest);
+				pullRequestUpdateStates.remove(pullRequest.getId());
+			}
+		} else {
+			log.info("PR{} is unchanged since last run, last change at {}", pullRequest,
+					pullRequestUpdateStates.get(pullRequest.getId()));
+		}
+	}
+
+	boolean hasChangedSinceLastRun(PullRequest pullRequest) {
+		return !pullRequest.getLastUpdate().equals(pullRequestUpdateStates.get(pullRequest.getId()));
 	}
 
 	private boolean isApproved(PullRequest pullRequest) {
@@ -109,20 +136,25 @@ public class BitbucketService {
 
 	private List<PullRequest> getAllPullRequestIds(Repository repo) {
 		final String urlPath = "/repositories/" + config.getTeam() + "/" + repo.getName() + "/pullrequests";
-
 		final DocumentContext jp = jsonPathForPath(urlPath);
-		final List<PullRequest> results = new ArrayList<>();
+		return parsePullRequestsJson(repo, urlPath, jp);
+	}
 
-		for (Integer i = 0; i < (int) jp.read("$.size"); i++) {
-			final Integer id = jp.read("$.values[" + i + "].id");
+	private static List<PullRequest> parsePullRequestsJson(Repository repo, final String urlPath, final DocumentContext jp) {
+		int numPullRequests = (int) jp.read("$.size");
+		final List<PullRequest> results = new ArrayList<>(numPullRequests);
+		for (int i = 0; i < numPullRequests; i++) {
+			final int id = jp.read("$.values[" + i + "].id");
 			final String source = jp.read("$.values[" + i + "].source.branch.name");
 			final String destination = jp.read("$.values[" + i + "].destination.branch.name");
+			final String lastUpdate = jp.read("$.values[" + i + "].updated_on");
 			results.add(PullRequest.builder() //
 					.id(id) //
 					.repo(repo.getName()) //
 					.source(source) //
 					.destination(destination) //
 					.url(urlPath + "/" + id) //
+					.lastUpdate(lastUpdate) //
 					.build()); //
 		}
 		return results;
