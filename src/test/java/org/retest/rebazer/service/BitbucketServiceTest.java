@@ -53,4 +53,29 @@ public class BitbucketServiceTest {
 		assertThat(cut.hasChangedSinceLastRun(pr)).isTrue();
 	}
 
+	@Test
+	public void rebaseNeeded_should_return_false_if_headOfBranch_is_equal_to_lastCommonCommitId() {
+		PullRequest pullRequest = mock(PullRequest.class);
+		BitbucketService cut = mock(BitbucketService.class);
+		String head = "12325345923759135";
+		when(cut.getHeadOfBranch(pullRequest)).thenReturn(head);
+		when(cut.getLastCommonCommitId(pullRequest)).thenReturn(head);
+		when(cut.rebaseNeeded(pullRequest)).thenCallRealMethod();
+
+		assertThat(cut.rebaseNeeded(pullRequest)).isFalse();
+	}
+
+	@Test
+	public void rebaseNeeded_should_return_true_if_headOfBranch_isnt_equal_to_lastCommonCommitId() {
+		PullRequest pullRequest = mock(PullRequest.class);
+		BitbucketService cut = mock(BitbucketService.class);
+		String head = "12325345923759135";
+		String lcci = "21342343253253452";
+		when(cut.getHeadOfBranch(pullRequest)).thenReturn(head);
+		when(cut.getLastCommonCommitId(pullRequest)).thenReturn(lcci);
+		when(cut.rebaseNeeded(pullRequest)).thenCallRealMethod();
+
+		assertThat(cut.rebaseNeeded(pullRequest)).isTrue();
+	}
+
 }

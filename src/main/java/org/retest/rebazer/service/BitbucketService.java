@@ -93,16 +93,16 @@ public class BitbucketService {
 		return jp.<List<Boolean>>read("$.participants[*].approved").stream().anyMatch(approved -> approved);
 	}
 
-	private boolean rebaseNeeded(PullRequest pullRequest) {
+	boolean rebaseNeeded(PullRequest pullRequest) {
 		return !getLastCommonCommitId(pullRequest).equals(getHeadOfBranch(pullRequest));
 	}
 
-	private String getHeadOfBranch(PullRequest pullRequest) {
+	String getHeadOfBranch(PullRequest pullRequest) {
 		String url = "/repositories/" + config.getTeam() + "/" + pullRequest.getRepo() + "/";
 		return jsonPathForPath(url + "refs/branches/" + pullRequest.getDestination()).read("$.target.hash");
 	}
 
-	private String getLastCommonCommitId(PullRequest pullRequest) {
+	String getLastCommonCommitId(PullRequest pullRequest) {
 		DocumentContext jp = jsonPathForPath(pullRequest.getUrl() + "/commits");
 
 		final int pageLength = jp.read("$.pagelen");
