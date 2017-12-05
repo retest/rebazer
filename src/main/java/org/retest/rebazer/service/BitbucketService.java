@@ -70,11 +70,11 @@ public class BitbucketService {
 		if (!greenBuildExists(pullRequest)) {
 			log.debug("Waiting for green build of {}.", pullRequest);
 			pullRequestUpdateStates.put(pullRequest.getId(), pullRequest.getLastUpdate());
-		} else if (rebaseNeeded(pullRequest)) {
-			rebaseService.rebase(repo, pullRequest);
-			pullRequestUpdateStates.put(pullRequest.getId(), pullRequest.getLastUpdate());
 		} else if (!isApproved(pullRequest)) {
 			log.debug("Waiting for approval of {}.", pullRequest);
+			pullRequestUpdateStates.put(pullRequest.getId(), pullRequest.getLastUpdate());
+		} else if (rebaseNeeded(pullRequest)) {
+			rebaseService.rebase(repo, pullRequest);
 			pullRequestUpdateStates.put(pullRequest.getId(), pullRequest.getLastUpdate());
 		} else {
 			merge(pullRequest);
