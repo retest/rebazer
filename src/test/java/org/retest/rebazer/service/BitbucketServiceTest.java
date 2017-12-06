@@ -1,6 +1,8 @@
 package org.retest.rebazer.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -16,12 +18,13 @@ import org.springframework.web.client.RestTemplate;
 public class BitbucketServiceTest {
 
 	Map<Integer, String> pullRequestUpdateStates;
+	RestTemplate bitbucketTemplate;
 
 	BitbucketService cut;
 
 	@Before
 	public void setUp() {
-		RestTemplate bitbucketTemplate = mock(RestTemplate.class);
+		bitbucketTemplate = mock(RestTemplate.class);
 		RestTemplate bitbucketLegacyTemplate = mock(RestTemplate.class);
 		RebazerConfig config = mock(RebazerConfig.class);
 		RebaseService rebaseService = mock(RebaseService.class);
@@ -76,6 +79,24 @@ public class BitbucketServiceTest {
 		when(cut.rebaseNeeded(pullRequest)).thenCallRealMethod();
 
 		assertThat(cut.rebaseNeeded(pullRequest)).isTrue();
+	}
+
+	@Test
+	public void isApproved_should_return_false_if_approved_is_false() {
+		PullRequest pullRequest = mock(PullRequest.class);
+		String json = "{participants: [{\"approved\": false}]}\"";
+		when(bitbucketTemplate.getForObject(anyString(), eq(String.class))).thenReturn(json);
+
+		assertThat(cut.isApproved(pullRequest)).isFalse();
+	}
+
+	@Test
+	public void isApproved_should_return_ture_if_approved_is_true() {
+		PullRequest pullRequest = mock(PullRequest.class);
+		String json = "{participants: [{\"approved\": true}]}\"";
+		when(bitbucketTemplate.getForObject(anyString(), eq(String.class))).thenReturn(json);
+
+		assertThat(cut.isApproved(pullRequest)).isTrue();
 	}
 
 }

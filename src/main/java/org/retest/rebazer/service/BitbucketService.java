@@ -88,7 +88,7 @@ public class BitbucketService {
 		return !pullRequest.getLastUpdate().equals(pullRequestUpdateStates.get(pullRequest.getId()));
 	}
 
-	private boolean isApproved(PullRequest pullRequest) {
+	boolean isApproved(PullRequest pullRequest) {
 		final DocumentContext jp = jsonPathForPath(pullRequest.getUrl());
 		return jp.<List<Boolean>>read("$.participants[*].approved").stream().anyMatch(approved -> approved);
 	}
@@ -163,7 +163,7 @@ public class BitbucketService {
 		return results;
 	}
 
-	private DocumentContext jsonPathForPath(String urlPath) {
+	DocumentContext jsonPathForPath(String urlPath) {
 		final String json = bitbucketTemplate.getForObject(urlPath, String.class);
 		return JsonPath.parse(json);
 	}
