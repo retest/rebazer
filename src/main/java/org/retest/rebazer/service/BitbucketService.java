@@ -132,7 +132,7 @@ public class BitbucketService {
 		bitbucketTemplate.postForObject(pullRequest.getUrl() + "/merge", request, Object.class);
 	}
 
-	private boolean greenBuildExists(PullRequest pullRequest) {
+	boolean greenBuildExists(PullRequest pullRequest) {
 		final DocumentContext jp = jsonPathForPath(pullRequest.getUrl() + "/statuses");
 		return jp.<List<String>>read("$.values[*].state").stream().anyMatch(s -> s.equals("SUCCESSFUL"));
 	}

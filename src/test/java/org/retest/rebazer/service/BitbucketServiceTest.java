@@ -99,4 +99,22 @@ public class BitbucketServiceTest {
 		assertThat(cut.isApproved(pullRequest)).isTrue();
 	}
 
+	@Test
+	public void greenBuildExists_should_return_false_if_state_is_failed() {
+		PullRequest pullRequest = mock(PullRequest.class);
+		String json = "{values: [{\"state\": FAILED}]}";
+		when(bitbucketTemplate.getForObject(anyString(), eq(String.class))).thenReturn(json);
+
+		assertThat(cut.greenBuildExists(pullRequest)).isFalse();
+	}
+
+	@Test
+	public void greenBuildExists_should_return_true_if_state_is_successful() {
+		PullRequest pullRequest = mock(PullRequest.class);
+		String json = "{values: [{\"state\": SUCCESSFUL}]}";
+		when(bitbucketTemplate.getForObject(anyString(), eq(String.class))).thenReturn(json);
+
+		assertThat(cut.greenBuildExists(pullRequest)).isTrue();
+	}
+
 }
