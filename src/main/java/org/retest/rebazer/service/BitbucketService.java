@@ -35,6 +35,7 @@ public class BitbucketService {
 
 	private Map<Integer, String> pullRequestUpdateStates = new HashMap<>();
 
+	@Autowired
 	public BitbucketService(RebaseService rebaseService) {
 		this.rebaseService = rebaseService;
 	}
