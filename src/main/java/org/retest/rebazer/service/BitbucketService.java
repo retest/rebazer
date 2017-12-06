@@ -137,7 +137,7 @@ public class BitbucketService {
 		return jp.<List<String>>read("$.values[*].state").stream().anyMatch(s -> s.equals("SUCCESSFUL"));
 	}
 
-	private List<PullRequest> getAllPullRequests(Repository repo) {
+	List<PullRequest> getAllPullRequests(Repository repo) {
 		final String urlPath = "/repositories/" + config.getTeam() + "/" + repo.getName() + "/pullrequests";
 		final DocumentContext jp = jsonPathForPath(urlPath);
 		return parsePullRequestsJson(repo, urlPath, jp);

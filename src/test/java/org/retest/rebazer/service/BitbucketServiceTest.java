@@ -6,19 +6,29 @@ import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.junit.Before;
 import org.junit.Test;
 import org.retest.rebazer.config.RebazerConfig;
+import org.retest.rebazer.config.RebazerConfig.Repository;
 import org.retest.rebazer.domain.PullRequest;
 import org.springframework.web.client.RestTemplate;
+
+import com.jayway.jsonpath.DocumentContext;
+import com.jayway.jsonpath.JsonPath;
 
 public class BitbucketServiceTest {
 
 	Map<Integer, String> pullRequestUpdateStates;
 	RestTemplate bitbucketTemplate;
+	RebazerConfig config;
 
 	BitbucketService cut;
 
@@ -26,9 +36,10 @@ public class BitbucketServiceTest {
 	public void setUp() {
 		bitbucketTemplate = mock(RestTemplate.class);
 		RestTemplate bitbucketLegacyTemplate = mock(RestTemplate.class);
-		RebazerConfig config = mock(RebazerConfig.class);
+		config = mock(RebazerConfig.class);
 		RebaseService rebaseService = mock(RebaseService.class);
 		pullRequestUpdateStates = new HashMap<>();
+		
 		cut = new BitbucketService(bitbucketTemplate, bitbucketLegacyTemplate, config, rebaseService,
 				pullRequestUpdateStates);
 	}
@@ -115,6 +126,27 @@ public class BitbucketServiceTest {
 		when(bitbucketTemplate.getForObject(anyString(), eq(String.class))).thenReturn(json);
 
 		assertThat(cut.greenBuildExists(pullRequest)).isTrue();
+	}
+
+	@Test
+	public void getAllPullRequests_should_return_all_pull_requests_as_list() throws IOException {
+		Repository repo = mock(Repository.class);
+		String json = new String(Files.readAllBytes(Paths.get(
+						"src/test/resources/org/retest/rebazer/service/bitbucketservicetest/response.json")));
+		DocumentContext documentContext = JsonPath.parse(json);
+		when(config.getTeam()).thenReturn("test_team");
+		when(repo.getName()).thenReturn("test_repo_name");
+		when(bitbucketTemplate.getForObject(anyString(), eq(String.class))).thenReturn(json);
+
+		int expectedId = (int) documentContext.read("$.values[0].id");
+		String expectedUrl = "/repositories/" + config.getTeam() + "/" + repo.getName() + "/pullrequests/" + expectedId;
+		List<PullRequest> expected = Arrays.asList(PullRequest.builder().id(expectedId).repo(repo.getName())
+				.source(documentContext.read("$.values[0].source.branch.name"))
+				.destination(documentContext.read("$.values[0].destination.branch.name")).url(expectedUrl)
+				.lastUpdate(documentContext.read("$.values[0].updated_on")).build());
+		List<PullRequest> actual = cut.getAllPullRequests(repo);
+
+		assertThat(actual).isEqualTo(expected);
 	}
 
 }
