@@ -53,7 +53,7 @@ public class BitbucketService {
 	@Scheduled(fixedDelay = 10 * 1000)
 	public void pollBitbucket() {
 		for (Repository repo : config.getRepos()) {
-			log.debug("Processing {}.", repo);
+			log.info("Processing {}.", repo);
 			for (PullRequest pr : getAllPullRequests(repo)) {
 				handlePR(repo, pr);
 			}
@@ -61,10 +61,10 @@ public class BitbucketService {
 	}
 
 	private void handlePR(Repository repo, PullRequest pullRequest) {
-		log.debug("Processing {}.", pullRequest);
+		log.info("Processing {}.", pullRequest);
 		
 		if (!hasChangedSinceLastRun(pullRequest)) {
-			log.debug("{} is unchanged since last run (last change: {}).", pullRequest,
+			log.info("{} is unchanged since last run (last change: {}).", pullRequest,
 					pullRequestUpdateStates.get(pullRequest.getId()));
 			return;
 		}
@@ -72,9 +72,9 @@ public class BitbucketService {
 		pullRequestUpdateStates.put(pullRequest.getId(), pullRequest.getLastUpdate());
 		
 		if (!greenBuildExists(pullRequest)) {
-			log.debug("Waiting for green build of {}.", pullRequest);
+			log.info("Waiting for green build of {}.", pullRequest);
 		} else if (!isApproved(pullRequest)) {
-			log.debug("Waiting for approval of {}.", pullRequest);
+			log.info("Waiting for approval of {}.", pullRequest);
 		} else if (rebaseNeeded(pullRequest)) {
 			rebaseService.rebase(repo, pullRequest);
 		} else {
