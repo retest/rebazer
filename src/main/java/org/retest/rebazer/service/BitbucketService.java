@@ -88,21 +88,21 @@ public class BitbucketService {
 		return !pullRequest.getLastUpdate().equals(pullRequestUpdateStates.get(pullRequest.getId()));
 	}
 
-	private boolean isApproved(PullRequest pullRequest) {
+	boolean isApproved(PullRequest pullRequest) {
 		final DocumentContext jp = jsonPathForPath(pullRequest.getUrl());
 		return jp.<List<Boolean>>read("$.participants[*].approved").stream().anyMatch(approved -> approved);
 	}
 
-	private boolean rebaseNeeded(PullRequest pullRequest) {
+	boolean rebaseNeeded(PullRequest pullRequest) {
 		return !getLastCommonCommitId(pullRequest).equals(getHeadOfBranch(pullRequest));
 	}
 
-	private String getHeadOfBranch(PullRequest pullRequest) {
+	String getHeadOfBranch(PullRequest pullRequest) {
 		String url = "/repositories/" + config.getTeam() + "/" + pullRequest.getRepo() + "/";
 		return jsonPathForPath(url + "refs/branches/" + pullRequest.getDestination()).read("$.target.hash");
 	}
 
-	private String getLastCommonCommitId(PullRequest pullRequest) {
+	String getLastCommonCommitId(PullRequest pullRequest) {
 		DocumentContext jp = jsonPathForPath(pullRequest.getUrl() + "/commits");
 
 		final int pageLength = jp.read("$.pagelen");
@@ -132,12 +132,12 @@ public class BitbucketService {
 		bitbucketTemplate.postForObject(pullRequest.getUrl() + "/merge", request, Object.class);
 	}
 
-	private boolean greenBuildExists(PullRequest pullRequest) {
+	boolean greenBuildExists(PullRequest pullRequest) {
 		final DocumentContext jp = jsonPathForPath(pullRequest.getUrl() + "/statuses");
 		return jp.<List<String>>read("$.values[*].state").stream().anyMatch(s -> s.equals("SUCCESSFUL"));
 	}
 
-	private List<PullRequest> getAllPullRequests(Repository repo) {
+	List<PullRequest> getAllPullRequests(Repository repo) {
 		final String urlPath = "/repositories/" + config.getTeam() + "/" + repo.getName() + "/pullrequests";
 		final DocumentContext jp = jsonPathForPath(urlPath);
 		return parsePullRequestsJson(repo, urlPath, jp);
@@ -163,7 +163,7 @@ public class BitbucketService {
 		return results;
 	}
 
-	private DocumentContext jsonPathForPath(String urlPath) {
+	DocumentContext jsonPathForPath(String urlPath) {
 		final String json = bitbucketTemplate.getForObject(urlPath, String.class);
 		return JsonPath.parse(json);
 	}

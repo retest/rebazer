@@ -1,0 +1,24 @@
+{
+    "values": 
+    [
+        {
+            "id": 2,
+            "source": 
+            {
+                "branch": 
+                {
+                    "name": "test/source-branch"
+                }
+            },
+            "destination": 
+            {
+                "branch": 
+                {
+                    "name": "master"
+                }
+            },
+            "updated_on": "yyyy-MM-ddThh:mm:ss.SSSZZ"
+        },
+    ],
+    "size": 1
+}
