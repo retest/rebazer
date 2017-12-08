@@ -154,6 +154,7 @@ public class RebaseService {
 		currentGcCountdown--;
 		if (currentGcCountdown == 0) {
 			currentGcCountdown = config.getGarbageCollectionCountdown();
+			log.info("Running git gc on {}, next gc after {} rebases.", repository, currentGcCountdown);
 			repository.gc() //
 					.setPrunePreserved(true) //
 					.setExpire(null) //
