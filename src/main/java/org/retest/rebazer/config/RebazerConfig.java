@@ -30,7 +30,7 @@ public class RebazerConfig {
 
 		@Override
 		public String toString() {
-			return "Repository [name=" + name + ", branch=" + branch + "]";
+			return "Repo " + name + " (" + url + ")";
 		}
 	}
 }

@@ -16,6 +16,6 @@ public class PullRequest {
 
 	@Override
 	public String toString() {
-		return "PR" + id + " ( " + source + " -> " + destination + " )";
+		return "PR #" + id + " (" + source + " -> " + destination + ")";
 	}
 }

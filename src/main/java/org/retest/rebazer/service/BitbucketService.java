@@ -52,32 +52,34 @@ public class BitbucketService {
 
 	@Scheduled(fixedDelay = 10 * 1000)
 	public void pollBitbucket() {
-		config.getRepos().forEach(repo -> {
-			log.info("Processing repository: {}", repo.getName());
-			getAllPullRequestIds(repo).forEach(pullRequest -> handlePR(repo, pullRequest));
-		});
+		for (Repository repo : config.getRepos()) {
+			log.info("Processing {}.", repo);
+			for (PullRequest pr : getAllPullRequests(repo)) {
+				handlePR(repo, pr);
+			}
+		}
 	}
 
 	private void handlePR(Repository repo, PullRequest pullRequest) {
-		log.info("Processing " + pullRequest);
-		if (hasChangedSinceLastRun(pullRequest)) {
-			if (!greenBuildExists(pullRequest)) {
-				log.info("Waiting for green builds on " + pullRequest);
-				pullRequestUpdateStates.put(pullRequest.getId(), pullRequest.getLastUpdate());
-			} else if (rebaseNeeded(pullRequest)) {
-				log.info("Waiting for rebase on " + pullRequest);
-				rebaseService.rebase(repo, pullRequest);
-				pullRequestUpdateStates.put(pullRequest.getId(), pullRequest.getLastUpdate());
-			} else if (!isApproved(pullRequest)) {
-				log.warn("Waiting for approval on " + pullRequest);
-				pullRequestUpdateStates.put(pullRequest.getId(), pullRequest.getLastUpdate());
-			} else {
-				merge(pullRequest);
-				pullRequestUpdateStates.remove(pullRequest.getId());
-			}
-		} else {
-			log.info("PR{} is unchanged since last run, last change at {}", pullRequest,
+		log.info("Processing {}.", pullRequest);
+		
+		if (!hasChangedSinceLastRun(pullRequest)) {
+			log.info("{} is unchanged since last run (last change: {}).", pullRequest,
 					pullRequestUpdateStates.get(pullRequest.getId()));
+			return;
+		}
+		
+		pullRequestUpdateStates.put(pullRequest.getId(), pullRequest.getLastUpdate());
+		
+		if (!greenBuildExists(pullRequest)) {
+			log.info("Waiting for green build of {}.", pullRequest);
+		} else if (!isApproved(pullRequest)) {
+			log.info("Waiting for approval of {}.", pullRequest);
+		} else if (rebaseNeeded(pullRequest)) {
+			rebaseService.rebase(repo, pullRequest);
+		} else {
+			merge(pullRequest);
+			pullRequestUpdateStates.remove(pullRequest.getId());
 		}
 	}
 
@@ -134,7 +136,7 @@ public class BitbucketService {
 		return jp.<List<String>>read("$.values[*].state").stream().anyMatch(s -> s.equals("SUCCESSFUL"));
 	}
 
-	private List<PullRequest> getAllPullRequestIds(Repository repo) {
+	private List<PullRequest> getAllPullRequests(Repository repo) {
 		final String urlPath = "/repositories/" + config.getTeam() + "/" + repo.getName() + "/pullrequests";
 		final DocumentContext jp = jsonPathForPath(urlPath);
 		return parsePullRequestsJson(repo, urlPath, jp);
