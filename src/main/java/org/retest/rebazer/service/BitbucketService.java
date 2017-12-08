@@ -51,7 +51,7 @@ public class BitbucketService {
         this.pullRequestUpdateStates = pullRequestUpdateStates;
     }
 
-	@Scheduled(fixedDelay = 10 * 1000)
+	@Scheduled(fixedDelay = 60 * 1000)
 	public void pollBitbucket() {
 		for (Repository repo : config.getRepos()) {
 			log.info("Processing {}.", repo);
