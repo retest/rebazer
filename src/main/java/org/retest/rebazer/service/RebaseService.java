@@ -28,7 +28,7 @@ public class RebaseService {
 	
 	private final RebazerConfig config;
 	
-	private volatile int currentGcCountdown;
+	private int currentGcCountdown;
 
 	public RebaseService(RebazerConfig config) {
 		this.config = config;
@@ -92,7 +92,7 @@ public class RebaseService {
 	}
 
 	@SneakyThrows
-	public synchronized void rebase(Repository repo, PullRequest pullRequest) {
+	public void rebase(Repository repo, PullRequest pullRequest) {
 		log.info("rebase " + pullRequest);
 		try {
 			Git repository = repo.getGit();
