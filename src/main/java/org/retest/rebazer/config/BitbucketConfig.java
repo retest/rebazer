@@ -16,12 +16,12 @@ public class BitbucketConfig {
 	private RebazerConfig config;
 
 	@Bean
-	public RestTemplate bitbucketLegacyTemplate( RestTemplateBuilder builder ) {
+	public RestTemplate bitbucketLegacyTemplate( final RestTemplateBuilder builder ) {
 		return builder.basicAuthorization( config.getUser(), config.getPass() ).rootUri( baseUrlV1 ).build();
 	}
 
 	@Bean
-	public RestTemplate bitbucketTemplate( RestTemplateBuilder builder ) {
+	public RestTemplate bitbucketTemplate( final RestTemplateBuilder builder ) {
 		return builder.basicAuthorization( config.getUser(), config.getPass() ).rootUri( baseUrlV2 ).build();
 	}
 

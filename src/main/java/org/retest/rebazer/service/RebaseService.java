@@ -30,7 +30,7 @@ public class RebaseService {
 
 	private int currentGcCountdown;
 
-	public RebaseService( RebazerConfig config ) {
+	public RebaseService( final RebazerConfig config ) {
 		this.config = config;
 		currentGcCountdown = config.getGarbageCollectionCountdown();
 
@@ -63,7 +63,7 @@ public class RebaseService {
 
 	}
 
-	private static Git tryToOpenExistingRepoAndCheckRemote( File repoFolder, String expectedRepoUrl ) {
+	private static Git tryToOpenExistingRepoAndCheckRemote( final File repoFolder, final String expectedRepoUrl ) {
 		try {
 			final Git repo = Git.open( repoFolder );
 			if ( originIsRepoUrl( repo, expectedRepoUrl ) ) {
@@ -79,24 +79,25 @@ public class RebaseService {
 	}
 
 	@SneakyThrows
-	private static boolean originIsRepoUrl( Git repo, String expectedRepoUrl ) {
+	private static boolean originIsRepoUrl( final Git repo, final String expectedRepoUrl ) {
 		return repo.remoteList().call().stream().anyMatch( r -> r.getName().equals( "origin" )
 				&& r.getURIs().stream().anyMatch( url -> url.toString().equals( expectedRepoUrl ) ) );
 	}
 
 	@SneakyThrows
-	private static Git cloneNewRepo( File repoFolder, String gitRepoUrl, CredentialsProvider credentialsProvider ) {
+	private static Git cloneNewRepo( final File repoFolder, final String gitRepoUrl,
+			final CredentialsProvider credentialsProvider ) {
 		log.info( "Cloning repository {} to folder {} ...", gitRepoUrl, repoFolder );
 		return Git.cloneRepository().setURI( gitRepoUrl ).setCredentialsProvider( credentialsProvider )
 				.setDirectory( repoFolder ).call();
 	}
 
 	@SneakyThrows
-	public void rebase( Repository repo, PullRequest pullRequest ) {
+	public void rebase( final Repository repo, final PullRequest pullRequest ) {
 		log.info( "rebase " + pullRequest );
 		try {
-			Git repository = repo.getGit();
-			CredentialsProvider credentials = repo.getCredentials();
+			final Git repository = repo.getGit();
+			final CredentialsProvider credentials = repo.getCredentials();
 			repository.fetch().setCredentialsProvider( credentials ).setRemoveDeletedRefs( true ).call();
 			repository.checkout().setCreateBranch( true ).setName( pullRequest.getSource() )
 					.setStartPoint( "origin/" + pullRequest.getSource() ).call();
@@ -115,15 +116,16 @@ public class RebaseService {
 	}
 
 	@SneakyThrows
-	private void cleanUp( Repository repo ) {
-		Git repository = repo.getGit();
+	private void cleanUp( final Repository repo ) {
+		final Git repository = repo.getGit();
 		resetAndRemoveUntrackedFiles( repository );
 		repository.checkout().setName( "remotes/origin/" + repo.getBranch() ).call();
 		removeAllLocalBranches( repository );
 		triggerGc( repository );
 	}
 
-	private void resetAndRemoveUntrackedFiles( Git repository ) throws GitAPIException, CheckoutConflictException {
+	private void resetAndRemoveUntrackedFiles( final Git repository )
+			throws GitAPIException, CheckoutConflictException {
 		repository.clean() //
 				.setCleanDirectories( true ) //
 				.setForce( true ) //
@@ -135,7 +137,7 @@ public class RebaseService {
 				.call(); //
 	}
 
-	private void removeAllLocalBranches( Git repository )
+	private void removeAllLocalBranches( final Git repository )
 			throws GitAPIException, NotMergedException, CannotDeleteCurrentBranchException {
 		final String[] localBranches = repository.branchList() //
 				.call().stream() //
@@ -150,7 +152,7 @@ public class RebaseService {
 				.call(); //
 	}
 
-	private void triggerGc( Git repository ) throws GitAPIException {
+	private void triggerGc( final Git repository ) throws GitAPIException {
 		currentGcCountdown--;
 		if ( currentGcCountdown == 0 ) {
 			currentGcCountdown = config.getGarbageCollectionCountdown();
