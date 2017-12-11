@@ -159,10 +159,7 @@ public class BitbucketServiceTest {
 				Paths.get( "src/test/resources/org/retest/rebazer/service/bitbucketservicetest/response.json" ) ) );
 		when( bitbucketTemplate.getForObject( eq( url ), eq( String.class ) ) ).thenReturn( json );
 
-		final String expected = "latestUpdate";
-		final String actual = cut.getLatestUpdate( pullRequest );
-
-		assertThat( actual ).isEqualTo( expected );
+		assertThat( cut.getLatestUpdate( pullRequest ) ).isEqualTo( "someTimestamp" );
 	}
 
 }
