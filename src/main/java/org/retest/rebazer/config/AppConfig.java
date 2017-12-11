@@ -7,10 +7,10 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 
 @Configuration
 public class AppConfig {
-	
+
 	@Bean
-    public TaskScheduler taskScheduler() {
-        return new ThreadPoolTaskScheduler();
-    }
-	
+	public TaskScheduler taskScheduler() {
+		return new ThreadPoolTaskScheduler();
+	}
+
 }
