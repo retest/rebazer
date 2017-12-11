@@ -93,7 +93,8 @@ public class RebaseService {
 	}
 
 	@SneakyThrows
-	public void rebase( final Repository repo, final PullRequest pullRequest ) {
+	public boolean rebase( final Repository repo, final PullRequest pullRequest ) {
+		boolean successful = true;
 		log.info( "rebase " + pullRequest );
 		try {
 			final Git repository = repo.getGit();
@@ -109,10 +110,12 @@ public class RebaseService {
 				log.warn( "merge conflict for " + pullRequest + " " + repository.status().call().getChanged().stream()
 						.map( l -> l.toString() ).reduce( "\n", String::concat ) );
 				repository.rebase().setOperation( Operation.ABORT ).call();
+				successful = false;
 			}
 		} finally {
 			cleanUp( repo );
 		}
+		return successful;
 	}
 
 	@SneakyThrows
