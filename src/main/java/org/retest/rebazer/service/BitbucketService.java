@@ -81,7 +81,7 @@ public class BitbucketService {
 		} else if ( rebaseNeeded( pullRequest ) ) {
 			if ( !rebaseService.rebase( repo, pullRequest ) ) {
 				addComment( pullRequest );
-				pullRequestUpdateStates.put( pullRequest.getId(), getLatestUpdate( repo, pullRequest ) );
+				pullRequestUpdateStates.put( pullRequest.getId(), getLatestUpdate( pullRequest ) );
 			}
 		} else {
 			merge( pullRequest );
@@ -89,9 +89,9 @@ public class BitbucketService {
 		}
 	}
 
-	String getLatestUpdate( final Repository repo, final PullRequest pullRequest ) {
-		final String urlPath =
-				"/repositories/" + config.getTeam() + "/" + repo.getName() + "/pullrequests/" + pullRequest.getId();
+	String getLatestUpdate( final PullRequest pullRequest ) {
+		final String urlPath = "/repositories/" + config.getTeam() + "/" + pullRequest.getRepo() + "/pullrequests/"
+				+ pullRequest.getId();
 		final DocumentContext jp = jsonPathForPath( urlPath );
 		return jp.read( "$.updated_on" );
 	}

@@ -149,21 +149,20 @@ public class BitbucketServiceTest {
 
 		assertThat( actual ).isEqualTo( expected );
 	}
-	
+
 	@Test
 	public void getLatestUpdate_should_return_the_latest_update_of_pullrequest_as_string() throws IOException {
-		Repository repo = mock(Repository.class);
-		PullRequest pullRequest = mock( PullRequest.class );
-		String json = new String( Files.readAllBytes(
+		final PullRequest pullRequest = mock( PullRequest.class );
+		final String json = new String( Files.readAllBytes(
 				Paths.get( "src/test/resources/org/retest/rebazer/service/bitbucketservicetest/response.json" ) ) );
-		when (config.getTeam()).thenReturn( "test_team" );
-		when (repo.getName()).thenReturn( "test_name" );
-		when (pullRequest.getId()).thenReturn( 7 );
-		when( bitbucketTemplate.getForObject( anyString(), eq(String.class) ) ).thenReturn( json );
-		
-		String expected = "latestUpdate";
-		String actual = cut.getLatestUpdate( repo, pullRequest );
-		
+		when( config.getTeam() ).thenReturn( "test_team" );
+		when( pullRequest.getId() ).thenReturn( 7 );
+		when( pullRequest.getRepo() ).thenReturn( "\"test_name\"" );
+		when( bitbucketTemplate.getForObject( anyString(), eq( String.class ) ) ).thenReturn( json );
+
+		final String expected = "latestUpdate";
+		final String actual = cut.getLatestUpdate( pullRequest );
+
 		assertThat( actual ).isEqualTo( expected );
 	}
 
