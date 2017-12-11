@@ -109,7 +109,7 @@ public class RebaseService {
 
 				return true;
 			} catch ( final WrongRepositoryStateException e ) {
-				log.warn( "Merge conflict during rebase.", e );
+				log.warn( "Merge conflict during rebase of {}.", pullRequest );
 				repository.rebase().setOperation( Operation.ABORT ).call();
 
 				return false;
