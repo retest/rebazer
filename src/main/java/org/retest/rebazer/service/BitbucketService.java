@@ -79,11 +79,19 @@ public class BitbucketService {
 		} else if ( !isApproved( pullRequest ) ) {
 			log.info( "Waiting for approval of {}.", pullRequest );
 		} else if ( rebaseNeeded( pullRequest ) ) {
-			rebaseService.rebase( repo, pullRequest );
+			if ( !rebaseService.rebase( repo, pullRequest ) ) {
+				addComment( pullRequest );
+				pullRequestUpdateStates.put( pullRequest.getId(), getLatestUpdate( pullRequest ) );
+			}
 		} else {
 			merge( pullRequest );
 			pullRequestUpdateStates.remove( pullRequest.getId() );
 		}
+	}
+
+	String getLatestUpdate( final PullRequest pullRequest ) {
+		final DocumentContext jp = jsonPathForPath( pullRequest.getUrl() );
+		return jp.read( "$.updated_on" );
 	}
 
 	boolean hasChangedSinceLastRun( final PullRequest pullRequest ) {

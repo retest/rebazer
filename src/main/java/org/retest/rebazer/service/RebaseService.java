@@ -93,8 +93,9 @@ public class RebaseService {
 	}
 
 	@SneakyThrows
-	public void rebase( final Repository repo, final PullRequest pullRequest ) {
-		log.info( "rebase " + pullRequest );
+	public boolean rebase( final Repository repo, final PullRequest pullRequest ) {
+		log.info( "Rebasing {}.", pullRequest );
+
 		try {
 			final Git repository = repo.getGit();
 			final CredentialsProvider credentials = repo.getCredentials();
@@ -105,10 +106,13 @@ public class RebaseService {
 			try {
 				repository.rebase().setUpstream( "origin/" + pullRequest.getDestination() ).call();
 				repository.push().setCredentialsProvider( credentials ).setForce( true ).call();
+
+				return true;
 			} catch ( final WrongRepositoryStateException e ) {
-				log.warn( "merge conflict for " + pullRequest + " " + repository.status().call().getChanged().stream()
-						.map( l -> l.toString() ).reduce( "\n", String::concat ) );
+				log.warn( "Merge conflict during rebase of {}.", pullRequest );
 				repository.rebase().setOperation( Operation.ABORT ).call();
+
+				return false;
 			}
 		} finally {
 			cleanUp( repo );

@@ -150,4 +150,16 @@ public class BitbucketServiceTest {
 		assertThat( actual ).isEqualTo( expected );
 	}
 
+	@Test
+	public void getLatestUpdate_should_return_the_latest_update_of_pullrequest_as_string() throws IOException {
+		final PullRequest pullRequest = mock( PullRequest.class );
+		final String url = "/repositories/test_team/test_repo/pullrequests/7";
+		when( pullRequest.getUrl() ).thenReturn( url );
+		final String json = new String( Files.readAllBytes(
+				Paths.get( "src/test/resources/org/retest/rebazer/service/bitbucketservicetest/response.json" ) ) );
+		when( bitbucketTemplate.getForObject( eq( url ), eq( String.class ) ) ).thenReturn( json );
+
+		assertThat( cut.getLatestUpdate( pullRequest ) ).isEqualTo( "someTimestamp" );
+	}
+
 }
