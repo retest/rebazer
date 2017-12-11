@@ -15,5 +15,6 @@
 			"updated_on": "yyyy-MM-ddThh:mm:ss.SSSZZ"
 		}
 	],
-	"size": 1
+	"size": 1,
+	"updated_on": "latestUpdate"
 }

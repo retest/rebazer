@@ -89,7 +89,7 @@ public class BitbucketService {
 		}
 	}
 
-	private String getLatestUpdate( final Repository repo, final PullRequest pullRequest ) {
+	String getLatestUpdate( final Repository repo, final PullRequest pullRequest ) {
 		final String urlPath =
 				"/repositories/" + config.getTeam() + "/" + repo.getName() + "/pullrequests/" + pullRequest.getId();
 		final DocumentContext jp = jsonPathForPath( urlPath );
