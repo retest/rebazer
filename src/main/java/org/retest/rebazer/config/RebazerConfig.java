@@ -11,7 +11,7 @@ import lombok.Data;
 
 @Data
 @Configuration
-@ConfigurationProperties("rebazer")
+@ConfigurationProperties( "rebazer" )
 public class RebazerConfig {
 	private String team;
 	private String user;
