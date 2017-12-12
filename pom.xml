@@ -199,4 +199,10 @@
 		</license>
 	</licenses>
 
+	<scm>
+		<connection>scm:git:https://github.com/retest/rebazer.git</connection>
+		<developerConnection>scm:git:ssh://git@github.com:retest/rebazer.git</developerConnection>
+		<url>https://github.com/retest/rebazer</url>
+		<tag>HEAD</tag>
+	</scm>
 </project>
