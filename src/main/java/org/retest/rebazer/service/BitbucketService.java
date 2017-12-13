@@ -76,13 +76,13 @@ public class BitbucketService {
 
 		if ( !greenBuildExists( pullRequest ) ) {
 			log.info( "Waiting for green build of {}.", pullRequest );
-		} else if ( !isApproved( pullRequest ) ) {
-			log.info( "Waiting for approval of {}.", pullRequest );
 		} else if ( rebaseNeeded( pullRequest ) ) {
 			if ( !rebaseService.rebase( repo, pullRequest ) ) {
 				addComment( pullRequest );
 				pullRequestUpdateStates.put( pullRequest.getId(), getLatestUpdate( pullRequest ) );
 			}
+		} else if ( !isApproved( pullRequest ) ) {
+			log.info( "Waiting for approval of {}.", pullRequest );
 		} else {
 			merge( pullRequest );
 			pullRequestUpdateStates.remove( pullRequest.getId() );
