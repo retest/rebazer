@@ -77,10 +77,8 @@ public class BitbucketService {
 		if ( !greenBuildExists( pullRequest ) ) {
 			log.info( "Waiting for green build of {}.", pullRequest );
 		} else if ( rebaseNeeded( pullRequest ) ) {
-			if ( !rebaseService.rebase( repo, pullRequest ) ) {
-				addComment( pullRequest );
-				pullRequestUpdateStates.put( pullRequest.getId(), getLatestUpdate( pullRequest ) );
-			}
+			rebase( repo, pullRequest );
+			pullRequestUpdateStates.put( pullRequest.getId(), getLatestUpdate( pullRequest ) );
 		} else if ( !isApproved( pullRequest ) ) {
 			log.info( "Waiting for approval of {}.", pullRequest );
 		} else {
@@ -177,6 +175,12 @@ public class BitbucketService {
 	DocumentContext jsonPathForPath( final String urlPath ) {
 		final String json = bitbucketTemplate.getForObject( urlPath, String.class );
 		return JsonPath.parse( json );
+	}
+
+	private void rebase( final Repository repo, final PullRequest pullRequest ) {
+		if ( !rebaseService.rebase( repo, pullRequest ) ) {
+			addComment( pullRequest );
+		}
 	}
 
 	private void addComment( final PullRequest pullRequest ) {
