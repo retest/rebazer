@@ -18,6 +18,7 @@ Before building the `rebazer` application, please make sure that the following t
 
 `rebazer` relies on several parameters, which need to be specified inside a `.yml` configuration and made available to the program. An example can be found in [application.yml.example](src/main/resources/application.yml.example).
 
+
 ### Mandatory:
 
 | Parameter              | Explanation                                             |
@@ -30,11 +31,13 @@ Before building the `rebazer` application, please make sure that the following t
 | `rebazer.repos.name`   | Name of the repository                                  |
 | `rebazer.repos.branch` | Default branch to check out                             |
 
+
 ### Optional:
 
 | Parameter                            | Explanation                                     | Default |
 |--------------------------------------|-------------------------------------------------|---------|
 | `rebazer.garbageCollectionCountdown` | Number of rebases after which a GC is triggered | 20      |
+
 
 ## Building
 
@@ -48,7 +51,7 @@ Two major artifacts are then build inside the `target` directory: `rebazer-$VERS
 
 ### Fat JAR
 
-This JAR can basically be run everywhere a JVM is present; there are no further dependencies. However, for a successful start, several parameters need to be configured (see configuration section for details). There are quite a [number](https://docs.spring.io/spring-boot/docs/current/reference/html/boot-features-external-config.html#boot-features-external-config-command-line-args) of ways to specify these parameters. 
+This JAR can basically be run everywhere a JVM is present; there are no further dependencies. However, for a successful start, several parameters need to be configured (see configuration section for details). There are quite a [number](https://docs.spring.io/spring-boot/docs/current/reference/html/boot-features-external-config.html#boot-features-external-config-command-line-args) of ways to specify these parameters.
 
 If e.g. all parameters are specified in a file called `application.yml`, the following command should be sufficient for starting `rebazer`:
 
@@ -67,6 +70,7 @@ This package automatically creates:
 * Workspace in `/var/lib/rebazer` (can be configured in `/etc/defaults/rebazer`)
 
 The debian package overwrites the `rebazer.workspace` parameter via an [environment](src/deb/etc/default/rebazer) variable.
+
 
 ## Troubleshooting
 
