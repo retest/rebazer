@@ -1,8 +1,8 @@
 # rebazer
 
-Helper service to handle pull requests on Bitbucket.
-Rebase pull requests against target to streamline commit history.
-Merge the pull requests if it's rebased, approved and the build is green.
+Helper service to handle pull requests on Bitbucket. Rebase pull requests against target to streamline commit history. Every 60 seconds, the `rebazer` app polls Bitbucket and processes each open pull request according to the following flowchart:
+
+![Image](src/doc/rebazer-flowchart.jpg)
 
 
 ## Prerequisites
