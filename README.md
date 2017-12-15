@@ -1,6 +1,16 @@
 # rebazer
 
-Helper service to handle pull requests on Bitbucket. Rebase pull requests against target to streamline commit history. Every 60 seconds, the `rebazer` app polls Bitbucket and processes each open pull request according to the following flowchart:
+Helper service to handle pull requests (PRs) on Bitbucket. Rebase PRs against target to streamline commit history. Every 60 seconds, the `rebazer` app polls Bitbucket and processes each open PR as follows:
+
+1. Is there a change since the last poll? Yes: continue, no: end.
+2. Is the corresponding build stable? Yes: continue, no: end.
+3. Is a rebase necessary? Yes: continue, no: end.
+4. Rebase.
+5. Is there a merge conflict? Yes: leave a comment and end, no: continue.
+6. Is the PR approved? Yes: continue, no: end.
+7. Merge.
+
+Illustrated as a flowchart:
 
 ![Image](src/doc/rebazer-flowchart.jpg)
 
