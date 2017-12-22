@@ -16,47 +16,25 @@ import org.springframework.web.client.RestTemplate;
 import com.jayway.jsonpath.DocumentContext;
 import com.jayway.jsonpath.JsonPath;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Service
+@RequiredArgsConstructor( onConstructor = @__( @Autowired ) )
 public class BitbucketService {
 
-	@Autowired
-	private RestTemplate bitbucketTemplate;
+	private final RestTemplate bitbucketTemplate;
+	private final RestTemplate bitbucketLegacyTemplate;
 
-	@Autowired
-	private RestTemplate bitbucketLegacyTemplate;
-
-	@Autowired
-	private RebazerConfig config;
-
+	private final RebazerConfig config;
 	private final RebaseService rebaseService;
-
-	private Map<Integer, String> pullRequestUpdateStates = new HashMap<>();
-
-	@Autowired
-	public BitbucketService( final RebaseService rebaseService ) {
-		this.rebaseService = rebaseService;
-	}
-
-	/**
-	 * Testing only.
-	 */
-	BitbucketService( final RestTemplate bitbucketTemplate, final RestTemplate bitbucketLegacyTemplate,
-			final RebazerConfig config, final RebaseService rebaseService,
-			final Map<Integer, String> pullRequestUpdateStates ) {
-		this.bitbucketTemplate = bitbucketTemplate;
-		this.bitbucketLegacyTemplate = bitbucketLegacyTemplate;
-		this.config = config;
-		this.rebaseService = rebaseService;
-		this.pullRequestUpdateStates = pullRequestUpdateStates;
-	}
+	private final PullRequestLastUpdateStore pullRequestLastUpdateStore;
 
 	@Scheduled( fixedDelay = 60 * 1000 )
 	public void pollBitbucket() {
 		for ( final Repository repo : config.getRepos() ) {
-			log.info( "Processing {}.", repo );
+			log.debug( "Processing {}.", repo );
 			for ( final PullRequest pr : getAllPullRequests( repo ) ) {
 				handlePR( repo, pr );
 			}
@@ -64,36 +42,29 @@ public class BitbucketService {
 	}
 
 	private void handlePR( final Repository repo, final PullRequest pullRequest ) {
-		log.info( "Processing {}.", pullRequest );
+		log.debug( "Processing {}.", pullRequest );
 
-		if ( !hasChangedSinceLastRun( pullRequest ) ) {
+		if ( pullRequestLastUpdateStore.isHandled( repo, pullRequest ) ) {
 			log.info( "{} is unchanged since last run (last change: {}).", pullRequest,
-					pullRequestUpdateStates.get( pullRequest.getId() ) );
-			return;
-		}
+					pullRequestLastUpdateStore.getLastDate( repo, pullRequest ) );
 
-		pullRequestUpdateStates.put( pullRequest.getId(), pullRequest.getLastUpdate() );
-
-		if ( !greenBuildExists( pullRequest ) ) {
+		} else if ( !greenBuildExists( pullRequest ) ) {
 			log.info( "Waiting for green build of {}.", pullRequest );
+			pullRequestLastUpdateStore.setHandled( repo, pullRequest );
+
 		} else if ( rebaseNeeded( pullRequest ) ) {
 			rebase( repo, pullRequest );
-			pullRequestUpdateStates.put( pullRequest.getId(), getLatestUpdate( pullRequest ) );
+			pullRequestLastUpdateStore.setHandled( repo, pullRequest );
+
 		} else if ( !isApproved( pullRequest ) ) {
 			log.info( "Waiting for approval of {}.", pullRequest );
+			pullRequestLastUpdateStore.setHandled( repo, pullRequest );
+
 		} else {
+			log.info( "Merging pull request " + pullRequest );
 			merge( pullRequest );
-			pullRequestUpdateStates.remove( pullRequest.getId() );
+			pullRequestLastUpdateStore.resetAllInThisRepo( repo );
 		}
-	}
-
-	String getLatestUpdate( final PullRequest pullRequest ) {
-		final DocumentContext jp = jsonPathForPath( pullRequest.getUrl() );
-		return jp.read( "$.updated_on" );
-	}
-
-	boolean hasChangedSinceLastRun( final PullRequest pullRequest ) {
-		return !pullRequest.getLastUpdate().equals( pullRequestUpdateStates.get( pullRequest.getId() ) );
 	}
 
 	boolean isApproved( final PullRequest pullRequest ) {
@@ -129,9 +100,9 @@ public class BitbucketService {
 	}
 
 	private void merge( final PullRequest pullRequest ) {
-		log.warn( "Merging pull request " + pullRequest );
 		final String message = String.format( "Merged in %s (pull request #%d) by ReBaZer", pullRequest.getSource(),
 				pullRequest.getId() );
+		// TODO add approver to message?
 		final Map<String, Object> request = new HashMap<>();
 		request.put( "close_source_branch", true );
 		request.put( "message", message );
