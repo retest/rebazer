@@ -17,6 +17,7 @@ import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider;
 import org.retest.rebazer.config.RebazerConfig;
 import org.retest.rebazer.config.RebazerConfig.Repository;
 import org.retest.rebazer.domain.PullRequest;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import lombok.SneakyThrows;
@@ -30,6 +31,7 @@ public class RebaseService {
 
 	private int currentGcCountdown;
 
+	@Autowired
 	public RebaseService( final RebazerConfig config ) {
 		this.config = config;
 		currentGcCountdown = config.getGarbageCollectionCountdown();
