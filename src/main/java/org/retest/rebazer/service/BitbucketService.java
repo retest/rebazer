@@ -47,10 +47,8 @@ public class BitbucketService {
 		if ( pullRequestLastUpdateStore.isHandled( repo, pullRequest ) ) {
 			log.info( "{} is unchanged since last run (last change: {}).", pullRequest,
 					pullRequestLastUpdateStore.getLastDate( repo, pullRequest ) );
-			return;
-		}
 
-		if ( !greenBuildExists( pullRequest ) ) {
+		} else if ( !greenBuildExists( pullRequest ) ) {
 			log.info( "Waiting for green build of {}.", pullRequest );
 			pullRequestLastUpdateStore.setHandled( repo, pullRequest );
 
