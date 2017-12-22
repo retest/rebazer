@@ -10,9 +10,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -26,7 +24,7 @@ import com.jayway.jsonpath.JsonPath;
 
 public class BitbucketServiceTest {
 
-	Map<Integer, String> pullRequestUpdateStates;
+	PullRequestLastUpdateStore pullRequestUpdateStates;
 	RestTemplate bitbucketTemplate;
 	RebazerConfig config;
 
@@ -38,33 +36,10 @@ public class BitbucketServiceTest {
 		final RestTemplate bitbucketLegacyTemplate = mock( RestTemplate.class );
 		config = mock( RebazerConfig.class );
 		final RebaseService rebaseService = mock( RebaseService.class );
-		pullRequestUpdateStates = new HashMap<>();
+		pullRequestUpdateStates = mock( PullRequestLastUpdateStore.class );
 
 		cut = new BitbucketService( bitbucketTemplate, bitbucketLegacyTemplate, config, rebaseService,
 				pullRequestUpdateStates );
-	}
-
-	@Test
-	public void hasChangedSinceLastRun_should_return_false_if_pullrequest_didnt_change() {
-		final PullRequest pr = mock( PullRequest.class );
-		when( pr.getId() ).thenReturn( 1 );
-		final String timestamp = "2017-11-30T09:05:28+00:00";
-		when( pr.getLastUpdate() ).thenReturn( timestamp );
-		pullRequestUpdateStates.put( 1, timestamp );
-
-		assertThat( cut.hasChangedSinceLastRun( pr ) ).isFalse();
-	}
-
-	@Test
-	public void hasChangedSinceLastRun_should_return_true_if_pullrequest_did_change() throws Exception {
-		final PullRequest pr = mock( PullRequest.class );
-		when( pr.getId() ).thenReturn( 1 );
-		final String timestampLastUpdate = "2017-11-30T10:05:28+00:00";
-		when( pr.getLastUpdate() ).thenReturn( timestampLastUpdate );
-		final String timestampUpdateStates = "2017-11-30T09:05:28+00:00";
-		pullRequestUpdateStates.put( 1, timestampUpdateStates );
-
-		assertThat( cut.hasChangedSinceLastRun( pr ) ).isTrue();
 	}
 
 	@Test

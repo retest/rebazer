@@ -33,7 +33,8 @@ public class BitbucketService {
 
 	private final RebaseService rebaseService;
 
-	private Map<Integer, String> pullRequestUpdateStates = new HashMap<>();
+	@Autowired
+	private PullRequestLastUpdateStore pullRequestLastUpdateStore;
 
 	@Autowired
 	public BitbucketService( final RebaseService rebaseService ) {
@@ -45,12 +46,12 @@ public class BitbucketService {
 	 */
 	BitbucketService( final RestTemplate bitbucketTemplate, final RestTemplate bitbucketLegacyTemplate,
 			final RebazerConfig config, final RebaseService rebaseService,
-			final Map<Integer, String> pullRequestUpdateStates ) {
+			final PullRequestLastUpdateStore pullRequestLastUpdateStore ) {
 		this.bitbucketTemplate = bitbucketTemplate;
 		this.bitbucketLegacyTemplate = bitbucketLegacyTemplate;
 		this.config = config;
 		this.rebaseService = rebaseService;
-		this.pullRequestUpdateStates = pullRequestUpdateStates;
+		this.pullRequestLastUpdateStore = pullRequestLastUpdateStore;
 	}
 
 	@Scheduled( fixedDelay = 60 * 1000 )
@@ -66,35 +67,34 @@ public class BitbucketService {
 	private void handlePR( final Repository repo, final PullRequest pullRequest ) {
 		log.debug( "Processing {}.", pullRequest );
 
-		if ( !hasChangedSinceLastRun( pullRequest ) ) {
+		if ( pullRequestLastUpdateStore.isHandled( repo, pullRequest ) ) {
 			log.info( "{} is unchanged since last run (last change: {}).", pullRequest,
-					pullRequestUpdateStates.get( pullRequest.getId() ) );
+					pullRequestLastUpdateStore.getLastDate( repo, pullRequest ) );
 			return;
 		}
 
-		pullRequestUpdateStates.put( pullRequest.getId(), pullRequest.getLastUpdate() );
-
 		if ( !greenBuildExists( pullRequest ) ) {
 			log.info( "Waiting for green build of {}.", pullRequest );
+			pullRequestLastUpdateStore.setHandled( repo, pullRequest );
+
 		} else if ( rebaseNeeded( pullRequest ) ) {
 			rebase( repo, pullRequest );
-			pullRequestUpdateStates.put( pullRequest.getId(), getLatestUpdate( pullRequest ) );
+			pullRequestLastUpdateStore.setHandled( repo, pullRequest );
+
 		} else if ( !isApproved( pullRequest ) ) {
 			log.info( "Waiting for approval of {}.", pullRequest );
+			pullRequestLastUpdateStore.setHandled( repo, pullRequest );
+
 		} else {
 			log.info( "Merging pull request " + pullRequest );
 			merge( pullRequest );
-			pullRequestUpdateStates.remove( pullRequest.getId() );
+			pullRequestLastUpdateStore.resetAllInThisRepo( repo );
 		}
 	}
 
 	String getLatestUpdate( final PullRequest pullRequest ) {
 		final DocumentContext jp = jsonPathForPath( pullRequest.getUrl() );
 		return jp.read( "$.updated_on" );
-	}
-
-	boolean hasChangedSinceLastRun( final PullRequest pullRequest ) {
-		return !pullRequest.getLastUpdate().equals( pullRequestUpdateStates.get( pullRequest.getId() ) );
 	}
 
 	boolean isApproved( final PullRequest pullRequest ) {
