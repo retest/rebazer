@@ -16,43 +16,20 @@ import org.springframework.web.client.RestTemplate;
 import com.jayway.jsonpath.DocumentContext;
 import com.jayway.jsonpath.JsonPath;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Service
+@RequiredArgsConstructor( onConstructor = @__( @Autowired ) )
 public class BitbucketService {
 
-	@Autowired
-	private RestTemplate bitbucketTemplate;
+	private final RestTemplate bitbucketTemplate;
+	private final RestTemplate bitbucketLegacyTemplate;
 
-	@Autowired
-	private RestTemplate bitbucketLegacyTemplate;
-
-	@Autowired
-	private RebazerConfig config;
-
+	private final RebazerConfig config;
 	private final RebaseService rebaseService;
-
-	@Autowired
-	private PullRequestLastUpdateStore pullRequestLastUpdateStore;
-
-	@Autowired
-	public BitbucketService( final RebaseService rebaseService ) {
-		this.rebaseService = rebaseService;
-	}
-
-	/**
-	 * Testing only.
-	 */
-	BitbucketService( final RestTemplate bitbucketTemplate, final RestTemplate bitbucketLegacyTemplate,
-			final RebazerConfig config, final RebaseService rebaseService,
-			final PullRequestLastUpdateStore pullRequestLastUpdateStore ) {
-		this.bitbucketTemplate = bitbucketTemplate;
-		this.bitbucketLegacyTemplate = bitbucketLegacyTemplate;
-		this.config = config;
-		this.rebaseService = rebaseService;
-		this.pullRequestLastUpdateStore = pullRequestLastUpdateStore;
-	}
+	private final PullRequestLastUpdateStore pullRequestLastUpdateStore;
 
 	@Scheduled( fixedDelay = 60 * 1000 )
 	public void pollBitbucket() {
@@ -132,6 +109,7 @@ public class BitbucketService {
 	private void merge( final PullRequest pullRequest ) {
 		final String message = String.format( "Merged in %s (pull request #%d) by ReBaZer", pullRequest.getSource(),
 				pullRequest.getId() );
+		// TODO add approver to message?
 		final Map<String, Object> request = new HashMap<>();
 		request.put( "close_source_branch", true );
 		request.put( "message", message );
