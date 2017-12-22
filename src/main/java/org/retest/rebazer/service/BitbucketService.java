@@ -56,7 +56,7 @@ public class BitbucketService {
 	@Scheduled( fixedDelay = 60 * 1000 )
 	public void pollBitbucket() {
 		for ( final Repository repo : config.getRepos() ) {
-			log.info( "Processing {}.", repo );
+			log.debug( "Processing {}.", repo );
 			for ( final PullRequest pr : getAllPullRequests( repo ) ) {
 				handlePR( repo, pr );
 			}
@@ -64,7 +64,7 @@ public class BitbucketService {
 	}
 
 	private void handlePR( final Repository repo, final PullRequest pullRequest ) {
-		log.info( "Processing {}.", pullRequest );
+		log.debug( "Processing {}.", pullRequest );
 
 		if ( !hasChangedSinceLastRun( pullRequest ) ) {
 			log.info( "{} is unchanged since last run (last change: {}).", pullRequest,
@@ -82,6 +82,7 @@ public class BitbucketService {
 		} else if ( !isApproved( pullRequest ) ) {
 			log.info( "Waiting for approval of {}.", pullRequest );
 		} else {
+			log.info( "Merging pull request " + pullRequest );
 			merge( pullRequest );
 			pullRequestUpdateStates.remove( pullRequest.getId() );
 		}
@@ -129,7 +130,6 @@ public class BitbucketService {
 	}
 
 	private void merge( final PullRequest pullRequest ) {
-		log.warn( "Merging pull request " + pullRequest );
 		final String message = String.format( "Merged in %s (pull request #%d) by ReBaZer", pullRequest.getSource(),
 				pullRequest.getId() );
 		final Map<String, Object> request = new HashMap<>();
