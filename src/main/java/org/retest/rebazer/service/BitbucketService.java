@@ -67,11 +67,6 @@ public class BitbucketService {
 		}
 	}
 
-	String getLatestUpdate( final PullRequest pullRequest ) {
-		final DocumentContext jp = jsonPathForPath( pullRequest.getUrl() );
-		return jp.read( "$.updated_on" );
-	}
-
 	boolean isApproved( final PullRequest pullRequest ) {
 		final DocumentContext jp = jsonPathForPath( pullRequest.getUrl() );
 		return jp.<List<Boolean>> read( "$.participants[*].approved" ).stream().anyMatch( approved -> approved );
