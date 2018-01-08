@@ -42,7 +42,8 @@ public class RebaseService {
 		config.getRepos().forEach( repo -> {
 			final File repoFolder = new File( config.getWorkspace(), repo.getName() );
 			Git localRepo = null;
-			final String repoUrl = "https://bitbucket.org/" + config.getTeam() + "/" + repo.getName() + ".git";
+			//			final String repoUrl = "https://bitbucket.org/" + config.getTeam() + "/" + repo.getName() + ".git";
+			final String repoUrl = "https://github.com/" + config.getTeam() + "/" + repo.getName() + ".git";
 			repo.setUrl( repoUrl );
 			repo.setCredentials( credentials );
 
