@@ -36,7 +36,25 @@ public class GithubService {
 		}
 	}
 
-	private void handlePR( final Repository repo, final PullRequest pullRequest ) {}
+	private void handlePR( final Repository repo, final PullRequest pullRequest ) {
+		if ( !isApproved( pullRequest ) ) {
+			log.info( "Waiting for approval of {}.", pullRequest );
+		}
+	}
+
+	private boolean isApproved( final PullRequest pullRequest ) {
+		final DocumentContext jp = jsonPathForPath( pullRequest.getUrl() + "/reviews" );
+		final List<String> states = jp.read( "$..state" );
+		boolean approved = false;
+		for ( final String state : states ) {
+			if ( state.equals( "APPROVED" ) ) {
+				approved = true;
+			} else {
+				approved = false;
+			}
+		}
+		return approved;
+	}
 
 	private List<PullRequest> getAllPullRequests( final Repository repo ) {
 		final String urlPath = "/repos/" + config.getTeam() + "/" + repo.getName() + "/pulls";
