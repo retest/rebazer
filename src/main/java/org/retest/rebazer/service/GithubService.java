@@ -1,5 +1,6 @@
 package org.retest.rebazer.service;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.retest.rebazer.config.RebazerConfig;
@@ -45,7 +46,24 @@ public class GithubService {
 
 	private static List<PullRequest> parsePullRequestsJson( final Repository repo, final String urlPath,
 			final DocumentContext jp ) {
-		return null;
+		final List<Integer> pullRequestAmount = jp.read( "$..number" );
+		final int numPullRequests = pullRequestAmount.size();
+		final List<PullRequest> results = new ArrayList<>( numPullRequests );
+		for ( int i = 0; i < numPullRequests; i++ ) {
+			final int id = pullRequestAmount.get( i );
+			final String source = jp.read( "$.[" + i + "].head.ref" );
+			final String destination = jp.read( "$.[" + i + "].base.ref" );
+			final String lastUpdate = jp.read( "$.[" + i + "].updated_at" );
+			results.add( PullRequest.builder() //
+					.id( id ) //
+					.repo( repo.getName() ) //
+					.source( source ) //
+					.destination( destination ) //
+					.url( urlPath + "/" + id ) //
+					.lastUpdate( lastUpdate ) //
+					.build() ); //
+		}
+		return results;
 	}
 
 	private DocumentContext jsonPathForPath( final String urlPath ) {
