@@ -37,7 +37,9 @@ public class GithubService {
 	}
 
 	private void handlePR( final Repository repo, final PullRequest pullRequest ) {
-		if ( !isApproved( pullRequest ) ) {
+		if ( rebaseNeeded( pullRequest ) ) {
+			//TODO call method to rebase(pullRequest)
+		} else if ( !isApproved( pullRequest ) ) {
 			log.info( "Waiting for approval of {}.", pullRequest );
 		}
 	}
@@ -54,6 +56,33 @@ public class GithubService {
 			}
 		}
 		return approved;
+	}
+
+	private boolean rebaseNeeded( final PullRequest pullRequest ) {
+		return !getLastCommonCommitId( pullRequest ).equals( getHeadOfBranch( pullRequest ) );
+	}
+
+	private String getHeadOfBranch( final PullRequest pullRequest ) {
+		final String url = "/repos/" + config.getTeam() + "/" + pullRequest.getRepo() + "/";
+		return jsonPathForPath( url + "git/refs/heads/" + pullRequest.getDestination() ).read( "$.object.sha" );
+	}
+
+	private String getLastCommonCommitId( final PullRequest pullRequest ) {
+		final DocumentContext jp = jsonPathForPath( pullRequest.getUrl() + "/commits" );
+
+		final List<String> commitIds = jp.read( "$..sha" );
+		final List<String> parentIds = jp.read( "$..parents..sha" );
+
+		//		return parentIds.stream().filter( parent -> !commitIds.contains( parent ) ).findFirst()
+		//				.orElseThrow( IllegalStateException::new );
+		for ( final String parent : parentIds ) {
+			if ( commitIds.contains( parent ) ) {
+				return parent;
+			} else {
+				throw new IllegalStateException();
+			}
+		}
+		return null;
 	}
 
 	private List<PullRequest> getAllPullRequests( final Repository repo ) {
