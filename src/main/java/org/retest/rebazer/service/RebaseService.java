@@ -6,12 +6,12 @@ import java.io.IOException;
 import org.apache.commons.io.FileUtils;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.RebaseCommand.Operation;
+import org.eclipse.jgit.api.RebaseResult;
 import org.eclipse.jgit.api.ResetCommand.ResetType;
 import org.eclipse.jgit.api.errors.CannotDeleteCurrentBranchException;
 import org.eclipse.jgit.api.errors.CheckoutConflictException;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.api.errors.NotMergedException;
-import org.eclipse.jgit.api.errors.WrongRepositoryStateException;
 import org.eclipse.jgit.transport.CredentialsProvider;
 import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider;
 import org.retest.rebazer.config.RebazerConfig;
@@ -105,16 +105,31 @@ public class RebaseService {
 			repository.checkout().setCreateBranch( true ).setName( pullRequest.getSource() )
 					.setStartPoint( "origin/" + pullRequest.getSource() ).call();
 
-			try {
-				repository.rebase().setUpstream( "origin/" + pullRequest.getDestination() ).call();
-				repository.push().setCredentialsProvider( credentials ).setForce( true ).call();
+			final RebaseResult rebaseResult =
+					repository.rebase().setUpstream( "origin/" + pullRequest.getDestination() ).call();
 
-				return true;
-			} catch ( final WrongRepositoryStateException e ) {
-				log.warn( "Merge conflict during rebase of {}.", pullRequest );
-				repository.rebase().setOperation( Operation.ABORT ).call();
+			switch ( rebaseResult.getStatus() ) {
+				case UP_TO_DATE:
+					log.warn( "Why rebasing up to date {}?", pullRequest );
+					return true;
 
-				return false;
+				case FAST_FORWARD:
+					log.warn( "Why creating {} without changes?", pullRequest );
+					// fall-through
+
+				case OK:
+					repository.push().setCredentialsProvider( credentials ).setForce( true ).call();
+					return true;
+
+				case STOPPED:
+					log.info( "Merge conflict in {}", pullRequest );
+					repository.rebase().setOperation( Operation.ABORT ).call();
+					return false;
+
+				default:
+					repository.rebase().setOperation( Operation.ABORT ).call();
+					throw new RuntimeException(
+							"For " + pullRequest + " rebase causes an unexpected result: " + rebaseResult.getStatus() );
 			}
 		} finally {
 			cleanUp( repo );
