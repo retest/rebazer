@@ -25,6 +25,7 @@ public class GithubService {
 	private RestTemplate githubTemplate;
 
 	private RebazerConfig config;
+	private final RebaseService rebaseService;
 
 	@Scheduled( fixedDelay = 60 * 1000 )
 	public void pollGithub() {
@@ -38,7 +39,7 @@ public class GithubService {
 
 	private void handlePR( final Repository repo, final PullRequest pullRequest ) {
 		if ( rebaseNeeded( pullRequest ) ) {
-			//TODO call method to rebase(pullRequest)
+			rebase( repo, pullRequest );
 		} else if ( !isApproved( pullRequest ) ) {
 			log.info( "Waiting for approval of {}.", pullRequest );
 		}
@@ -116,6 +117,11 @@ public class GithubService {
 	private DocumentContext jsonPathForPath( final String urlPath ) {
 		final String json = githubTemplate.getForObject( urlPath, String.class );
 		return JsonPath.parse( json );
+	}
+
+	private void rebase( final Repository repo, final PullRequest pullRequest ) {
+		rebaseService.rebase( repo, pullRequest );
+		//TODO method to addComment( pullRequest ) if a mergeConflict happens;
 	}
 
 }
