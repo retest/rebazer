@@ -24,9 +24,9 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor( onConstructor = @__( @Autowired ) )
 public class GithubService {
 
-	private RestTemplate githubTemplate;
+	private final RestTemplate githubTemplate;
 
-	private RebazerConfig config;
+	private final RebazerConfig config;
 	private final RebaseService rebaseService;
 
 	@Scheduled( fixedDelay = 60 * 1000 )
@@ -51,7 +51,7 @@ public class GithubService {
 		}
 	}
 
-	private boolean isApproved( final PullRequest pullRequest ) {
+	boolean isApproved( final PullRequest pullRequest ) {
 		final DocumentContext jp = jsonPathForPath( pullRequest.getUrl() + "/reviews" );
 		final List<String> states = jp.read( "$..state" );
 		boolean approved = false;
@@ -65,16 +65,16 @@ public class GithubService {
 		return approved;
 	}
 
-	private boolean rebaseNeeded( final PullRequest pullRequest ) {
+	boolean rebaseNeeded( final PullRequest pullRequest ) {
 		return !getLastCommonCommitId( pullRequest ).equals( getHeadOfBranch( pullRequest ) );
 	}
 
-	private String getHeadOfBranch( final PullRequest pullRequest ) {
+	String getHeadOfBranch( final PullRequest pullRequest ) {
 		final String url = "/repos/" + config.getTeam() + "/" + pullRequest.getRepo() + "/";
 		return jsonPathForPath( url + "git/refs/heads/" + pullRequest.getDestination() ).read( "$.object.sha" );
 	}
 
-	private String getLastCommonCommitId( final PullRequest pullRequest ) {
+	String getLastCommonCommitId( final PullRequest pullRequest ) {
 		final DocumentContext jp = jsonPathForPath( pullRequest.getUrl() + "/commits" );
 
 		final List<String> commitIds = jp.read( "$..sha" );
@@ -103,7 +103,7 @@ public class GithubService {
 		githubTemplate.put( pullRequest.getUrl() + "/merge", request, Object.class );
 	}
 
-	private List<PullRequest> getAllPullRequests( final Repository repo ) {
+	List<PullRequest> getAllPullRequests( final Repository repo ) {
 		final String urlPath = "/repos/" + config.getTeam() + "/" + repo.getName() + "/pulls";
 		final DocumentContext jp = jsonPathForPath( urlPath );
 		return parsePullRequestsJson( repo, urlPath, jp );
