@@ -1,7 +1,9 @@
 package org.retest.rebazer.service;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.retest.rebazer.config.RebazerConfig;
 import org.retest.rebazer.config.RebazerConfig.Repository;
@@ -38,10 +40,14 @@ public class GithubService {
 	}
 
 	private void handlePR( final Repository repo, final PullRequest pullRequest ) {
+		log.debug( "Processing {}.", pullRequest );
+
 		if ( rebaseNeeded( pullRequest ) ) {
 			rebase( repo, pullRequest );
 		} else if ( !isApproved( pullRequest ) ) {
 			log.info( "Waiting for approval of {}.", pullRequest );
+		} else {
+			merge( pullRequest );
 		}
 	}
 
@@ -84,6 +90,17 @@ public class GithubService {
 			}
 		}
 		return null;
+	}
+
+	private void merge( final PullRequest pullRequest ) {
+		log.warn( "Merging pull request {}", pullRequest );
+		final String message = String.format( "Merged in %s (pull request #%d) by ReBaZer", pullRequest.getSource(),
+				pullRequest.getId() );
+		final Map<String, String> request = new HashMap<>();
+		request.put( "commit_title", message );
+		request.put( "merge_method", "merge" );
+
+		githubTemplate.put( pullRequest.getUrl() + "/merge", request, Object.class );
 	}
 
 	private List<PullRequest> getAllPullRequests( final Repository repo ) {
