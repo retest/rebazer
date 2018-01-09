@@ -137,8 +137,15 @@ public class GithubService {
 	}
 
 	private void rebase( final Repository repo, final PullRequest pullRequest ) {
-		rebaseService.rebase( repo, pullRequest );
-		//TODO method to addComment( pullRequest ) if a mergeConflict happens;
+		if ( !rebaseService.rebase( repo, pullRequest ) ) {
+			addComment( pullRequest );
+		}
+	}
+
+	private void addComment( final PullRequest pullRequest ) {
+		final Map<String, String> request = new HashMap<>();
+		request.put( "body", "This pull request needs some manual love ..." );
+		githubTemplate.put( pullRequest.getUrl() + "/comments", request, String.class );
 	}
 
 }
