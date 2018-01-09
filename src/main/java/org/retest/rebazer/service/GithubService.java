@@ -42,7 +42,9 @@ public class GithubService {
 	private void handlePR( final Repository repo, final PullRequest pullRequest ) {
 		log.debug( "Processing {}.", pullRequest );
 
-		if ( rebaseNeeded( pullRequest ) ) {
+		if ( !greenBuildExists( pullRequest ) ) {
+			log.info( "Waiting for green build of {}.", pullRequest );
+		} else if ( rebaseNeeded( pullRequest ) ) {
 			rebase( repo, pullRequest );
 		} else if ( !isApproved( pullRequest ) ) {
 			log.info( "Waiting for approval of {}.", pullRequest );
@@ -101,6 +103,13 @@ public class GithubService {
 		request.put( "merge_method", "merge" );
 
 		githubTemplate.put( pullRequest.getUrl() + "/merge", request, Object.class );
+	}
+
+	boolean greenBuildExists( final PullRequest pullRequest ) {
+		final String urlPath = "/repos/" + config.getTeam() + "/" + pullRequest.getRepo() + "/commits/"
+				+ pullRequest.getSource() + "/status";
+		final DocumentContext jp = jsonPathForPath( urlPath );
+		return jp.<List<String>> read( "$.statuses[*].state" ).stream().anyMatch( s -> s.equals( "success" ) );
 	}
 
 	List<PullRequest> getAllPullRequests( final Repository repo ) {

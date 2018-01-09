@@ -66,19 +66,37 @@ public class GithubServiceTest {
 	@Test
 	public void isApproved_should_return_false_if_approved_is_false() {
 		final PullRequest pullRequest = mock( PullRequest.class );
-		final String json = "{participants: [{\"state\": \"CHANGES_REQUESTED\"}]}\"";
+		final String json = "{review: [{\"state\": \"CHANGES_REQUESTED\"}]}\"";
 		when( githubTemplate.getForObject( anyString(), eq( String.class ) ) ).thenReturn( json );
 
 		assertThat( cut.isApproved( pullRequest ) ).isFalse();
 	}
 
 	@Test
-	public void isApproved_should_return_ture_if_approved_is_true() {
+	public void isApproved_should_return_true_if_approved_is_true() {
 		final PullRequest pullRequest = mock( PullRequest.class );
-		final String json = "{participants: [{\"state\": \"APPROVED\"}]}\"";
+		final String json = "{review: [{\"state\": \"APPROVED\"}]}\"";
 		when( githubTemplate.getForObject( anyString(), eq( String.class ) ) ).thenReturn( json );
 
 		assertThat( cut.isApproved( pullRequest ) ).isTrue();
+	}
+
+	@Test
+	public void greenBuildExists_should_return_false_if_state_is_failed() {
+		final PullRequest pullRequest = mock( PullRequest.class );
+		final String json = "{statuses: [{\"state\": \"failure_or_error\"}]}";
+		when( githubTemplate.getForObject( anyString(), eq( String.class ) ) ).thenReturn( json );
+
+		assertThat( cut.greenBuildExists( pullRequest ) ).isFalse();
+	}
+
+	@Test
+	public void greenBuildExists_should_return_true_if_state_is_successful() {
+		final PullRequest pullRequest = mock( PullRequest.class );
+		final String json = "{statuses: [{\"state\": \"success\"}]}";
+		when( githubTemplate.getForObject( anyString(), eq( String.class ) ) ).thenReturn( json );
+
+		assertThat( cut.greenBuildExists( pullRequest ) ).isTrue();
 	}
 
 	@Test
