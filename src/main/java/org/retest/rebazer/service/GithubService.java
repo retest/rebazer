@@ -28,9 +28,11 @@ public class GithubService {
 
 	private final RebazerConfig config;
 	private final RebaseService rebaseService;
+	private final PullRequestLastUpdateStore pullRequestLastUpdateStore;
 
 	@Scheduled( fixedDelay = 60 * 1000 )
 	public void pollGithub() {
+		//TODO add condition to seperate the service and extract the handling into an extra class
 		for ( final Repository repo : config.getRepos() ) {
 			log.info( "Processing {}.", repo );
 			for ( final PullRequest pr : getAllPullRequests( repo ) ) {
@@ -42,17 +44,30 @@ public class GithubService {
 	private void handlePR( final Repository repo, final PullRequest pullRequest ) {
 		log.debug( "Processing {}.", pullRequest );
 
-		if ( !greenBuildExists( pullRequest ) ) {
+		if ( pullRequestLastUpdateStore.isHandled( repo, pullRequest ) ) {
+			log.info( "{} is unchanged since last run (last change: {}).", pullRequest,
+					pullRequestLastUpdateStore.getLastDate( repo, pullRequest ) );
+
+		} else if ( !greenBuildExists( pullRequest ) ) {
 			log.info( "Waiting for green build of {}.", pullRequest );
+			pullRequestLastUpdateStore.setHandled( repo, pullRequest );
+
 		} else if ( rebaseNeeded( pullRequest ) ) {
 			rebase( repo, pullRequest );
+			pullRequestLastUpdateStore.setHandled( repo, pullRequest );
+
 		} else if ( !isApproved( pullRequest ) ) {
 			log.info( "Waiting for approval of {}.", pullRequest );
+			pullRequestLastUpdateStore.setHandled( repo, pullRequest );
+
 		} else {
+			log.info( "Merging pull request " + pullRequest );
 			merge( pullRequest );
+			pullRequestLastUpdateStore.resetAllInThisRepo( repo );
 		}
 	}
 
+	//TODO change visibilty of redundant service methods to public and extract an interface
 	boolean isApproved( final PullRequest pullRequest ) {
 		final DocumentContext jp = jsonPathForPath( pullRequest.getUrl() + "/reviews" );
 		final List<String> states = jp.read( "$..state" );
@@ -154,7 +169,8 @@ public class GithubService {
 	private void addComment( final PullRequest pullRequest ) {
 		final Map<String, String> request = new HashMap<>();
 		request.put( "body", "This pull request needs some manual love ..." );
-		githubTemplate.put( pullRequest.getUrl() + "/comments", request, String.class );
+		githubTemplate.postForObject( "/repos/" + config.getTeam() + "/" + pullRequest.getRepo() + "/issues/"
+				+ pullRequest.getId() + "/comments", request, String.class );
 	}
 
 }
