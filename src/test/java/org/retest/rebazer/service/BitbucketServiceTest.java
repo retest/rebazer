@@ -6,7 +6,6 @@ import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Arrays;
@@ -104,7 +103,7 @@ public class BitbucketServiceTest {
 	}
 
 	@Test
-	public void getAllPullRequests_should_return_all_pull_requests_as_list() throws IOException {
+	public void getAllPullRequests_should_return_all_pull_requests_as_list() throws Exception {
 		final Repository repo = mock( Repository.class );
 		final String json = new String( Files.readAllBytes(
 				Paths.get( "src/test/resources/org/retest/rebazer/service/bitbucketservicetest/response.json" ) ) );
@@ -123,6 +122,15 @@ public class BitbucketServiceTest {
 		final List<PullRequest> actual = cut.getAllPullRequests( repo );
 
 		assertThat( actual ).isEqualTo( expected );
+	}
+
+	@Test
+	public void getLatestUpdate_should_return_updated_PullRequest() {
+		final PullRequest pullRequest = mock( PullRequest.class );
+		final String json = "{\"updated_on\": \"someTimestamp\"}";
+		when( bitbucketTemplate.getForObject( anyString(), eq( String.class ) ) ).thenReturn( json );
+
+		assertThat( cut.getLatestUpdate( pullRequest ).getLastUpdate() ).isEqualTo( "someTimestamp" );
 	}
 
 }

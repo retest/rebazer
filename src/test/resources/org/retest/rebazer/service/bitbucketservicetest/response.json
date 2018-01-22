@@ -15,6 +15,5 @@
 			"updated_on": "yyyy-MM-ddThh:mm:ss.SSSZZ"
 		}
 	],
-	"size": 1,
-	"updated_on": "someTimestamp"
+	"size": 1
 }
