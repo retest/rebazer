@@ -5,8 +5,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.retest.rebazer.config.RebazerConfig;
 import org.retest.rebazer.config.RebazerConfig.Repository;
+import org.retest.rebazer.config.RebazerConfig.Team;
 import org.retest.rebazer.domain.PullRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -16,14 +16,15 @@ import com.jayway.jsonpath.DocumentContext;
 import com.jayway.jsonpath.JsonPath;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor( onConstructor = @__( @Autowired ) )
 public class GithubService implements Provider {
 
 	private final RestTemplate githubTemplate;
 
-	private final RebazerConfig config;
 	private final RebaseService rebaseService;
 
 	@Override
@@ -56,13 +57,13 @@ public class GithubService implements Provider {
 	}
 
 	@Override
-	public boolean rebaseNeeded( final PullRequest pullRequest ) {
-		return !getLastCommonCommitId( pullRequest ).equals( getHeadOfBranch( pullRequest ) );
+	public boolean rebaseNeeded( final PullRequest pullRequest, final Team team ) {
+		return !getLastCommonCommitId( pullRequest ).equals( getHeadOfBranch( pullRequest, team ) );
 	}
 
 	@Override
-	public String getHeadOfBranch( final PullRequest pullRequest ) {
-		final String url = "/repos/" + config.getTeam() + "/" + pullRequest.getRepo() + "/";
+	public String getHeadOfBranch( final PullRequest pullRequest, final Team team ) {
+		final String url = "/repos/" + team.getName() + "/" + pullRequest.getRepo() + "/";
 		return jsonPathForPath( url + "git/refs/heads/" + pullRequest.getDestination() ).read( "$.object.sha" );
 	}
 
@@ -98,16 +99,16 @@ public class GithubService implements Provider {
 	}
 
 	@Override
-	public boolean greenBuildExists( final PullRequest pullRequest ) {
-		final String urlPath = "/repos/" + config.getTeam() + "/" + pullRequest.getRepo() + "/commits/"
+	public boolean greenBuildExists( final PullRequest pullRequest, final Team team ) {
+		final String urlPath = "/repos/" + team.getName() + "/" + pullRequest.getRepo() + "/commits/"
 				+ pullRequest.getSource() + "/status";
 		final DocumentContext jp = jsonPathForPath( urlPath );
 		return jp.<List<String>> read( "$.statuses[*].state" ).stream().anyMatch( s -> s.equals( "success" ) );
 	}
 
 	@Override
-	public List<PullRequest> getAllPullRequests( final Repository repo ) {
-		final String urlPath = "/repos/" + config.getTeam() + "/" + repo.getName() + "/pulls";
+	public List<PullRequest> getAllPullRequests( final Repository repo, final Team team ) {
+		final String urlPath = "/repos/" + team.getName() + "/" + repo.getName() + "/pulls";
 		final DocumentContext jp = jsonPathForPath( urlPath );
 		return parsePullRequestsJson( repo, urlPath, jp );
 	}
@@ -140,17 +141,17 @@ public class GithubService implements Provider {
 	}
 
 	@Override
-	public void rebase( final Repository repo, final PullRequest pullRequest ) {
+	public void rebase( final Repository repo, final PullRequest pullRequest, final Team team ) {
 		if ( !rebaseService.rebase( repo, pullRequest ) ) {
-			addComment( pullRequest );
+			addComment( pullRequest, team );
 		}
 	}
 
 	@Override
-	public void addComment( final PullRequest pullRequest ) {
+	public void addComment( final PullRequest pullRequest, final Team team ) {
 		final Map<String, String> request = new HashMap<>();
 		request.put( "body", "This pull request needs some manual love ..." );
-		githubTemplate.postForObject( "/repos/" + config.getTeam() + "/" + pullRequest.getRepo() + "/issues/"
+		githubTemplate.postForObject( "/repos/" + team.getName() + "/" + pullRequest.getRepo() + "/issues/"
 				+ pullRequest.getId() + "/comments", request, String.class );
 	}
 

@@ -35,9 +35,9 @@ public class HandleServices {
 				final Team team = service.getTeam();
 				for ( final Repository repo : team.getRepos() ) {
 					log.debug( "Processing {}.", repo );
-					for ( final PullRequest pr : bitbucketService.getAllPullRequests( repo ) ) {
+					for ( final PullRequest pr : bitbucketService.getAllPullRequests( repo, team ) ) {
 						System.out.println( pr );
-						//                        handlePR( bitbucketService, repo, pr );
+						handlePR( bitbucketService, repo, pr, team );
 					}
 				}
 			}
@@ -45,19 +45,20 @@ public class HandleServices {
 
 	}
 
-	private void handlePR( final Provider provider, final Repository repo, final PullRequest pullRequest ) {
+	private void handlePR( final Provider provider, final Repository repo, final PullRequest pullRequest,
+			final Team team ) {
 		log.debug( "Processing {}.", pullRequest );
 
 		if ( pullRequestLastUpdateStore.isHandled( repo, pullRequest ) ) {
 			log.info( "{} is unchanged since last run (last change: {}).", pullRequest,
 					pullRequestLastUpdateStore.getLastDate( repo, pullRequest ) );
 
-		} else if ( !provider.greenBuildExists( pullRequest ) ) {
+		} else if ( !provider.greenBuildExists( pullRequest, team ) ) {
 			log.info( "Waiting for green build of {}.", pullRequest );
 			pullRequestLastUpdateStore.setHandled( repo, pullRequest );
 
-		} else if ( provider.rebaseNeeded( pullRequest ) ) {
-			provider.rebase( repo, pullRequest );
+		} else if ( provider.rebaseNeeded( pullRequest, team ) ) {
+			provider.rebase( repo, pullRequest, team );
 			// we need to update the "lastUpdate" of a PullRequest to counteract if addComment is called
 			pullRequestLastUpdateStore.setHandled( repo, provider.getLatestUpdate( pullRequest ) );
 
