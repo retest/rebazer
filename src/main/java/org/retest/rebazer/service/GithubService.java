@@ -54,7 +54,8 @@ public class GithubService {
 
 		} else if ( rebaseNeeded( pullRequest ) ) {
 			rebase( repo, pullRequest );
-			pullRequestLastUpdateStore.setHandled( repo, pullRequest );
+			// we need to update the "lastUpdate" of a PullRequest to counteract if addComment is called
+			pullRequestLastUpdateStore.setHandled( repo, getLatestUpdate( pullRequest ) );
 
 		} else if ( !isApproved( pullRequest ) ) {
 			log.info( "Waiting for approval of {}.", pullRequest );
@@ -65,6 +66,19 @@ public class GithubService {
 			merge( pullRequest );
 			pullRequestLastUpdateStore.resetAllInThisRepo( repo );
 		}
+	}
+
+	PullRequest getLatestUpdate( final PullRequest pullRequest ) {
+		final DocumentContext jp = jsonPathForPath( pullRequest.getUrl() );
+		final PullRequest updatedPullRequest = PullRequest.builder() //
+				.id( pullRequest.getId() ) //
+				.repo( pullRequest.getRepo() ) //
+				.source( pullRequest.getSource() ) //
+				.destination( pullRequest.getDestination() ) //
+				.url( pullRequest.getUrl() ) //
+				.lastUpdate( jp.read( "$.updated_at" ) ) //
+				.build();
+		return updatedPullRequest;
 	}
 
 	//TODO change visibilty of redundant service methods to public and extract an interface

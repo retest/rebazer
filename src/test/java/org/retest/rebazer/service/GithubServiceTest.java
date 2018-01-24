@@ -24,6 +24,7 @@ import com.jayway.jsonpath.JsonPath;
 
 public class GithubServiceTest {
 
+	PullRequestLastUpdateStore pullRequestUpdateStates;
 	RestTemplate githubTemplate;
 	RebazerConfig config;
 
@@ -34,8 +35,9 @@ public class GithubServiceTest {
 		githubTemplate = mock( RestTemplate.class );
 		config = mock( RebazerConfig.class );
 		final RebaseService rebaseService = mock( RebaseService.class );
+		pullRequestUpdateStates = mock( PullRequestLastUpdateStore.class );
 
-		cut = new GithubService( githubTemplate, config, rebaseService );
+		cut = new GithubService( githubTemplate, config, rebaseService, null );
 	}
 
 	@Test
@@ -118,6 +120,15 @@ public class GithubServiceTest {
 		final List<PullRequest> actual = cut.getAllPullRequests( repo );
 
 		assertThat( actual ).isEqualTo( expected );
+	}
+
+	@Test
+	public void getLatestUpdate_should_return_updated_PullRequest() {
+		final PullRequest pullRequest = mock( PullRequest.class );
+		final String json = "{\"updated_at\": \"someTimestamp\"}";
+		when( githubTemplate.getForObject( anyString(), eq( String.class ) ) ).thenReturn( json );
+
+		assertThat( cut.getLatestUpdate( pullRequest ).getLastUpdate() ).isEqualTo( "someTimestamp" );
 	}
 
 }
