@@ -16,6 +16,8 @@ import org.eclipse.jgit.transport.CredentialsProvider;
 import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider;
 import org.retest.rebazer.config.RebazerConfig;
 import org.retest.rebazer.config.RebazerConfig.Repository;
+import org.retest.rebazer.config.RebazerConfig.Services;
+import org.retest.rebazer.config.RebazerConfig.Team;
 import org.retest.rebazer.domain.PullRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -35,35 +37,34 @@ public class RebaseService {
 	public RebaseService( final RebazerConfig config ) {
 		this.config = config;
 		currentGcCountdown = config.getGarbageCollectionCountdown();
+		for ( final Services services : config.getServices() ) {
+			final Team team = services.getTeam();
+			final CredentialsProvider credentials =
+					new UsernamePasswordCredentialsProvider( team.getUser(), team.getPass() );
+			team.getRepos().forEach( repo -> {
+				final File repoFolder = new File( config.getWorkspace(), repo.getName() );
+				Git localRepo = null;
+				final String repoUrl = services.getUrl() + team.getName() + "/" + repo.getName() + ".git";
+				repo.setUrl( repoUrl );
+				repo.setCredentials( credentials );
 
-		final CredentialsProvider credentials =
-				new UsernamePasswordCredentialsProvider( config.getUser(), config.getPass() );
-
-		config.getRepos().forEach( repo -> {
-			final File repoFolder = new File( config.getWorkspace(), repo.getName() );
-			Git localRepo = null;
-			//			final String repoUrl = "https://bitbucket.org/" + config.getTeam() + "/" + repo.getName() + ".git";
-			final String repoUrl = "https://github.com/" + config.getTeam() + "/" + repo.getName() + ".git";
-			repo.setUrl( repoUrl );
-			repo.setCredentials( credentials );
-
-			if ( repoFolder.exists() ) {
-				localRepo = tryToOpenExistingRepoAndCheckRemote( repoFolder, repoUrl );
-				if ( localRepo == null ) {
-					try {
-						FileUtils.deleteDirectory( repoFolder );
-					} catch ( final IOException e ) {
-						throw new RuntimeException( e );
+				if ( repoFolder.exists() ) {
+					localRepo = tryToOpenExistingRepoAndCheckRemote( repoFolder, repoUrl );
+					if ( localRepo == null ) {
+						try {
+							FileUtils.deleteDirectory( repoFolder );
+						} catch ( final IOException e ) {
+							throw new RuntimeException( e );
+						}
 					}
 				}
-			}
-			if ( localRepo == null ) {
-				localRepo = cloneNewRepo( repoFolder, repoUrl, credentials );
-			}
-			repo.setGit( localRepo );
-			cleanUp( repo );
-		} );
-
+				if ( localRepo == null ) {
+					localRepo = cloneNewRepo( repoFolder, repoUrl, credentials );
+				}
+				repo.setGit( localRepo );
+				cleanUp( repo );
+			} );
+		}
 	}
 
 	private static Git tryToOpenExistingRepoAndCheckRemote( final File repoFolder, final String expectedRepoUrl ) {
