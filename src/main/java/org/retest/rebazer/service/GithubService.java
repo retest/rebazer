@@ -23,13 +23,11 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor( onConstructor = @__( @Autowired ) )
 public class GithubService implements Provider {
 
-	private final RestTemplate githubTemplate;
-
 	private final RebaseService rebaseService;
 
 	@Override
-	public PullRequest getLatestUpdate( final PullRequest pullRequest ) {
-		final DocumentContext jp = jsonPathForPath( pullRequest.getUrl() );
+	public PullRequest getLatestUpdate( final PullRequest pullRequest, final RestTemplate template ) {
+		final DocumentContext jp = jsonPathForPath( pullRequest.getUrl(), template );
 		final PullRequest updatedPullRequest = PullRequest.builder() //
 				.id( pullRequest.getId() ) //
 				.repo( pullRequest.getRepo() ) //
@@ -42,8 +40,8 @@ public class GithubService implements Provider {
 	}
 
 	@Override
-	public boolean isApproved( final PullRequest pullRequest ) {
-		final DocumentContext jp = jsonPathForPath( pullRequest.getUrl() + "/reviews" );
+	public boolean isApproved( final PullRequest pullRequest, final RestTemplate template ) {
+		final DocumentContext jp = jsonPathForPath( pullRequest.getUrl() + "/reviews", template );
 		final List<String> states = jp.read( "$..state" );
 		boolean approved = false;
 		for ( final String state : states ) {
@@ -57,19 +55,20 @@ public class GithubService implements Provider {
 	}
 
 	@Override
-	public boolean rebaseNeeded( final PullRequest pullRequest, final Team team ) {
-		return !getLastCommonCommitId( pullRequest ).equals( getHeadOfBranch( pullRequest, team ) );
+	public boolean rebaseNeeded( final PullRequest pullRequest, final Team team, final RestTemplate template ) {
+		return !getLastCommonCommitId( pullRequest, template ).equals( getHeadOfBranch( pullRequest, team, template ) );
 	}
 
 	@Override
-	public String getHeadOfBranch( final PullRequest pullRequest, final Team team ) {
+	public String getHeadOfBranch( final PullRequest pullRequest, final Team team, final RestTemplate template ) {
 		final String url = "/repos/" + team.getName() + "/" + pullRequest.getRepo() + "/";
-		return jsonPathForPath( url + "git/refs/heads/" + pullRequest.getDestination() ).read( "$.object.sha" );
+		return jsonPathForPath( url + "git/refs/heads/" + pullRequest.getDestination(), template )
+				.read( "$.object.sha" );
 	}
 
 	@Override
-	public String getLastCommonCommitId( final PullRequest pullRequest ) {
-		final DocumentContext jp = jsonPathForPath( pullRequest.getUrl() + "/commits" );
+	public String getLastCommonCommitId( final PullRequest pullRequest, final RestTemplate template ) {
+		final DocumentContext jp = jsonPathForPath( pullRequest.getUrl() + "/commits", template );
 
 		final List<String> commitIds = jp.read( "$..sha" );
 		final List<String> parentIds = jp.read( "$..parents..sha" );
@@ -87,7 +86,7 @@ public class GithubService implements Provider {
 	}
 
 	@Override
-	public void merge( final PullRequest pullRequest ) {
+	public void merge( final PullRequest pullRequest, final RestTemplate template ) {
 		log.warn( "Merging pull request {}", pullRequest );
 		final String message = String.format( "Merged in %s (pull request #%d) by ReBaZer", pullRequest.getSource(),
 				pullRequest.getId() );
@@ -95,25 +94,25 @@ public class GithubService implements Provider {
 		request.put( "commit_title", message );
 		request.put( "merge_method", "merge" );
 
-		githubTemplate.put( pullRequest.getUrl() + "/merge", request, Object.class );
+		template.put( pullRequest.getUrl() + "/merge", request, Object.class );
 	}
 
 	@Override
-	public boolean greenBuildExists( final PullRequest pullRequest, final Team team ) {
+	public boolean greenBuildExists( final PullRequest pullRequest, final Team team, final RestTemplate template ) {
 		final String urlPath = "/repos/" + team.getName() + "/" + pullRequest.getRepo() + "/commits/"
 				+ pullRequest.getSource() + "/status";
-		final DocumentContext jp = jsonPathForPath( urlPath );
+		final DocumentContext jp = jsonPathForPath( urlPath, template );
 		return jp.<List<String>> read( "$.statuses[*].state" ).stream().anyMatch( s -> s.equals( "success" ) );
 	}
 
 	@Override
-	public List<PullRequest> getAllPullRequests( final Repository repo, final Team team ) {
+	public List<PullRequest> getAllPullRequests( final Repository repo, final Team team, final RestTemplate template ) {
 		final String urlPath = "/repos/" + team.getName() + "/" + repo.getName() + "/pulls";
-		final DocumentContext jp = jsonPathForPath( urlPath );
+		final DocumentContext jp = jsonPathForPath( urlPath, template );
 		return parsePullRequestsJson( repo, urlPath, jp );
 	}
 
-	private static List<PullRequest> parsePullRequestsJson( final Repository repo, final String urlPath,
+	public static List<PullRequest> parsePullRequestsJson( final Repository repo, final String urlPath,
 			final DocumentContext jp ) {
 		final List<Integer> pullRequestAmount = jp.read( "$..number" );
 		final int numPullRequests = pullRequestAmount.size();
@@ -135,23 +134,24 @@ public class GithubService implements Provider {
 		return results;
 	}
 
-	private DocumentContext jsonPathForPath( final String urlPath ) {
-		final String json = githubTemplate.getForObject( urlPath, String.class );
+	private DocumentContext jsonPathForPath( final String urlPath, final RestTemplate template ) {
+		final String json = template.getForObject( urlPath, String.class );
 		return JsonPath.parse( json );
 	}
 
 	@Override
-	public void rebase( final Repository repo, final PullRequest pullRequest, final Team team ) {
+	public void rebase( final Repository repo, final PullRequest pullRequest, final Team team,
+			final RestTemplate template ) {
 		if ( !rebaseService.rebase( repo, pullRequest ) ) {
-			addComment( pullRequest, team );
+			addComment( pullRequest, team, template );
 		}
 	}
 
 	@Override
-	public void addComment( final PullRequest pullRequest, final Team team ) {
+	public void addComment( final PullRequest pullRequest, final Team team, final RestTemplate template ) {
 		final Map<String, String> request = new HashMap<>();
 		request.put( "body", "This pull request needs some manual love ..." );
-		githubTemplate.postForObject( "/repos/" + team.getName() + "/" + pullRequest.getRepo() + "/issues/"
+		template.postForObject( "/repos/" + team.getName() + "/" + pullRequest.getRepo() + "/issues/"
 				+ pullRequest.getId() + "/comments", request, String.class );
 	}
 

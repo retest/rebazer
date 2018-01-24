@@ -21,14 +21,11 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor( onConstructor = @__( @Autowired ) )
 public class BitbucketService implements Provider {
 
-	private final RestTemplate bitbucketTemplate;
-	private final RestTemplate bitbucketLegacyTemplate;
-
 	private final RebaseService rebaseService;
 
 	@Override
-	public PullRequest getLatestUpdate( final PullRequest pullRequest ) {
-		final DocumentContext jp = jsonPathForPath( pullRequest.getUrl() );
+	public PullRequest getLatestUpdate( final PullRequest pullRequest, final RestTemplate template ) {
+		final DocumentContext jp = jsonPathForPath( pullRequest.getUrl(), template );
 		final PullRequest updatedPullRequest = PullRequest.builder() //
 				.id( pullRequest.getId() ) //
 				.repo( pullRequest.getRepo() ) //
@@ -41,32 +38,34 @@ public class BitbucketService implements Provider {
 	}
 
 	@Override
-	public boolean isApproved( final PullRequest pullRequest ) {
-		final DocumentContext jp = jsonPathForPath( pullRequest.getUrl() );
+	public boolean isApproved( final PullRequest pullRequest, final RestTemplate template ) {
+		final DocumentContext jp = jsonPathForPath( pullRequest.getUrl(), template );
 		return jp.<List<Boolean>> read( "$.participants[*].approved" ).stream().anyMatch( approved -> approved );
 	}
 
 	@Override
-	public boolean rebaseNeeded( final PullRequest pullRequest, final Team team ) {
-		return !getLastCommonCommitId( pullRequest ).equals( getHeadOfBranch( pullRequest, team ) );
+	public boolean rebaseNeeded( final PullRequest pullRequest, final Team team, final RestTemplate template ) {
+		return !getLastCommonCommitId( pullRequest, template ).equals( getHeadOfBranch( pullRequest, team, template ) );
 	}
 
 	@Override
-	public String getHeadOfBranch( final PullRequest pullRequest, final Team team ) {
+	public String getHeadOfBranch( final PullRequest pullRequest, final Team team,
+			final RestTemplate bitbucketTemplate ) {
 		final String url = "/repositories/" + team.getName() + "/" + pullRequest.getRepo() + "/";
-		return jsonPathForPath( url + "refs/branches/" + pullRequest.getDestination() ).read( "$.target.hash" );
+		return jsonPathForPath( url + "refs/branches/" + pullRequest.getDestination(), bitbucketTemplate )
+				.read( "$.target.hash" );
 	}
 
 	@Override
-	public String getLastCommonCommitId( final PullRequest pullRequest ) {
-		DocumentContext jp = jsonPathForPath( pullRequest.getUrl() + "/commits" );
+	public String getLastCommonCommitId( final PullRequest pullRequest, final RestTemplate bitbucketTemplate ) {
+		DocumentContext jp = jsonPathForPath( pullRequest.getUrl() + "/commits", bitbucketTemplate );
 
 		final int pageLength = jp.read( "$.pagelen" );
 		final int size = jp.read( "$.size" );
 		final int lastPage = (pageLength + size - 1) / pageLength;
 
 		if ( lastPage > 1 ) {
-			jp = jsonPathForPath( pullRequest.getUrl() + "/commits?page=" + lastPage );
+			jp = jsonPathForPath( pullRequest.getUrl() + "/commits?page=" + lastPage, bitbucketTemplate );
 		}
 
 		final List<String> commitIds = jp.read( "$.values[*].hash" );
@@ -77,7 +76,7 @@ public class BitbucketService implements Provider {
 	}
 
 	@Override
-	public void merge( final PullRequest pullRequest ) {
+	public void merge( final PullRequest pullRequest, final RestTemplate template ) {
 		final String message = String.format( "Merged in %s (pull request #%d) by ReBaZer", pullRequest.getSource(),
 				pullRequest.getId() );
 		// TODO add approver to message?
@@ -86,23 +85,23 @@ public class BitbucketService implements Provider {
 		request.put( "message", message );
 		request.put( "merge_strategy", "merge_commit" );
 
-		bitbucketTemplate.postForObject( pullRequest.getUrl() + "/merge", request, Object.class );
+		template.postForObject( pullRequest.getUrl() + "/merge", request, Object.class );
 	}
 
 	@Override
-	public boolean greenBuildExists( final PullRequest pullRequest, final Team team ) {
-		final DocumentContext jp = jsonPathForPath( pullRequest.getUrl() + "/statuses" );
+	public boolean greenBuildExists( final PullRequest pullRequest, final Team team, final RestTemplate template ) {
+		final DocumentContext jp = jsonPathForPath( pullRequest.getUrl() + "/statuses", template );
 		return jp.<List<String>> read( "$.values[*].state" ).stream().anyMatch( s -> s.equals( "SUCCESSFUL" ) );
 	}
 
 	@Override
-	public List<PullRequest> getAllPullRequests( final Repository repo, final Team team ) {
+	public List<PullRequest> getAllPullRequests( final Repository repo, final Team team, final RestTemplate template ) {
 		final String urlPath = "/repositories/" + team.getName() + "/" + repo.getName() + "/pullrequests";
-		final DocumentContext jp = jsonPathForPath( urlPath );
+		final DocumentContext jp = jsonPathForPath( urlPath, template );
 		return parsePullRequestsJson( repo, urlPath, jp );
 	}
 
-	private static List<PullRequest> parsePullRequestsJson( final Repository repo, final String urlPath,
+	public static List<PullRequest> parsePullRequestsJson( final Repository repo, final String urlPath,
 			final DocumentContext jp ) {
 		final int numPullRequests = (int) jp.read( "$.size" );
 		final List<PullRequest> results = new ArrayList<>( numPullRequests );
@@ -123,23 +122,25 @@ public class BitbucketService implements Provider {
 		return results;
 	}
 
-	DocumentContext jsonPathForPath( final String urlPath ) {
-		final String json = bitbucketTemplate.getForObject( urlPath, String.class );
+	private DocumentContext jsonPathForPath( final String urlPath, final RestTemplate template ) {
+		final String json = template.getForObject( urlPath, String.class );
 		return JsonPath.parse( json );
 	}
 
 	@Override
-	public void rebase( final Repository repo, final PullRequest pullRequest, final Team team ) {
+	public void rebase( final Repository repo, final PullRequest pullRequest, final Team team,
+			final RestTemplate template ) {
 		if ( !rebaseService.rebase( repo, pullRequest ) ) {
-			addComment( pullRequest, team );
+			addComment( pullRequest, team, template );
 		}
 	}
 
 	@Override
-	public void addComment( final PullRequest pullRequest, final Team team ) {
+	public void addComment( final PullRequest pullRequest, final Team team, final RestTemplate template ) {
 		final Map<String, String> request = new HashMap<>();
 		request.put( "content", "This pull request needs some manual love ..." );
-		bitbucketLegacyTemplate.postForObject( pullRequest.getUrl() + "/comments", request, String.class );
+
+		template.postForObject( pullRequest.getUrl() + "/comments", request, String.class );
 	}
 
 }
