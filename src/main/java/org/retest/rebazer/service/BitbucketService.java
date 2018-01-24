@@ -9,7 +9,6 @@ import org.retest.rebazer.config.RebazerConfig;
 import org.retest.rebazer.config.RebazerConfig.Repository;
 import org.retest.rebazer.domain.PullRequest;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
@@ -17,58 +16,19 @@ import com.jayway.jsonpath.DocumentContext;
 import com.jayway.jsonpath.JsonPath;
 
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 
-@Slf4j
 @Service
 @RequiredArgsConstructor( onConstructor = @__( @Autowired ) )
-public class BitbucketService {
+public class BitbucketService implements Provider {
 
 	private final RestTemplate bitbucketTemplate;
 	private final RestTemplate bitbucketLegacyTemplate;
 
 	private final RebazerConfig config;
 	private final RebaseService rebaseService;
-	private final PullRequestLastUpdateStore pullRequestLastUpdateStore;
 
-	@Scheduled( fixedDelay = 60 * 1000 )
-	public void pollBitbucket() {
-		for ( final Repository repo : config.getRepos() ) {
-			log.debug( "Processing {}.", repo );
-			for ( final PullRequest pr : getAllPullRequests( repo ) ) {
-				handlePR( repo, pr );
-			}
-		}
-	}
-
-	private void handlePR( final Repository repo, final PullRequest pullRequest ) {
-		log.debug( "Processing {}.", pullRequest );
-
-		if ( pullRequestLastUpdateStore.isHandled( repo, pullRequest ) ) {
-			log.info( "{} is unchanged since last run (last change: {}).", pullRequest,
-					pullRequestLastUpdateStore.getLastDate( repo, pullRequest ) );
-
-		} else if ( !greenBuildExists( pullRequest ) ) {
-			log.info( "Waiting for green build of {}.", pullRequest );
-			pullRequestLastUpdateStore.setHandled( repo, pullRequest );
-
-		} else if ( rebaseNeeded( pullRequest ) ) {
-			rebase( repo, pullRequest );
-			// we need to update the "lastUpdate" of a PullRequest to counteract if addComment is called
-			pullRequestLastUpdateStore.setHandled( repo, getLatestUpdate( pullRequest ) );
-
-		} else if ( !isApproved( pullRequest ) ) {
-			log.info( "Waiting for approval of {}.", pullRequest );
-			pullRequestLastUpdateStore.setHandled( repo, pullRequest );
-
-		} else {
-			log.info( "Merging pull request " + pullRequest );
-			merge( pullRequest );
-			pullRequestLastUpdateStore.resetAllInThisRepo( repo );
-		}
-	}
-
-	PullRequest getLatestUpdate( final PullRequest pullRequest ) {
+	@Override
+	public PullRequest getLatestUpdate( final PullRequest pullRequest ) {
 		final DocumentContext jp = jsonPathForPath( pullRequest.getUrl() );
 		final PullRequest updatedPullRequest = PullRequest.builder() //
 				.id( pullRequest.getId() ) //
@@ -81,21 +41,25 @@ public class BitbucketService {
 		return updatedPullRequest;
 	}
 
-	boolean isApproved( final PullRequest pullRequest ) {
+	@Override
+	public boolean isApproved( final PullRequest pullRequest ) {
 		final DocumentContext jp = jsonPathForPath( pullRequest.getUrl() );
 		return jp.<List<Boolean>> read( "$.participants[*].approved" ).stream().anyMatch( approved -> approved );
 	}
 
-	boolean rebaseNeeded( final PullRequest pullRequest ) {
+	@Override
+	public boolean rebaseNeeded( final PullRequest pullRequest ) {
 		return !getLastCommonCommitId( pullRequest ).equals( getHeadOfBranch( pullRequest ) );
 	}
 
-	String getHeadOfBranch( final PullRequest pullRequest ) {
+	@Override
+	public String getHeadOfBranch( final PullRequest pullRequest ) {
 		final String url = "/repositories/" + config.getTeam() + "/" + pullRequest.getRepo() + "/";
 		return jsonPathForPath( url + "refs/branches/" + pullRequest.getDestination() ).read( "$.target.hash" );
 	}
 
-	String getLastCommonCommitId( final PullRequest pullRequest ) {
+	@Override
+	public String getLastCommonCommitId( final PullRequest pullRequest ) {
 		DocumentContext jp = jsonPathForPath( pullRequest.getUrl() + "/commits" );
 
 		final int pageLength = jp.read( "$.pagelen" );
@@ -113,7 +77,8 @@ public class BitbucketService {
 				.orElseThrow( IllegalStateException::new );
 	}
 
-	private void merge( final PullRequest pullRequest ) {
+	@Override
+	public void merge( final PullRequest pullRequest ) {
 		final String message = String.format( "Merged in %s (pull request #%d) by ReBaZer", pullRequest.getSource(),
 				pullRequest.getId() );
 		// TODO add approver to message?
@@ -125,12 +90,14 @@ public class BitbucketService {
 		bitbucketTemplate.postForObject( pullRequest.getUrl() + "/merge", request, Object.class );
 	}
 
-	boolean greenBuildExists( final PullRequest pullRequest ) {
+	@Override
+	public boolean greenBuildExists( final PullRequest pullRequest ) {
 		final DocumentContext jp = jsonPathForPath( pullRequest.getUrl() + "/statuses" );
 		return jp.<List<String>> read( "$.values[*].state" ).stream().anyMatch( s -> s.equals( "SUCCESSFUL" ) );
 	}
 
-	List<PullRequest> getAllPullRequests( final Repository repo ) {
+	@Override
+	public List<PullRequest> getAllPullRequests( final Repository repo ) {
 		final String urlPath = "/repositories/" + config.getTeam() + "/" + repo.getName() + "/pullrequests";
 		final DocumentContext jp = jsonPathForPath( urlPath );
 		return parsePullRequestsJson( repo, urlPath, jp );
@@ -162,13 +129,15 @@ public class BitbucketService {
 		return JsonPath.parse( json );
 	}
 
-	private void rebase( final Repository repo, final PullRequest pullRequest ) {
+	@Override
+	public void rebase( final Repository repo, final PullRequest pullRequest ) {
 		if ( !rebaseService.rebase( repo, pullRequest ) ) {
 			addComment( pullRequest );
 		}
 	}
 
-	private void addComment( final PullRequest pullRequest ) {
+	@Override
+	public void addComment( final PullRequest pullRequest ) {
 		final Map<String, String> request = new HashMap<>();
 		request.put( "content", "This pull request needs some manual love ..." );
 		bitbucketLegacyTemplate.postForObject( pullRequest.getUrl() + "/comments", request, String.class );

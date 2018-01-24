@@ -9,7 +9,6 @@ import org.retest.rebazer.config.RebazerConfig;
 import org.retest.rebazer.config.RebazerConfig.Repository;
 import org.retest.rebazer.domain.PullRequest;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
@@ -17,58 +16,18 @@ import com.jayway.jsonpath.DocumentContext;
 import com.jayway.jsonpath.JsonPath;
 
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 
-@Slf4j
 @Service
 @RequiredArgsConstructor( onConstructor = @__( @Autowired ) )
-public class GithubService {
+public class GithubService implements Provider {
 
 	private final RestTemplate githubTemplate;
 
 	private final RebazerConfig config;
 	private final RebaseService rebaseService;
-	private final PullRequestLastUpdateStore pullRequestLastUpdateStore;
 
-	@Scheduled( fixedDelay = 60 * 1000 )
-	public void pollGithub() {
-		//TODO add condition to seperate the service and extract the handling into an extra class
-		for ( final Repository repo : config.getRepos() ) {
-			log.info( "Processing {}.", repo );
-			for ( final PullRequest pr : getAllPullRequests( repo ) ) {
-				handlePR( repo, pr );
-			}
-		}
-	}
-
-	private void handlePR( final Repository repo, final PullRequest pullRequest ) {
-		log.debug( "Processing {}.", pullRequest );
-
-		if ( pullRequestLastUpdateStore.isHandled( repo, pullRequest ) ) {
-			log.info( "{} is unchanged since last run (last change: {}).", pullRequest,
-					pullRequestLastUpdateStore.getLastDate( repo, pullRequest ) );
-
-		} else if ( !greenBuildExists( pullRequest ) ) {
-			log.info( "Waiting for green build of {}.", pullRequest );
-			pullRequestLastUpdateStore.setHandled( repo, pullRequest );
-
-		} else if ( rebaseNeeded( pullRequest ) ) {
-			rebase( repo, pullRequest );
-			// we need to update the "lastUpdate" of a PullRequest to counteract if addComment is called
-			pullRequestLastUpdateStore.setHandled( repo, getLatestUpdate( pullRequest ) );
-
-		} else if ( !isApproved( pullRequest ) ) {
-			log.info( "Waiting for approval of {}.", pullRequest );
-			pullRequestLastUpdateStore.setHandled( repo, pullRequest );
-
-		} else {
-			log.info( "Merging pull request " + pullRequest );
-			merge( pullRequest );
-			pullRequestLastUpdateStore.resetAllInThisRepo( repo );
-		}
-	}
-
-	PullRequest getLatestUpdate( final PullRequest pullRequest ) {
+	@Override
+	public PullRequest getLatestUpdate( final PullRequest pullRequest ) {
 		final DocumentContext jp = jsonPathForPath( pullRequest.getUrl() );
 		final PullRequest updatedPullRequest = PullRequest.builder() //
 				.id( pullRequest.getId() ) //
@@ -81,8 +40,8 @@ public class GithubService {
 		return updatedPullRequest;
 	}
 
-	//TODO change visibilty of redundant service methods to public and extract an interface
-	boolean isApproved( final PullRequest pullRequest ) {
+	@Override
+	public boolean isApproved( final PullRequest pullRequest ) {
 		final DocumentContext jp = jsonPathForPath( pullRequest.getUrl() + "/reviews" );
 		final List<String> states = jp.read( "$..state" );
 		boolean approved = false;
@@ -96,16 +55,19 @@ public class GithubService {
 		return approved;
 	}
 
-	boolean rebaseNeeded( final PullRequest pullRequest ) {
+	@Override
+	public boolean rebaseNeeded( final PullRequest pullRequest ) {
 		return !getLastCommonCommitId( pullRequest ).equals( getHeadOfBranch( pullRequest ) );
 	}
 
-	String getHeadOfBranch( final PullRequest pullRequest ) {
+	@Override
+	public String getHeadOfBranch( final PullRequest pullRequest ) {
 		final String url = "/repos/" + config.getTeam() + "/" + pullRequest.getRepo() + "/";
 		return jsonPathForPath( url + "git/refs/heads/" + pullRequest.getDestination() ).read( "$.object.sha" );
 	}
 
-	String getLastCommonCommitId( final PullRequest pullRequest ) {
+	@Override
+	public String getLastCommonCommitId( final PullRequest pullRequest ) {
 		final DocumentContext jp = jsonPathForPath( pullRequest.getUrl() + "/commits" );
 
 		final List<String> commitIds = jp.read( "$..sha" );
@@ -123,7 +85,8 @@ public class GithubService {
 		return null;
 	}
 
-	private void merge( final PullRequest pullRequest ) {
+	@Override
+	public void merge( final PullRequest pullRequest ) {
 		log.warn( "Merging pull request {}", pullRequest );
 		final String message = String.format( "Merged in %s (pull request #%d) by ReBaZer", pullRequest.getSource(),
 				pullRequest.getId() );
@@ -134,14 +97,16 @@ public class GithubService {
 		githubTemplate.put( pullRequest.getUrl() + "/merge", request, Object.class );
 	}
 
-	boolean greenBuildExists( final PullRequest pullRequest ) {
+	@Override
+	public boolean greenBuildExists( final PullRequest pullRequest ) {
 		final String urlPath = "/repos/" + config.getTeam() + "/" + pullRequest.getRepo() + "/commits/"
 				+ pullRequest.getSource() + "/status";
 		final DocumentContext jp = jsonPathForPath( urlPath );
 		return jp.<List<String>> read( "$.statuses[*].state" ).stream().anyMatch( s -> s.equals( "success" ) );
 	}
 
-	List<PullRequest> getAllPullRequests( final Repository repo ) {
+	@Override
+	public List<PullRequest> getAllPullRequests( final Repository repo ) {
 		final String urlPath = "/repos/" + config.getTeam() + "/" + repo.getName() + "/pulls";
 		final DocumentContext jp = jsonPathForPath( urlPath );
 		return parsePullRequestsJson( repo, urlPath, jp );
@@ -174,13 +139,15 @@ public class GithubService {
 		return JsonPath.parse( json );
 	}
 
-	private void rebase( final Repository repo, final PullRequest pullRequest ) {
+	@Override
+	public void rebase( final Repository repo, final PullRequest pullRequest ) {
 		if ( !rebaseService.rebase( repo, pullRequest ) ) {
 			addComment( pullRequest );
 		}
 	}
 
-	private void addComment( final PullRequest pullRequest ) {
+	@Override
+	public void addComment( final PullRequest pullRequest ) {
 		final Map<String, String> request = new HashMap<>();
 		request.put( "body", "This pull request needs some manual love ..." );
 		githubTemplate.postForObject( "/repos/" + config.getTeam() + "/" + pullRequest.getRepo() + "/issues/"

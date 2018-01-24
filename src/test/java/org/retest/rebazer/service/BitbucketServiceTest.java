@@ -122,6 +122,7 @@ public class BitbucketServiceTest {
 
 	@Test
 	public void getLatestUpdate_should_return_updated_PullRequest() {
+		final PullRequest pullRequest = mock( PullRequest.class );
 		final String json = "{\"updated_on\": \"someTimestamp\"}";
 		when( bitbucketTemplate.getForObject( anyString(), eq( String.class ) ) ).thenReturn( json );
 
