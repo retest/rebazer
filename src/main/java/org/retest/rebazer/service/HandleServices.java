@@ -35,17 +35,23 @@ public class HandleServices {
 			for ( final Team team : hosts.getTeam() ) {
 				for ( final RepositoryConfig repo : team.getRepos() ) {
 					log.debug( "Processing {}.", repo );
-					if ( "bitbucket".equals( hosts.getType() ) ) {
-						final RestTemplate bitbucketLegacyTemplate =
-								bitbucketConfig.bitbucketLegacyTemplate( builder, team.getUser(), team.getPass() );
-						final RestTemplate bitbucketTemplate =
-								bitbucketConfig.bitbucketTemplate( builder, team.getUser(), team.getPass() );
-						hosts.setProvider( new BitbucketService( rebaseService, team, repo, bitbucketLegacyTemplate,
-								bitbucketTemplate ) );
-					} else if ( "github".equals( hosts.getType() ) ) {
-						final RestTemplate githubTemplate =
-								githubConfig.githubTemplate( builder, team.getUser(), team.getPass() );
-						hosts.setProvider( new GithubService( rebaseService, team, repo, githubTemplate ) );
+					final KnownProvider knownProvider = KnownProvider.valueOf( hosts.getType() );
+					switch ( knownProvider ) {
+						case BITBUCKET:
+							final RestTemplate bitbucketLegacyTemplate =
+									bitbucketConfig.bitbucketLegacyTemplate( builder, team.getUser(), team.getPass() );
+							final RestTemplate bitbucketTemplate =
+									bitbucketConfig.bitbucketTemplate( builder, team.getUser(), team.getPass() );
+							hosts.setProvider( new BitbucketService( rebaseService, team, repo, bitbucketLegacyTemplate,
+									bitbucketTemplate ) );
+							break;
+						case GITHUB:
+							final RestTemplate githubTemplate =
+									githubConfig.githubTemplate( builder, team.getUser(), team.getPass() );
+							hosts.setProvider( new GithubService( rebaseService, team, repo, githubTemplate ) );
+							break;
+						default:
+							log.info( "The hosting Service via: {} is not supported", hosts.getType() );
 					}
 					for ( final PullRequest pr : hosts.getProvider().getAllPullRequests( repo ) ) {
 						handlePR( hosts.getProvider(), repo, pr );

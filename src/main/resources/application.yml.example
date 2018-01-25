@@ -7,7 +7,7 @@ rebazer:
   garbageCollectionCountdown: 20
   pollInterval: 10000
   hosts:
-    - type: bitbucket
+    - type: BITBUCKET
       url: https://bitbucket.org/
       team:
       - name: your_company
@@ -19,7 +19,7 @@ rebazer:
         - name: bla
           branch: bla          
             
-    - type: github
+    - type: GITHUB
       url: https://github.com/
       team:
       - name: your_company
