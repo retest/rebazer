@@ -39,9 +39,9 @@ public class RebaseService {
 		currentGcCountdown = config.getGarbageCollectionCountdown();
 		for ( final RepositoryHost host : config.getHosts() ) {
 			for ( final Team team : host.getTeam() ) {
-				final CredentialsProvider credentials =
-						new UsernamePasswordCredentialsProvider( team.getUser(), team.getPass() );
-				team.getRepos().forEach( repo -> {
+				for ( final RepositoryConfig repo : team.getRepos() ) {
+					final CredentialsProvider credentials =
+							new UsernamePasswordCredentialsProvider( team.getUser(), team.getPass() );
 					final File repoFolder = new File( config.getWorkspace(), repo.getName() );
 					Git localRepo = null;
 					final String repoUrl = host.getUrl() + team.getName() + "/" + repo.getName() + ".git";
@@ -63,7 +63,7 @@ public class RebaseService {
 					}
 					repo.setGit( localRepo );
 					cleanUp( repo );
-				} );
+				}
 			}
 		}
 	}
