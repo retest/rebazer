@@ -14,7 +14,7 @@ import lombok.Data;
 @Configuration
 @ConfigurationProperties( "rebazer" )
 public class RebazerConfig {
-	private List<Services> services;
+	private List<RepositoryHost> hosts;
 	private String workspace = "./rebazer-workspace";
 	private int garbageCollectionCountdown = 20;
 	private int pollInterval;
@@ -43,7 +43,7 @@ public class RebazerConfig {
 	}
 
 	@Data
-	public static class Services {
+	public static class RepositoryHost {
 		private String type;
 		private String url;
 		private Team team;

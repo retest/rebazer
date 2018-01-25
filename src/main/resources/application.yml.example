@@ -6,7 +6,7 @@ rebazer:
   workspace: ./rebazer-workspace
   garbageCollectionCountdown: 20
   pollInterval: 10000
-  services:
+  hosts:
       - type: bitbucket
         url: https://bitbucket.org/
         team:

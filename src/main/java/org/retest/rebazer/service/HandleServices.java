@@ -7,7 +7,7 @@ import org.retest.rebazer.config.BitbucketConfig;
 import org.retest.rebazer.config.GithubConfig;
 import org.retest.rebazer.config.RebazerConfig;
 import org.retest.rebazer.config.RebazerConfig.Repository;
-import org.retest.rebazer.config.RebazerConfig.Services;
+import org.retest.rebazer.config.RebazerConfig.RepositoryHost;
 import org.retest.rebazer.config.RebazerConfig.Team;
 import org.retest.rebazer.domain.PullRequest;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -43,24 +43,24 @@ public class HandleServices {
 
 	@Scheduled( fixedDelay = 60 * 1000 )
 	public void pollBitbucket() {
-		for ( final Services services : config.getServices() ) {
-			final Team team = services.getTeam();
-			if ( "bitbucket".equals( services.getType() ) ) {
-				services.setProvider( bitbucketService );
+		for ( final RepositoryHost hosts : config.getHosts() ) {
+			final Team team = hosts.getTeam();
+			if ( "bitbucket".equals( hosts.getType() ) ) {
+				hosts.setProvider( bitbucketService );
 				restTemplates.put( team.getUser(),
 						bitbucketConfig.bitbucketLegacyTemplate( builder, team.getUser(), team.getPass() ) );
 				restTemplates.put( team.getName(),
 						bitbucketConfig.bitbucketTemplate( builder, team.getUser(), team.getPass() ) );
-			} else if ( "github".equals( services.getType() ) ) {
-				services.setProvider( githubService );
+			} else if ( "github".equals( hosts.getType() ) ) {
+				hosts.setProvider( githubService );
 				restTemplates.put( team.getName(),
 						githubConfig.githubTemplate( builder, team.getUser(), team.getPass() ) );
 			}
 			for ( final Repository repo : team.getRepos() ) {
 				log.debug( "Processing {}.", repo );
-				for ( final PullRequest pr : services.getProvider().getAllPullRequests( repo, team,
+				for ( final PullRequest pr : hosts.getProvider().getAllPullRequests( repo, team,
 						restTemplates.get( team.getName() ) ) ) {
-					handlePR( services.getProvider(), repo, pr, team, restTemplates );
+					handlePR( hosts.getProvider(), repo, pr, team, restTemplates );
 				}
 			}
 		}

@@ -16,7 +16,7 @@ import org.eclipse.jgit.transport.CredentialsProvider;
 import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider;
 import org.retest.rebazer.config.RebazerConfig;
 import org.retest.rebazer.config.RebazerConfig.Repository;
-import org.retest.rebazer.config.RebazerConfig.Services;
+import org.retest.rebazer.config.RebazerConfig.RepositoryHost;
 import org.retest.rebazer.config.RebazerConfig.Team;
 import org.retest.rebazer.domain.PullRequest;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -37,14 +37,14 @@ public class RebaseService {
 	public RebaseService( final RebazerConfig config ) {
 		this.config = config;
 		currentGcCountdown = config.getGarbageCollectionCountdown();
-		for ( final Services services : config.getServices() ) {
-			final Team team = services.getTeam();
+		for ( final RepositoryHost host : config.getHosts() ) {
+			final Team team = host.getTeam();
 			final CredentialsProvider credentials =
 					new UsernamePasswordCredentialsProvider( team.getUser(), team.getPass() );
 			team.getRepos().forEach( repo -> {
 				final File repoFolder = new File( config.getWorkspace(), repo.getName() );
 				Git localRepo = null;
-				final String repoUrl = services.getUrl() + team.getName() + "/" + repo.getName() + ".git";
+				final String repoUrl = host.getUrl() + team.getName() + "/" + repo.getName() + ".git";
 				repo.setUrl( repoUrl );
 				repo.setCredentials( credentials );
 
