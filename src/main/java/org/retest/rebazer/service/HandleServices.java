@@ -1,8 +1,5 @@
 package org.retest.rebazer.service;
 
-import java.util.HashMap;
-import java.util.Map;
-
 import org.retest.rebazer.config.BitbucketConfig;
 import org.retest.rebazer.config.GithubConfig;
 import org.retest.rebazer.config.RebazerConfig;
@@ -11,7 +8,6 @@ import org.retest.rebazer.config.RebazerConfig.RepositoryHost;
 import org.retest.rebazer.config.RebazerConfig.Team;
 import org.retest.rebazer.domain.PullRequest;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -25,42 +21,34 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor( onConstructor = @__( @Autowired ) )
 public class HandleServices {
 
+	private final RebaseService rebaseService;
 	private final RebazerConfig config;
 	private final PullRequestLastUpdateStore pullRequestLastUpdateStore;
-
-	@Qualifier( "bitbucketService" )
-	private final Provider bitbucketService;
-
-	@Qualifier( "githubService" )
-	private final Provider githubService;
 
 	private final BitbucketConfig bitbucketConfig = new BitbucketConfig();
 	private final GithubConfig githubConfig = new GithubConfig();
 	private final RestTemplateBuilder builder;
 
-	private final Map<String, RestTemplate> restTemplates = new HashMap<>();
-	private RestTemplate template;
-
 	@Scheduled( fixedDelay = 60 * 1000 )
 	public void pollBitbucket() {
 		for ( final RepositoryHost hosts : config.getHosts() ) {
 			for ( final Team team : hosts.getTeam() ) {
-				if ( "bitbucket".equals( hosts.getType() ) ) {
-					hosts.setProvider( bitbucketService );
-					restTemplates.put( team.getUser(),
-							bitbucketConfig.bitbucketLegacyTemplate( builder, team.getUser(), team.getPass() ) );
-					restTemplates.put( team.getName(),
-							bitbucketConfig.bitbucketTemplate( builder, team.getUser(), team.getPass() ) );
-				} else if ( "github".equals( hosts.getType() ) ) {
-					hosts.setProvider( githubService );
-					restTemplates.put( team.getName(),
-							githubConfig.githubTemplate( builder, team.getUser(), team.getPass() ) );
-				}
 				for ( final RepositoryConfig repo : team.getRepos() ) {
 					log.debug( "Processing {}.", repo );
-					for ( final PullRequest pr : hosts.getProvider().getAllPullRequests( repo, team,
-							restTemplates.get( team.getName() ) ) ) {
-						handlePR( hosts.getProvider(), repo, pr, team, restTemplates );
+					if ( "bitbucket".equals( hosts.getType() ) ) {
+						final RestTemplate bitbucketLegacyTemplate =
+								bitbucketConfig.bitbucketLegacyTemplate( builder, team.getUser(), team.getPass() );
+						final RestTemplate bitbucketTemplate =
+								bitbucketConfig.bitbucketTemplate( builder, team.getUser(), team.getPass() );
+						hosts.setProvider( new BitbucketService( rebaseService, team, repo, bitbucketLegacyTemplate,
+								bitbucketTemplate ) );
+					} else if ( "github".equals( hosts.getType() ) ) {
+						final RestTemplate githubTemplate =
+								githubConfig.githubTemplate( builder, team.getUser(), team.getPass() );
+						hosts.setProvider( new GithubService( rebaseService, team, repo, githubTemplate ) );
+					}
+					for ( final PullRequest pr : hosts.getProvider().getAllPullRequests( repo ) ) {
+						handlePR( hosts.getProvider(), repo, pr );
 					}
 				}
 			}
@@ -68,35 +56,30 @@ public class HandleServices {
 
 	}
 
-	public void handlePR( final Provider provider, final RepositoryConfig repositories, final PullRequest pullRequest,
-			final Team team, final Map<String, RestTemplate> restTemplates ) {
+	public void handlePR( final Provider provider, final RepositoryConfig repositories,
+			final PullRequest pullRequest ) {
 		log.debug( "Processing {}.", pullRequest );
 
-		if ( provider.getClass().equals( BitbucketService.class ) ) {
-			template = restTemplates.get( team.getUser() );
-		} else if ( provider.getClass().equals( GithubService.class ) ) {
-			template = restTemplates.get( team.getName() );
-		}
 		if ( pullRequestLastUpdateStore.isHandled( repositories, pullRequest ) ) {
 			log.info( "{} is unchanged since last run (last change: {}).", pullRequest,
 					pullRequestLastUpdateStore.getLastDate( repositories, pullRequest ) );
 
-		} else if ( !provider.greenBuildExists( pullRequest, team, restTemplates.get( team.getName() ) ) ) {
+		} else if ( !provider.greenBuildExists( pullRequest ) ) {
 			log.info( "Waiting for green build of {}.", pullRequest );
 			pullRequestLastUpdateStore.setHandled( repositories, pullRequest );
 
-		} else if ( provider.rebaseNeeded( pullRequest, team, template ) ) {
-			provider.rebase( repositories, pullRequest, team, restTemplates.get( team.getName() ) );
+		} else if ( provider.rebaseNeeded( pullRequest ) ) {
+			provider.rebase( repositories, pullRequest );
 			// we need to update the "lastUpdate" of a PullRequest to counteract if addComment is called
-			pullRequestLastUpdateStore.setHandled( repositories, provider.getLatestUpdate( pullRequest, template ) );
+			pullRequestLastUpdateStore.setHandled( repositories, provider.getLatestUpdate( pullRequest ) );
 
-		} else if ( !provider.isApproved( pullRequest, restTemplates.get( team.getName() ) ) ) {
+		} else if ( !provider.isApproved( pullRequest ) ) {
 			log.info( "Waiting for approval of {}.", pullRequest );
 			pullRequestLastUpdateStore.setHandled( repositories, pullRequest );
 
 		} else {
 			log.info( "Merging pull request " + pullRequest );
-			provider.merge( pullRequest, restTemplates.get( team.getName() ) );
+			provider.merge( pullRequest );
 			pullRequestLastUpdateStore.resetAllInThisRepo( repositories );
 		}
 	}

@@ -37,10 +37,12 @@ public class BitbucketServiceTest {
 		bitbucketTemplate = mock( RestTemplate.class );
 		config = mock( RebazerConfig.class );
 		team = mock( Team.class );
+		final RepositoryConfig repo = mock( RepositoryConfig.class );
 		final RebaseService rebaseService = mock( RebaseService.class );
+		final RestTemplate bitbucketLegacyTemplate = mock( RestTemplate.class );
 		pullRequestUpdateStates = mock( PullRequestLastUpdateStore.class );
 
-		cut = new BitbucketService( rebaseService );
+		cut = new BitbucketService( rebaseService, team, repo, bitbucketLegacyTemplate, bitbucketTemplate );
 	}
 
 	@Test
@@ -48,11 +50,11 @@ public class BitbucketServiceTest {
 		final PullRequest pullRequest = mock( PullRequest.class );
 		final Provider cut = mock( BitbucketService.class );
 		final String head = "12325345923759135";
-		when( cut.getHeadOfBranch( pullRequest, team, bitbucketTemplate ) ).thenReturn( head );
-		when( cut.getLastCommonCommitId( pullRequest, bitbucketTemplate ) ).thenReturn( head );
-		when( cut.rebaseNeeded( pullRequest, team, bitbucketTemplate ) ).thenCallRealMethod();
+		when( cut.getHeadOfBranch( pullRequest ) ).thenReturn( head );
+		when( cut.getLastCommonCommitId( pullRequest ) ).thenReturn( head );
+		when( cut.rebaseNeeded( pullRequest ) ).thenCallRealMethod();
 
-		assertThat( cut.rebaseNeeded( pullRequest, team, bitbucketTemplate ) ).isFalse();
+		assertThat( cut.rebaseNeeded( pullRequest ) ).isFalse();
 	}
 
 	@Test
@@ -61,11 +63,11 @@ public class BitbucketServiceTest {
 		final Provider cut = mock( BitbucketService.class );
 		final String head = "12325345923759135";
 		final String lcci = "21342343253253452";
-		when( cut.getHeadOfBranch( pullRequest, team, bitbucketTemplate ) ).thenReturn( head );
-		when( cut.getLastCommonCommitId( pullRequest, bitbucketTemplate ) ).thenReturn( lcci );
-		when( cut.rebaseNeeded( pullRequest, team, bitbucketTemplate ) ).thenCallRealMethod();
+		when( cut.getHeadOfBranch( pullRequest ) ).thenReturn( head );
+		when( cut.getLastCommonCommitId( pullRequest ) ).thenReturn( lcci );
+		when( cut.rebaseNeeded( pullRequest ) ).thenCallRealMethod();
 
-		assertThat( cut.rebaseNeeded( pullRequest, team, bitbucketTemplate ) ).isTrue();
+		assertThat( cut.rebaseNeeded( pullRequest ) ).isTrue();
 	}
 
 	@Test
@@ -74,7 +76,7 @@ public class BitbucketServiceTest {
 		final String json = "{participants: [{\"approved\": false}]}\"";
 		when( bitbucketTemplate.getForObject( anyString(), eq( String.class ) ) ).thenReturn( json );
 
-		assertThat( cut.isApproved( pullRequest, bitbucketTemplate ) ).isFalse();
+		assertThat( cut.isApproved( pullRequest ) ).isFalse();
 	}
 
 	@Test
@@ -83,7 +85,7 @@ public class BitbucketServiceTest {
 		final String json = "{participants: [{\"approved\": true}]}\"";
 		when( bitbucketTemplate.getForObject( anyString(), eq( String.class ) ) ).thenReturn( json );
 
-		assertThat( cut.isApproved( pullRequest, bitbucketTemplate ) ).isTrue();
+		assertThat( cut.isApproved( pullRequest ) ).isTrue();
 	}
 
 	@Test
@@ -92,7 +94,7 @@ public class BitbucketServiceTest {
 		final String json = "{values: [{\"state\": FAILED}]}";
 		when( bitbucketTemplate.getForObject( anyString(), eq( String.class ) ) ).thenReturn( json );
 
-		assertThat( cut.greenBuildExists( pullRequest, team, bitbucketTemplate ) ).isFalse();
+		assertThat( cut.greenBuildExists( pullRequest ) ).isFalse();
 	}
 
 	@Test
@@ -101,7 +103,7 @@ public class BitbucketServiceTest {
 		final String json = "{values: [{\"state\": SUCCESSFUL}]}";
 		when( bitbucketTemplate.getForObject( anyString(), eq( String.class ) ) ).thenReturn( json );
 
-		assertThat( cut.greenBuildExists( pullRequest, team, bitbucketTemplate ) ).isTrue();
+		assertThat( cut.greenBuildExists( pullRequest ) ).isTrue();
 	}
 
 	@Test
@@ -122,7 +124,7 @@ public class BitbucketServiceTest {
 				.source( documentContext.read( "$.values[0].source.branch.name" ) )
 				.destination( documentContext.read( "$.values[0].destination.branch.name" ) ).url( expectedUrl )
 				.lastUpdate( documentContext.read( "$.values[0].updated_on" ) ).build() );
-		final List<PullRequest> actual = cut.getAllPullRequests( repo, team, bitbucketTemplate );
+		final List<PullRequest> actual = cut.getAllPullRequests( repo );
 
 		assertThat( actual ).isEqualTo( expected );
 	}

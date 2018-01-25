@@ -36,9 +36,10 @@ public class GithubServiceTest {
 		githubTemplate = mock( RestTemplate.class );
 		config = mock( RebazerConfig.class );
 		team = mock( Team.class );
+		final RepositoryConfig repo = mock( RepositoryConfig.class );
 		final RebaseService rebaseService = mock( RebaseService.class );
 
-		cut = new GithubService( rebaseService );
+		cut = new GithubService( rebaseService, team, repo, githubTemplate );
 	}
 
 	@Test
@@ -46,11 +47,11 @@ public class GithubServiceTest {
 		final PullRequest pullRequest = mock( PullRequest.class );
 		final GithubService cut = mock( GithubService.class );
 		final String head = "12325345923759135";
-		when( cut.getHeadOfBranch( pullRequest, team, githubTemplate ) ).thenReturn( head );
-		when( cut.getLastCommonCommitId( pullRequest, githubTemplate ) ).thenReturn( head );
-		when( cut.rebaseNeeded( pullRequest, team, githubTemplate ) ).thenCallRealMethod();
+		when( cut.getHeadOfBranch( pullRequest ) ).thenReturn( head );
+		when( cut.getLastCommonCommitId( pullRequest ) ).thenReturn( head );
+		when( cut.rebaseNeeded( pullRequest ) ).thenCallRealMethod();
 
-		assertThat( cut.rebaseNeeded( pullRequest, team, githubTemplate ) ).isFalse();
+		assertThat( cut.rebaseNeeded( pullRequest ) ).isFalse();
 	}
 
 	@Test
@@ -59,11 +60,11 @@ public class GithubServiceTest {
 		final GithubService cut = mock( GithubService.class );
 		final String head = "12325345923759135";
 		final String lcci = "21342343253253452";
-		when( cut.getHeadOfBranch( pullRequest, team, githubTemplate ) ).thenReturn( head );
-		when( cut.getLastCommonCommitId( pullRequest, githubTemplate ) ).thenReturn( lcci );
-		when( cut.rebaseNeeded( pullRequest, team, githubTemplate ) ).thenCallRealMethod();
+		when( cut.getHeadOfBranch( pullRequest ) ).thenReturn( head );
+		when( cut.getLastCommonCommitId( pullRequest ) ).thenReturn( lcci );
+		when( cut.rebaseNeeded( pullRequest ) ).thenCallRealMethod();
 
-		assertThat( cut.rebaseNeeded( pullRequest, team, githubTemplate ) ).isTrue();
+		assertThat( cut.rebaseNeeded( pullRequest ) ).isTrue();
 	}
 
 	@Test
@@ -72,7 +73,7 @@ public class GithubServiceTest {
 		final String json = "{review: [{\"state\": \"CHANGES_REQUESTED\"}]}\"";
 		when( githubTemplate.getForObject( anyString(), eq( String.class ) ) ).thenReturn( json );
 
-		assertThat( cut.isApproved( pullRequest, githubTemplate ) ).isFalse();
+		assertThat( cut.isApproved( pullRequest ) ).isFalse();
 	}
 
 	@Test
@@ -81,7 +82,7 @@ public class GithubServiceTest {
 		final String json = "{review: [{\"state\": \"APPROVED\"}]}\"";
 		when( githubTemplate.getForObject( anyString(), eq( String.class ) ) ).thenReturn( json );
 
-		assertThat( cut.isApproved( pullRequest, githubTemplate ) ).isTrue();
+		assertThat( cut.isApproved( pullRequest ) ).isTrue();
 	}
 
 	@Test
@@ -90,7 +91,7 @@ public class GithubServiceTest {
 		final String json = "{statuses: [{\"state\": \"failure_or_error\"}]}";
 		when( githubTemplate.getForObject( anyString(), eq( String.class ) ) ).thenReturn( json );
 
-		assertThat( cut.greenBuildExists( pullRequest, team, githubTemplate ) ).isFalse();
+		assertThat( cut.greenBuildExists( pullRequest ) ).isFalse();
 	}
 
 	@Test
@@ -99,7 +100,7 @@ public class GithubServiceTest {
 		final String json = "{statuses: [{\"state\": \"success\"}]}";
 		when( githubTemplate.getForObject( anyString(), eq( String.class ) ) ).thenReturn( json );
 
-		assertThat( cut.greenBuildExists( pullRequest, team, githubTemplate ) ).isTrue();
+		assertThat( cut.greenBuildExists( pullRequest ) ).isTrue();
 	}
 
 	@Test
@@ -118,7 +119,7 @@ public class GithubServiceTest {
 				.source( documentContext.read( "$.[0].head.ref" ) )
 				.destination( documentContext.read( "$.[0].base.ref" ) ).url( expectedUrl )
 				.lastUpdate( documentContext.read( "$.[0].updated_at" ) ).build() );
-		final List<PullRequest> actual = cut.getAllPullRequests( repo, team, githubTemplate );
+		final List<PullRequest> actual = cut.getAllPullRequests( repo );
 
 		assertThat( actual ).isEqualTo( expected );
 	}
