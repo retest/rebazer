@@ -20,7 +20,7 @@ public class RebazerConfig {
 	private int pollInterval;
 
 	@Data
-	public static class Repository {
+	public static class RepositoryConfig {
 		private String name;
 		private String branch;
 		private String url;
@@ -35,11 +35,10 @@ public class RebazerConfig {
 
 	@Data
 	public static class Team {
-		private String id;
 		private String name;
 		private String user;
 		private String pass;
-		private List<Repository> repos;
+		private List<RepositoryConfig> repos;
 	}
 
 	@Data

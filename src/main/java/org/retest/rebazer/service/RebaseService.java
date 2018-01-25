@@ -15,7 +15,7 @@ import org.eclipse.jgit.api.errors.NotMergedException;
 import org.eclipse.jgit.transport.CredentialsProvider;
 import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider;
 import org.retest.rebazer.config.RebazerConfig;
-import org.retest.rebazer.config.RebazerConfig.Repository;
+import org.retest.rebazer.config.RebazerConfig.RepositoryConfig;
 import org.retest.rebazer.config.RebazerConfig.RepositoryHost;
 import org.retest.rebazer.config.RebazerConfig.Team;
 import org.retest.rebazer.domain.PullRequest;
@@ -98,7 +98,7 @@ public class RebaseService {
 	}
 
 	@SneakyThrows
-	public boolean rebase( final Repository repo, final PullRequest pullRequest ) {
+	public boolean rebase( final RepositoryConfig repo, final PullRequest pullRequest ) {
 		log.info( "Rebasing {}.", pullRequest );
 
 		try {
@@ -140,7 +140,7 @@ public class RebaseService {
 	}
 
 	@SneakyThrows
-	private void cleanUp( final Repository repo ) {
+	private void cleanUp( final RepositoryConfig repo ) {
 		final Git repository = repo.getGit();
 		resetAndRemoveUntrackedFiles( repository );
 		repository.checkout().setName( "remotes/origin/" + repo.getBranch() ).call();

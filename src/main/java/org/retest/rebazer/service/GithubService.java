@@ -5,7 +5,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.retest.rebazer.config.RebazerConfig.Repository;
+import org.retest.rebazer.config.RebazerConfig.RepositoryConfig;
 import org.retest.rebazer.config.RebazerConfig.Team;
 import org.retest.rebazer.domain.PullRequest;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -106,13 +106,13 @@ public class GithubService implements Provider {
 	}
 
 	@Override
-	public List<PullRequest> getAllPullRequests( final Repository repo, final Team team, final RestTemplate template ) {
+	public List<PullRequest> getAllPullRequests( final RepositoryConfig repo, final Team team, final RestTemplate template ) {
 		final String urlPath = "/repos/" + team.getName() + "/" + repo.getName() + "/pulls";
 		final DocumentContext jp = jsonPathForPath( urlPath, template );
 		return parsePullRequestsJson( repo, urlPath, jp );
 	}
 
-	public static List<PullRequest> parsePullRequestsJson( final Repository repo, final String urlPath,
+	public static List<PullRequest> parsePullRequestsJson( final RepositoryConfig repo, final String urlPath,
 			final DocumentContext jp ) {
 		final List<Integer> pullRequestAmount = jp.read( "$..number" );
 		final int numPullRequests = pullRequestAmount.size();
@@ -140,7 +140,7 @@ public class GithubService implements Provider {
 	}
 
 	@Override
-	public void rebase( final Repository repo, final PullRequest pullRequest, final Team team,
+	public void rebase( final RepositoryConfig repo, final PullRequest pullRequest, final Team team,
 			final RestTemplate template ) {
 		if ( !rebaseService.rebase( repo, pullRequest ) ) {
 			addComment( pullRequest, team, template );

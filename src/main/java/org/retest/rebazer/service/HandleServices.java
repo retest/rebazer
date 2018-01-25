@@ -6,7 +6,7 @@ import java.util.Map;
 import org.retest.rebazer.config.BitbucketConfig;
 import org.retest.rebazer.config.GithubConfig;
 import org.retest.rebazer.config.RebazerConfig;
-import org.retest.rebazer.config.RebazerConfig.Repository;
+import org.retest.rebazer.config.RebazerConfig.RepositoryConfig;
 import org.retest.rebazer.config.RebazerConfig.RepositoryHost;
 import org.retest.rebazer.config.RebazerConfig.Team;
 import org.retest.rebazer.domain.PullRequest;
@@ -56,7 +56,7 @@ public class HandleServices {
 					restTemplates.put( team.getName(),
 							githubConfig.githubTemplate( builder, team.getUser(), team.getPass() ) );
 				}
-				for ( final Repository repo : team.getRepos() ) {
+				for ( final RepositoryConfig repo : team.getRepos() ) {
 					log.debug( "Processing {}.", repo );
 					for ( final PullRequest pr : hosts.getProvider().getAllPullRequests( repo, team,
 							restTemplates.get( team.getName() ) ) ) {
@@ -68,7 +68,7 @@ public class HandleServices {
 
 	}
 
-	public void handlePR( final Provider provider, final Repository repo, final PullRequest pullRequest,
+	public void handlePR( final Provider provider, final RepositoryConfig repositories, final PullRequest pullRequest,
 			final Team team, final Map<String, RestTemplate> restTemplates ) {
 		log.debug( "Processing {}.", pullRequest );
 
@@ -77,27 +77,27 @@ public class HandleServices {
 		} else if ( provider.getClass().equals( GithubService.class ) ) {
 			template = restTemplates.get( team.getName() );
 		}
-		if ( pullRequestLastUpdateStore.isHandled( repo, pullRequest ) ) {
+		if ( pullRequestLastUpdateStore.isHandled( repositories, pullRequest ) ) {
 			log.info( "{} is unchanged since last run (last change: {}).", pullRequest,
-					pullRequestLastUpdateStore.getLastDate( repo, pullRequest ) );
+					pullRequestLastUpdateStore.getLastDate( repositories, pullRequest ) );
 
 		} else if ( !provider.greenBuildExists( pullRequest, team, restTemplates.get( team.getName() ) ) ) {
 			log.info( "Waiting for green build of {}.", pullRequest );
-			pullRequestLastUpdateStore.setHandled( repo, pullRequest );
+			pullRequestLastUpdateStore.setHandled( repositories, pullRequest );
 
 		} else if ( provider.rebaseNeeded( pullRequest, team, template ) ) {
-			provider.rebase( repo, pullRequest, team, restTemplates.get( team.getName() ) );
+			provider.rebase( repositories, pullRequest, team, restTemplates.get( team.getName() ) );
 			// we need to update the "lastUpdate" of a PullRequest to counteract if addComment is called
-			pullRequestLastUpdateStore.setHandled( repo, provider.getLatestUpdate( pullRequest, template ) );
+			pullRequestLastUpdateStore.setHandled( repositories, provider.getLatestUpdate( pullRequest, template ) );
 
 		} else if ( !provider.isApproved( pullRequest, restTemplates.get( team.getName() ) ) ) {
 			log.info( "Waiting for approval of {}.", pullRequest );
-			pullRequestLastUpdateStore.setHandled( repo, pullRequest );
+			pullRequestLastUpdateStore.setHandled( repositories, pullRequest );
 
 		} else {
 			log.info( "Merging pull request " + pullRequest );
 			provider.merge( pullRequest, restTemplates.get( team.getName() ) );
-			pullRequestLastUpdateStore.resetAllInThisRepo( repo );
+			pullRequestLastUpdateStore.resetAllInThisRepo( repositories );
 		}
 	}
 

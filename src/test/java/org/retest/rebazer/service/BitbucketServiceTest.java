@@ -15,7 +15,7 @@ import java.util.List;
 import org.junit.Before;
 import org.junit.Test;
 import org.retest.rebazer.config.RebazerConfig;
-import org.retest.rebazer.config.RebazerConfig.Repository;
+import org.retest.rebazer.config.RebazerConfig.RepositoryConfig;
 import org.retest.rebazer.config.RebazerConfig.Team;
 import org.retest.rebazer.domain.PullRequest;
 import org.springframework.web.client.RestTemplate;
@@ -106,7 +106,7 @@ public class BitbucketServiceTest {
 
 	@Test
 	public void getAllPullRequests_should_return_all_pull_requests_as_list() throws IOException {
-		final Repository repo = mock( Repository.class );
+		final RepositoryConfig repo = mock( RepositoryConfig.class );
 		final String json = new String( Files.readAllBytes(
 				Paths.get( "src/test/resources/org/retest/rebazer/service/bitbucketservicetest/response.json" ) ) );
 		final DocumentContext documentContext = JsonPath.parse( json );
