@@ -7,24 +7,24 @@ rebazer:
   garbageCollectionCountdown: 20
   pollInterval: 10000
   hosts:
-      - type: bitbucket
-        url: https://bitbucket.org/
-        team:
-          name: your_company
-          user: service_user
-          pass: dont_use_this_pass_at_home
-          repos:
-          - name: blub
-            branch: blub
-          - name: bla
-            branch: bla          
+    - type: bitbucket
+      url: https://bitbucket.org/
+      team:
+      - name: your_company
+        user: service_user
+        pass: dont_use_this_pass_at_home
+        repos:
+        - name: blub
+          branch: blub
+        - name: bla
+          branch: bla          
             
-      - type: github
-        url: https://github.com/
-        team:
-          name: your_company
-          user: service_user
-          pass: dont_use_this_pass_at_home
-          repos:
-          - name: foo
-            branch: foo
+    - type: github
+      url: https://github.com/
+      team:
+      - name: your_company
+        user: service_user
+        pass: dont_use_this_pass_at_home
+        repos:
+        - name: foo
+          branch: foo

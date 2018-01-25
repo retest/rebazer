@@ -44,23 +44,24 @@ public class HandleServices {
 	@Scheduled( fixedDelay = 60 * 1000 )
 	public void pollBitbucket() {
 		for ( final RepositoryHost hosts : config.getHosts() ) {
-			final Team team = hosts.getTeam();
-			if ( "bitbucket".equals( hosts.getType() ) ) {
-				hosts.setProvider( bitbucketService );
-				restTemplates.put( team.getUser(),
-						bitbucketConfig.bitbucketLegacyTemplate( builder, team.getUser(), team.getPass() ) );
-				restTemplates.put( team.getName(),
-						bitbucketConfig.bitbucketTemplate( builder, team.getUser(), team.getPass() ) );
-			} else if ( "github".equals( hosts.getType() ) ) {
-				hosts.setProvider( githubService );
-				restTemplates.put( team.getName(),
-						githubConfig.githubTemplate( builder, team.getUser(), team.getPass() ) );
-			}
-			for ( final Repository repo : team.getRepos() ) {
-				log.debug( "Processing {}.", repo );
-				for ( final PullRequest pr : hosts.getProvider().getAllPullRequests( repo, team,
-						restTemplates.get( team.getName() ) ) ) {
-					handlePR( hosts.getProvider(), repo, pr, team, restTemplates );
+			for ( final Team team : hosts.getTeam() ) {
+				if ( "bitbucket".equals( hosts.getType() ) ) {
+					hosts.setProvider( bitbucketService );
+					restTemplates.put( team.getUser(),
+							bitbucketConfig.bitbucketLegacyTemplate( builder, team.getUser(), team.getPass() ) );
+					restTemplates.put( team.getName(),
+							bitbucketConfig.bitbucketTemplate( builder, team.getUser(), team.getPass() ) );
+				} else if ( "github".equals( hosts.getType() ) ) {
+					hosts.setProvider( githubService );
+					restTemplates.put( team.getName(),
+							githubConfig.githubTemplate( builder, team.getUser(), team.getPass() ) );
+				}
+				for ( final Repository repo : team.getRepos() ) {
+					log.debug( "Processing {}.", repo );
+					for ( final PullRequest pr : hosts.getProvider().getAllPullRequests( repo, team,
+							restTemplates.get( team.getName() ) ) ) {
+						handlePR( hosts.getProvider(), repo, pr, team, restTemplates );
+					}
 				}
 			}
 		}

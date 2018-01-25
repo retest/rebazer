@@ -38,32 +38,33 @@ public class RebaseService {
 		this.config = config;
 		currentGcCountdown = config.getGarbageCollectionCountdown();
 		for ( final RepositoryHost host : config.getHosts() ) {
-			final Team team = host.getTeam();
-			final CredentialsProvider credentials =
-					new UsernamePasswordCredentialsProvider( team.getUser(), team.getPass() );
-			team.getRepos().forEach( repo -> {
-				final File repoFolder = new File( config.getWorkspace(), repo.getName() );
-				Git localRepo = null;
-				final String repoUrl = host.getUrl() + team.getName() + "/" + repo.getName() + ".git";
-				repo.setUrl( repoUrl );
-				repo.setCredentials( credentials );
+			for ( final Team team : host.getTeam() ) {
+				final CredentialsProvider credentials =
+						new UsernamePasswordCredentialsProvider( team.getUser(), team.getPass() );
+				team.getRepos().forEach( repo -> {
+					final File repoFolder = new File( config.getWorkspace(), repo.getName() );
+					Git localRepo = null;
+					final String repoUrl = host.getUrl() + team.getName() + "/" + repo.getName() + ".git";
+					repo.setUrl( repoUrl );
+					repo.setCredentials( credentials );
 
-				if ( repoFolder.exists() ) {
-					localRepo = tryToOpenExistingRepoAndCheckRemote( repoFolder, repoUrl );
-					if ( localRepo == null ) {
-						try {
-							FileUtils.deleteDirectory( repoFolder );
-						} catch ( final IOException e ) {
-							throw new RuntimeException( e );
+					if ( repoFolder.exists() ) {
+						localRepo = tryToOpenExistingRepoAndCheckRemote( repoFolder, repoUrl );
+						if ( localRepo == null ) {
+							try {
+								FileUtils.deleteDirectory( repoFolder );
+							} catch ( final IOException e ) {
+								throw new RuntimeException( e );
+							}
 						}
 					}
-				}
-				if ( localRepo == null ) {
-					localRepo = cloneNewRepo( repoFolder, repoUrl, credentials );
-				}
-				repo.setGit( localRepo );
-				cleanUp( repo );
-			} );
+					if ( localRepo == null ) {
+						localRepo = cloneNewRepo( repoFolder, repoUrl, credentials );
+					}
+					repo.setGit( localRepo );
+					cleanUp( repo );
+				} );
+			}
 		}
 	}
 

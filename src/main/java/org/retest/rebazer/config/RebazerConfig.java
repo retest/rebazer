@@ -46,7 +46,7 @@ public class RebazerConfig {
 	public static class RepositoryHost {
 		private String type;
 		private String url;
-		private Team team;
+		private List<Team> team;
 		private Provider provider;
 	}
 }
