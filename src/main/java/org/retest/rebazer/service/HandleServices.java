@@ -29,7 +29,7 @@ public class HandleServices {
 	private final GithubConfig githubConfig = new GithubConfig();
 	private final RestTemplateBuilder builder;
 
-	@Scheduled( fixedDelay = 60 * 1000 )
+	@Scheduled( fixedDelayString = "${rebazer.pollInterval:60}000" )
 	public void pollBitbucket() {
 		for ( final RepositoryHost hosts : config.getHosts() ) {
 			for ( final Team team : hosts.getTeam() ) {
@@ -88,10 +88,6 @@ public class HandleServices {
 			provider.merge( pullRequest );
 			pullRequestLastUpdateStore.resetAllInThisRepo( repositories );
 		}
-	}
-
-	public int getCurrentPollInterval( final RebazerConfig config ) {
-		return config.getPollInterval();
 	}
 
 }

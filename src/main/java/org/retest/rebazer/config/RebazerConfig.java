@@ -16,7 +16,7 @@ import lombok.Data;
 public class RebazerConfig {
 	private String workspace = "./rebazer-workspace";
 	private int garbageCollectionCountdown = 20;
-	private int pollInterval;
+	private long pollInterval;
 	private List<RepositoryHost> hosts;
 
 	@Data
