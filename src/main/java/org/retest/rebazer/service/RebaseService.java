@@ -16,6 +16,8 @@ import org.eclipse.jgit.transport.CredentialsProvider;
 import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider;
 import org.retest.rebazer.config.RebazerConfig;
 import org.retest.rebazer.config.RebazerConfig.RepositoryConfig;
+import org.retest.rebazer.config.RebazerConfig.RepositoryHost;
+import org.retest.rebazer.config.RebazerConfig.Team;
 import org.retest.rebazer.domain.PullRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -40,30 +42,40 @@ public class RebaseService {
 				final CredentialsProvider credentials =
 						new UsernamePasswordCredentialsProvider( team.getUser(), team.getPass() );
 				team.getRepos().forEach( repo -> {
-					final File repoFolder = new File( config.getWorkspace(), repo.getName() );
-					Git localRepo = null;
-					final String repoUrl = host.getUrl() + team.getName() + "/" + repo.getName() + ".git";
-					repo.setUrl( repoUrl );
-					repo.setCredentials( credentials );
-
-					if ( repoFolder.exists() ) {
-						localRepo = tryToOpenExistingRepoAndCheckRemote( repoFolder, repoUrl );
-						if ( localRepo == null ) {
-							try {
-								FileUtils.deleteDirectory( repoFolder );
-							} catch ( final IOException e ) {
-								throw new RuntimeException( e );
-							}
-						}
-					}
-					if ( localRepo == null ) {
-						localRepo = cloneNewRepo( repoFolder, repoUrl, credentials );
-					}
+					final Git localRepo = createUrl( config, host, team, credentials, repo );
 					repo.setGit( localRepo );
 					cleanUp( repo );
 				} );
 			} );
 		} );
+	}
+
+	private Git createUrl( final RebazerConfig config, final RepositoryHost host, final Team team,
+			final CredentialsProvider credentials, final RepositoryConfig repo ) {
+		final File repoFolder = new File( config.getWorkspace(), repo.getName() );
+		Git localRepo = null;
+		final String repoUrl = host.getUrl() + team.getName() + "/" + repo.getName() + ".git";
+		repo.setUrl( repoUrl );
+		repo.setCredentials( credentials );
+		return localRepo = checkRepoFolder( credentials, repoFolder, localRepo, repoUrl );
+	}
+
+	private Git checkRepoFolder( final CredentialsProvider credentials, final File repoFolder, Git localRepo,
+			final String repoUrl ) {
+		if ( repoFolder.exists() ) {
+			localRepo = tryToOpenExistingRepoAndCheckRemote( repoFolder, repoUrl );
+			if ( localRepo == null ) {
+				try {
+					FileUtils.deleteDirectory( repoFolder );
+				} catch ( final IOException e ) {
+					throw new RuntimeException( e );
+				}
+			}
+		}
+		if ( localRepo == null ) {
+			localRepo = cloneNewRepo( repoFolder, repoUrl, credentials );
+		}
+		return localRepo;
 	}
 
 	private static Git tryToOpenExistingRepoAndCheckRemote( final File repoFolder, final String expectedRepoUrl ) {
