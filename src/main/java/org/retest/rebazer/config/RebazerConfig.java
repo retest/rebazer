@@ -1,5 +1,6 @@
 package org.retest.rebazer.config;
 
+import java.net.URL;
 import java.util.List;
 
 import org.eclipse.jgit.api.Git;
@@ -21,7 +22,7 @@ public class RebazerConfig {
 	@Data
 	public static class RepositoryHost {
 		private String type;
-		private String url;
+		private URL url;
 		private List<Team> team;
 	}
 
