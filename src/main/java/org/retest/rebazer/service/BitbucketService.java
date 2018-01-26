@@ -23,9 +23,9 @@ public class BitbucketService implements Provider {
 
 	private final RebaseService rebaseService;
 
-	RestTemplate bitbucketLegacyTemplate;
-	RestTemplate bitbucketTemplate;
-	Team team;
+	private RestTemplate bitbucketLegacyTemplate;
+	private RestTemplate bitbucketTemplate;
+	private Team team;
 	RepositoryConfig repo;
 
 	public BitbucketService( final RebaseService rebaseService, final Team team, final RepositoryConfig repo,

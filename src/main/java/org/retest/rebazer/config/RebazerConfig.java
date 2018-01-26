@@ -4,7 +4,6 @@ import java.util.List;
 
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.transport.CredentialsProvider;
-import org.retest.rebazer.service.Provider;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 
@@ -24,7 +23,6 @@ public class RebazerConfig {
 		private String type;
 		private String url;
 		private List<Team> team;
-		private Provider provider;
 	}
 
 	@Data

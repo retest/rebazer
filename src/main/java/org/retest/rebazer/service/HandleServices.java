@@ -28,6 +28,7 @@ public class HandleServices {
 	private final BitbucketConfig bitbucketConfig = new BitbucketConfig();
 	private final GithubConfig githubConfig = new GithubConfig();
 	private final RestTemplateBuilder builder;
+	private Provider provider;
 
 	@Scheduled( fixedDelayString = "${rebazer.pollInterval:60}000" )
 	public void pollBitbucket() {
@@ -42,19 +43,19 @@ public class HandleServices {
 									bitbucketConfig.bitbucketLegacyTemplate( builder, team.getUser(), team.getPass() );
 							final RestTemplate bitbucketTemplate =
 									bitbucketConfig.bitbucketTemplate( builder, team.getUser(), team.getPass() );
-							hosts.setProvider( new BitbucketService( rebaseService, team, repo, bitbucketLegacyTemplate,
-									bitbucketTemplate ) );
+							provider = new BitbucketService( rebaseService, team, repo, bitbucketLegacyTemplate,
+									bitbucketTemplate );
 							break;
 						case GITHUB:
 							final RestTemplate githubTemplate =
 									githubConfig.githubTemplate( builder, team.getUser(), team.getPass() );
-							hosts.setProvider( new GithubService( rebaseService, team, repo, githubTemplate ) );
+							provider = new GithubService( rebaseService, team, repo, githubTemplate );
 							break;
 						default:
 							log.info( "The hosting Service via: {} is not supported", hosts.getType() );
 					}
-					for ( final PullRequest pr : hosts.getProvider().getAllPullRequests( repo ) ) {
-						handlePR( hosts.getProvider(), repo, pr );
+					for ( final PullRequest pr : provider.getAllPullRequests( repo ) ) {
+						handlePR( provider, repo, pr );
 					}
 				}
 			}

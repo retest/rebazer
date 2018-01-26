@@ -25,8 +25,8 @@ public class GithubService implements Provider {
 
 	private final RebaseService rebaseService;
 
-	RestTemplate githubTemplate;
-	Team team;
+	private RestTemplate githubTemplate;
+	private Team team;
 	RepositoryConfig repo;
 
 	public GithubService( final RebaseService rebaseService, final Team team, final RepositoryConfig repo,
