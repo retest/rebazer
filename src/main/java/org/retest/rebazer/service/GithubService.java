@@ -84,16 +84,8 @@ public class GithubService implements Provider {
 		final List<String> commitIds = jp.read( "$..sha" );
 		final List<String> parentIds = jp.read( "$..parents..sha" );
 
-		//		return parentIds.stream().filter( parent -> !commitIds.contains( parent ) ).findFirst()
-		//				.orElseThrow( IllegalStateException::new );
-		for ( final String parent : parentIds ) {
-			if ( commitIds.contains( parent ) ) {
-				return parent;
-			} else {
-				throw new IllegalStateException();
-			}
-		}
-		return null;
+		return parentIds.stream().filter( parent -> commitIds.contains( parent ) ).findFirst()
+				.orElseThrow( IllegalStateException::new );
 	}
 
 	@Override
