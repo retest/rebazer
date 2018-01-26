@@ -5,6 +5,7 @@ import java.util.List;
 
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.transport.CredentialsProvider;
+import org.retest.rebazer.service.KnownProvider;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 
@@ -21,7 +22,7 @@ public class RebazerConfig {
 
 	@Data
 	public static class RepositoryHost {
-		private String type;
+		private KnownProvider type;
 		private URL url;
 		private List<Team> team;
 	}

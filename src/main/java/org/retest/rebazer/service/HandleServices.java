@@ -36,8 +36,7 @@ public class HandleServices {
 			for ( final Team team : host.getTeam() ) {
 				for ( final RepositoryConfig repo : team.getRepos() ) {
 					log.debug( "Processing {}.", repo );
-					final KnownProvider knownProvider = KnownProvider.valueOf( host.getType() );
-					switch ( knownProvider ) {
+					switch ( host.getType() ) {
 						case BITBUCKET:
 							final RestTemplate bitbucketLegacyTemplate =
 									bitbucketConfig.bitbucketLegacyTemplate( builder, team.getUser(), team.getPass() );
