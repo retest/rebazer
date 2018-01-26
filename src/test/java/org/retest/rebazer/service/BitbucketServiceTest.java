@@ -30,7 +30,7 @@ public class BitbucketServiceTest {
 	RebazerConfig config;
 	Team team;
 
-	Provider cut;
+	BitbucketService cut;
 
 	@Before
 	public void setUp() {
@@ -48,7 +48,7 @@ public class BitbucketServiceTest {
 	@Test
 	public void rebaseNeeded_should_return_false_if_headOfBranch_is_equal_to_lastCommonCommitId() {
 		final PullRequest pullRequest = mock( PullRequest.class );
-		final Provider cut = mock( BitbucketService.class );
+		final BitbucketService cut = mock( BitbucketService.class );
 		final String head = "12325345923759135";
 		when( cut.getHeadOfBranch( pullRequest ) ).thenReturn( head );
 		when( cut.getLastCommonCommitId( pullRequest ) ).thenReturn( head );
@@ -60,7 +60,7 @@ public class BitbucketServiceTest {
 	@Test
 	public void rebaseNeeded_should_return_true_if_headOfBranch_isnt_equal_to_lastCommonCommitId() {
 		final PullRequest pullRequest = mock( PullRequest.class );
-		final Provider cut = mock( BitbucketService.class );
+		final BitbucketService cut = mock( BitbucketService.class );
 		final String head = "12325345923759135";
 		final String lcci = "21342343253253452";
 		when( cut.getHeadOfBranch( pullRequest ) ).thenReturn( head );
@@ -127,6 +127,15 @@ public class BitbucketServiceTest {
 		final List<PullRequest> actual = cut.getAllPullRequests( repo );
 
 		assertThat( actual ).isEqualTo( expected );
+	}
+
+	@Test
+	public void getLatestUpdate_should_return_updated_PullRequest() {
+		final PullRequest pullRequest = mock( PullRequest.class );
+		final String json = "{\"updated_on\": \"someTimestamp\"}";
+		when( bitbucketTemplate.getForObject( anyString(), eq( String.class ) ) ).thenReturn( json );
+
+		assertThat( cut.getLatestUpdate( pullRequest ).getLastUpdate() ).isEqualTo( "someTimestamp" );
 	}
 
 }

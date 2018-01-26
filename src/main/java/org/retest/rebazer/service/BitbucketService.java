@@ -62,14 +62,12 @@ public class BitbucketService implements Provider {
 		return !getLastCommonCommitId( pullRequest ).equals( getHeadOfBranch( pullRequest ) );
 	}
 
-	@Override
-	public String getHeadOfBranch( final PullRequest pullRequest ) {
+	String getHeadOfBranch( final PullRequest pullRequest ) {
 		final String url = "/repositories/" + team.getName() + "/" + pullRequest.getRepo() + "/";
 		return jsonPathForPath( url + "refs/branches/" + pullRequest.getDestination() ).read( "$.target.hash" );
 	}
 
-	@Override
-	public String getLastCommonCommitId( final PullRequest pullRequest ) {
+	String getLastCommonCommitId( final PullRequest pullRequest ) {
 		DocumentContext jp = jsonPathForPath( pullRequest.getUrl() + "/commits" );
 
 		final int pageLength = jp.read( "$.pagelen" );
@@ -146,8 +144,7 @@ public class BitbucketService implements Provider {
 		}
 	}
 
-	@Override
-	public void addComment( final PullRequest pullRequest ) {
+	private void addComment( final PullRequest pullRequest ) {
 		final Map<String, String> request = new HashMap<>();
 		request.put( "content", "This pull request needs some manual love ..." );
 

@@ -13,17 +13,11 @@ public interface Provider {
 
 	boolean rebaseNeeded( PullRequest pullRequest );
 
-	String getHeadOfBranch( PullRequest pullRequest );
-
-	String getLastCommonCommitId( PullRequest pullRequest );
-
 	void merge( PullRequest pullRequest );
 
 	boolean greenBuildExists( PullRequest pullRequest );
 
 	List<PullRequest> getAllPullRequests( RepositoryConfig repo );
-
-	void addComment( PullRequest pullRequest );
 
 	void rebase( RepositoryConfig repo, PullRequest pullRequest );
 

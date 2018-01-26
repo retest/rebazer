@@ -71,14 +71,12 @@ public class GithubService implements Provider {
 		return !getLastCommonCommitId( pullRequest ).equals( getHeadOfBranch( pullRequest ) );
 	}
 
-	@Override
-	public String getHeadOfBranch( final PullRequest pullRequest ) {
+	String getHeadOfBranch( final PullRequest pullRequest ) {
 		final String url = "/repos/" + team.getName() + "/" + pullRequest.getRepo() + "/";
 		return jsonPathForPath( url + "git/refs/heads/" + pullRequest.getDestination() ).read( "$.object.sha" );
 	}
 
-	@Override
-	public String getLastCommonCommitId( final PullRequest pullRequest ) {
+	String getLastCommonCommitId( final PullRequest pullRequest ) {
 		final DocumentContext jp = jsonPathForPath( pullRequest.getUrl() + "/commits" );
 
 		final List<String> commitIds = jp.read( "$..sha" );
@@ -149,8 +147,7 @@ public class GithubService implements Provider {
 		}
 	}
 
-	@Override
-	public void addComment( final PullRequest pullRequest ) {
+	private void addComment( final PullRequest pullRequest ) {
 		final Map<String, String> request = new HashMap<>();
 		request.put( "body", "This pull request needs some manual love ..." );
 		githubTemplate.postForObject( "/repos/" + team.getName() + "/" + pullRequest.getRepo() + "/issues/"

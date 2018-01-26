@@ -124,4 +124,13 @@ public class GithubServiceTest {
 		assertThat( actual ).isEqualTo( expected );
 	}
 
+	@Test
+	public void getLatestUpdate_should_return_updated_PullRequest() {
+		final PullRequest pullRequest = mock( PullRequest.class );
+		final String json = "{\"updated_at\": \"someTimestamp\"}";
+		when( githubTemplate.getForObject( anyString(), eq( String.class ) ) ).thenReturn( json );
+
+		assertThat( cut.getLatestUpdate( pullRequest ).getLastUpdate() ).isEqualTo( "someTimestamp" );
+	}
+
 }
