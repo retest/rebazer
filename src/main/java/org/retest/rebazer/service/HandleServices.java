@@ -32,11 +32,11 @@ public class HandleServices {
 
 	@Scheduled( fixedDelayString = "${rebazer.pollInterval:60}000" )
 	public void pollBitbucket() {
-		for ( final RepositoryHost hosts : config.getHosts() ) {
-			for ( final Team team : hosts.getTeam() ) {
+		for ( final RepositoryHost host : config.getHosts() ) {
+			for ( final Team team : host.getTeam() ) {
 				for ( final RepositoryConfig repo : team.getRepos() ) {
 					log.debug( "Processing {}.", repo );
-					final KnownProvider knownProvider = KnownProvider.valueOf( hosts.getType() );
+					final KnownProvider knownProvider = KnownProvider.valueOf( host.getType() );
 					switch ( knownProvider ) {
 						case BITBUCKET:
 							final RestTemplate bitbucketLegacyTemplate =
@@ -52,7 +52,7 @@ public class HandleServices {
 							provider = new GithubService( rebaseService, team, repo, githubTemplate );
 							break;
 						default:
-							log.info( "The hosting Service via: {} is not supported", hosts.getType() );
+							log.info( "The hosting Service via: {} is not supported", host.getType() );
 					}
 					for ( final PullRequest pr : provider.getAllPullRequests( repo ) ) {
 						handlePR( provider, repo, pr );
