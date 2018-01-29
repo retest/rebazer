@@ -3,8 +3,6 @@ package org.retest.rebazer.config;
 import java.net.URL;
 import java.util.List;
 
-import org.eclipse.jgit.api.Git;
-import org.eclipse.jgit.transport.CredentialsProvider;
 import org.retest.rebazer.service.KnownProvider;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
@@ -39,14 +37,6 @@ public class RebazerConfig {
 	public static class RepositoryConfig {
 		private String name;
 		private String branch;
-		private String url;
-		private CredentialsProvider credentials;
-		private Git git;
-
-		@Override
-		public String toString() {
-			return "Repo " + name + " (" + url + ")";
-		}
 	}
 
 }

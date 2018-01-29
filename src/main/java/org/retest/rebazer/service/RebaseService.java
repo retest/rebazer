@@ -2,6 +2,8 @@ package org.retest.rebazer.service;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.apache.commons.io.FileUtils;
 import org.eclipse.jgit.api.Git;
@@ -33,17 +35,21 @@ public class RebaseService {
 
 	private int currentGcCountdown;
 
+	private final Map<String, CredentialsProvider> repoCredentials = new HashMap<>();
+	private final Map<String, Git> repoGit = new HashMap<>();
+	private final Map<String, String> repoUrl = new HashMap<>();
+
 	@Autowired
 	public RebaseService( final RebazerConfig config ) {
 		this.config = config;
 		currentGcCountdown = config.getGarbageCollectionCountdown();
 		config.getHosts().forEach( host -> {
 			host.getTeam().forEach( team -> {
-				final CredentialsProvider credentials =
-						new UsernamePasswordCredentialsProvider( team.getUser(), team.getPass() );
 				team.getRepos().forEach( repo -> {
-					final Git localRepo = createUrl( config, host, team, credentials, repo );
-					repo.setGit( localRepo );
+					repoCredentials.put( repo.getName(),
+							new UsernamePasswordCredentialsProvider( team.getUser(), team.getPass() ) );
+					final Git localRepo = createUrl( config, host, team, repoCredentials.get( repo.getName() ), repo );
+					repoGit.put( repo.getName(), localRepo );
 					cleanUp( repo );
 				} );
 			} );
@@ -51,13 +57,12 @@ public class RebaseService {
 	}
 
 	private Git createUrl( final RebazerConfig config, final RepositoryHost host, final Team team,
-			final CredentialsProvider credentials, final RepositoryConfig repo ) {
+			CredentialsProvider credentials, final RepositoryConfig repo ) {
+		credentials = repoCredentials.get( repo.getName() );
 		final File repoFolder = new File( config.getWorkspace(), repo.getName() );
 		Git localRepo = null;
-		final String repoUrl = host.getUrl() + team.getName() + "/" + repo.getName() + ".git";
-		repo.setUrl( repoUrl );
-		repo.setCredentials( credentials );
-		return localRepo = checkRepoFolder( credentials, repoFolder, localRepo, repoUrl );
+		repoUrl.put( repo.getName(), host.getUrl() + team.getName() + "/" + repo.getName() + ".git" );
+		return localRepo = checkRepoFolder( credentials, repoFolder, localRepo, repoUrl.get( repo.getName() ) );
 	}
 
 	private Git checkRepoFolder( final CredentialsProvider credentials, final File repoFolder, Git localRepo,
@@ -112,8 +117,8 @@ public class RebaseService {
 		log.info( "Rebasing {}.", pullRequest );
 
 		try {
-			final Git repository = repo.getGit();
-			final CredentialsProvider credentials = repo.getCredentials();
+			final Git repository = repoGit.get( repo.getName() );
+			final CredentialsProvider credentials = repoCredentials.get( repo.getName() );
 			repository.fetch().setCredentialsProvider( credentials ).setRemoveDeletedRefs( true ).call();
 			repository.checkout().setCreateBranch( true ).setName( pullRequest.getSource() )
 					.setStartPoint( "origin/" + pullRequest.getSource() ).call();
@@ -151,7 +156,7 @@ public class RebaseService {
 
 	@SneakyThrows
 	private void cleanUp( final RepositoryConfig repo ) {
-		final Git repository = repo.getGit();
+		final Git repository = repoGit.get( repo.getName() );
 		resetAndRemoveUntrackedFiles( repository );
 		repository.checkout().setName( "remotes/origin/" + repo.getBranch() ).call();
 		removeAllLocalBranches( repository );
