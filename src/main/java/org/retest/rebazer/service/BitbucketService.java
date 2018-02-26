@@ -127,7 +127,11 @@ public class BitbucketService {
 
 	boolean greenBuildExists( final PullRequest pullRequest ) {
 		final DocumentContext jp = jsonPathForPath( pullRequest.getUrl() + "/statuses" );
-		return jp.<List<String>> read( "$.values[*].state" ).stream().anyMatch( s -> s.equals( "SUCCESSFUL" ) );
+		final int size = jp.read( "$.size" );
+		if ( size > 0 ) {
+			return jp.<List<String>> read( "$.values[*].state" ).contains( "SUCCESSFUL" );
+		}
+		return true;
 	}
 
 	List<PullRequest> getAllPullRequests( final Repository repo ) {
