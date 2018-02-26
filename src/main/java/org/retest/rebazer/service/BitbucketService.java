@@ -129,7 +129,7 @@ public class BitbucketService {
 		final DocumentContext jp = jsonPathForPath( pullRequest.getUrl() + "/statuses" );
 		final int size = jp.read( "$.size" );
 		if ( size > 0 ) {
-			return jp.<List<String>> read( "$.values[*].state" ).stream().anyMatch( s -> s.equals( "SUCCESSFUL" ) );
+			return jp.<List<String>> read( "$.values[*].state" ).contains( "SUCCESSFUL" );
 		}
 		return true;
 	}
