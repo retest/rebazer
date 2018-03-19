@@ -16,9 +16,9 @@ public class RebazerConfig {
 	private String team;
 	private String user;
 	private String pass;
-	private String workspace;
+	private String workspace = "./rebazer-workspace";
 	private List<Repository> repos;
-	private int garbageCollectionCountdown;
+	private int garbageCollectionCountdown = 20;
 
 	@Data
 	public static class Repository {
