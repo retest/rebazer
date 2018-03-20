@@ -7,6 +7,7 @@ rebazer:
   user: service_user
   pass: dont_use_this_pass_at_home
   workspace: ./rebazer-workspace
+  garbageCollectionCountdown: 20
   repos:
     - name: the_repo_name
       branch: master

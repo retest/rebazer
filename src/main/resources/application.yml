@@ -1,3 +1,0 @@
-rebazer:
-  # Number of rebases until Git GC.
-  garbageCollectionCountdown: 20
