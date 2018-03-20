@@ -1,42 +1,43 @@
-def printIp() {
-	sh 'ip addr'
-}
-
-def checkoutAndEnforceCleanWorkingSpace() {
-	timeout(10) {
-		checkout scm
-		sh 'git clean -dfx'
+pipeline {
+	agent {
+		label 'linux'
 	}
-}
 
-def runMavenCompile() {
-	runMaven('compile test-compile', 8)
-}
-
-def runMaven(param = '', timeoutMinutes) {
-	def java8Home = tool 'JDK 1.8'
-	def mvnHome = tool 'Maven 3.5'
-
-	withEnv(["JAVA_HOME=${java8Home}"]) {
-		timeout(timeoutMinutes) {
-			sh "${mvnHome}/bin/mvn -X -e -B ${param}"
-		}
+	options {
+		timeout(time: 5, unit: 'MINUTES')
+		buildDiscarder(logRotator(numToKeepStr: '10'))
 	}
-}
 
-node('linux') {
-	timeout(60) {
-		stage('Checkout') {
-			printIp()
-			checkoutAndEnforceCleanWorkingSpace()
-		}
+	tools {
+		maven 'Default'
+		jdk 'Default'
+	}
 
+	stages {
 		stage('Build') {
-			runMavenCompile()
+			steps {
+				sh 'mvn clean compile test-compile'
+			}
 		}
 
 		stage('Tests') {
-			runMaven('test', 10)
+			steps {
+				sh 'mvn test'
+			}
+		}
+
+		stage('Artifacts') {
+			steps {
+				sh 'mvn package -DskipTests'
+			}
+		}
+	}
+
+	post {
+		always {
+			junit '**/target/surefire-reports/*.xml'
+			archiveArtifacts artifacts: '**/*.jar', onlyIfSuccessful: true
+			archiveArtifacts artifacts: '**/*.deb', onlyIfSuccessful: true
 		}
 	}
 }
