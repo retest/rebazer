@@ -1,8 +1,8 @@
 package org.retest.rebazer.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -24,6 +24,7 @@ import com.jayway.jsonpath.JsonPath;
 public class BitbucketServiceTest {
 
 	PullRequestLastUpdateStore pullRequestUpdateStates;
+	PullRequest pullRequest;
 	RestTemplate bitbucketTemplate;
 	RebazerConfig config;
 
@@ -36,6 +37,7 @@ public class BitbucketServiceTest {
 		config = mock( RebazerConfig.class );
 		final RebaseService rebaseService = mock( RebaseService.class );
 		pullRequestUpdateStates = mock( PullRequestLastUpdateStore.class );
+		pullRequest = PullRequest.builder().url( "" ).build();
 
 		cut = new BitbucketService( bitbucketTemplate, bitbucketLegacyTemplate, config, rebaseService,
 				pullRequestUpdateStates );
@@ -43,7 +45,6 @@ public class BitbucketServiceTest {
 
 	@Test
 	public void rebaseNeeded_should_return_false_if_headOfBranch_is_equal_to_lastCommonCommitId() {
-		final PullRequest pullRequest = mock( PullRequest.class );
 		final BitbucketService cut = mock( BitbucketService.class );
 		final String head = "12325345923759135";
 		when( cut.getHeadOfBranch( pullRequest ) ).thenReturn( head );
@@ -55,7 +56,6 @@ public class BitbucketServiceTest {
 
 	@Test
 	public void rebaseNeeded_should_return_true_if_headOfBranch_isnt_equal_to_lastCommonCommitId() {
-		final PullRequest pullRequest = mock( PullRequest.class );
 		final BitbucketService cut = mock( BitbucketService.class );
 		final String head = "12325345923759135";
 		final String lcci = "21342343253253452";
@@ -68,7 +68,6 @@ public class BitbucketServiceTest {
 
 	@Test
 	public void isApproved_should_return_false_if_approved_is_false() {
-		final PullRequest pullRequest = mock( PullRequest.class );
 		final String json = "{participants: [{\"approved\": false}]}\"";
 		when( bitbucketTemplate.getForObject( anyString(), eq( String.class ) ) ).thenReturn( json );
 
@@ -77,7 +76,6 @@ public class BitbucketServiceTest {
 
 	@Test
 	public void isApproved_should_return_ture_if_approved_is_true() {
-		final PullRequest pullRequest = mock( PullRequest.class );
 		final String json = "{participants: [{\"approved\": true}]}\"";
 		when( bitbucketTemplate.getForObject( anyString(), eq( String.class ) ) ).thenReturn( json );
 
@@ -86,7 +84,6 @@ public class BitbucketServiceTest {
 
 	@Test
 	public void greenBuildExists_should_return_false_if_state_is_failed() {
-		final PullRequest pullRequest = mock( PullRequest.class );
 		final String json = "{values: [{\"state\": FAILED}]}";
 		when( bitbucketTemplate.getForObject( anyString(), eq( String.class ) ) ).thenReturn( json );
 
@@ -95,7 +92,6 @@ public class BitbucketServiceTest {
 
 	@Test
 	public void greenBuildExists_should_return_true_if_state_is_successful() {
-		final PullRequest pullRequest = mock( PullRequest.class );
 		final String json = "{values: [{\"state\": SUCCESSFUL}]}";
 		when( bitbucketTemplate.getForObject( anyString(), eq( String.class ) ) ).thenReturn( json );
 
@@ -126,7 +122,6 @@ public class BitbucketServiceTest {
 
 	@Test
 	public void getLatestUpdate_should_return_updated_PullRequest() {
-		final PullRequest pullRequest = mock( PullRequest.class );
 		final String json = "{\"updated_on\": \"someTimestamp\"}";
 		when( bitbucketTemplate.getForObject( anyString(), eq( String.class ) ) ).thenReturn( json );
 
