@@ -90,6 +90,7 @@
 							<goal>jdeb</goal>
 						</goals>
 						<configuration>
+							<deb>${project.build.directory}/${project.build.finalName}.deb</deb>
 							<verbose>true</verbose>
 							<snapshotExpand>true</snapshotExpand>
 							<snapshotEnv>USER</snapshotEnv>
