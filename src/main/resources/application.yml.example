@@ -9,7 +9,7 @@ rebazer:
   hosts:
     - type: BITBUCKET
       url: https://bitbucket.org/
-      team:
+      teams:
       - name: your_company
         user: service_user
         pass: dont_use_this_pass_at_home
@@ -18,10 +18,10 @@ rebazer:
           branch: blub
         - name: bla
           branch: bla          
-            
+
     - type: GITHUB
       url: https://github.com/
-      team:
+      teams:
       - name: your_company
         user: service_user
         pass: dont_use_this_pass_at_home

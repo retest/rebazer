@@ -22,7 +22,7 @@ public class RebazerConfig {
 	public static class RepositoryHost {
 		private KnownProvider type;
 		private URL url;
-		private List<Team> team;
+		private List<Team> teams;
 	}
 
 	@Data

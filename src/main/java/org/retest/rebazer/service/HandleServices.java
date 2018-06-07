@@ -33,7 +33,7 @@ public class HandleServices {
 	@Scheduled( fixedDelayString = "${rebazer.pollInterval:60}000" )
 	public void pollBitbucket() {
 		for ( final RepositoryHost host : config.getHosts() ) {
-			for ( final Team team : host.getTeam() ) {
+			for ( final Team team : host.getTeams() ) {
 				for ( final RepositoryConfig repo : team.getRepos() ) {
 					log.debug( "Processing {}.", repo );
 					switch ( host.getType() ) {

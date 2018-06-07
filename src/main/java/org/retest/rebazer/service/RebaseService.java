@@ -44,7 +44,7 @@ public class RebaseService {
 		this.config = config;
 		currentGcCountdown = config.getGarbageCollectionCountdown();
 		config.getHosts().forEach( host -> {
-			host.getTeam().forEach( team -> {
+			host.getTeams().forEach( team -> {
 				team.getRepos().forEach( repo -> {
 					repoCredentials.put( repo.getName(),
 							new UsernamePasswordCredentialsProvider( team.getUser(), team.getPass() ) );
