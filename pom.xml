@@ -10,7 +10,7 @@
 
 	<name>rebazer</name>
 	<description>
-		Helper service to handle PullRequests on Bitbucket.
+		Helper service to handle PullRequests on GitHub/Bitbucket.
 		Rebase PullRequests against target to streamline commit history.
 		Merge the PullRequest if it's rebased, approved and the build is green.
 	</description>
