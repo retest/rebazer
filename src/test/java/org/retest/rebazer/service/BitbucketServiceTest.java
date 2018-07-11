@@ -1,8 +1,8 @@
 package org.retest.rebazer.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -73,6 +73,7 @@ public class BitbucketServiceTest {
 	@Test
 	public void isApproved_should_return_false_if_approved_is_false() {
 		final PullRequest pullRequest = mock( PullRequest.class );
+		when( pullRequest.getUrl() ).thenReturn( "url:dummy" );
 		final String json = "{participants: [{\"approved\": false}]}\"";
 		when( bitbucketTemplate.getForObject( anyString(), eq( String.class ) ) ).thenReturn( json );
 
@@ -82,6 +83,7 @@ public class BitbucketServiceTest {
 	@Test
 	public void isApproved_should_return_ture_if_approved_is_true() {
 		final PullRequest pullRequest = mock( PullRequest.class );
+		when( pullRequest.getUrl() ).thenReturn( "url:dummy" );
 		final String json = "{participants: [{\"approved\": true}]}\"";
 		when( bitbucketTemplate.getForObject( anyString(), eq( String.class ) ) ).thenReturn( json );
 
@@ -132,6 +134,7 @@ public class BitbucketServiceTest {
 	@Test
 	public void getLatestUpdate_should_return_updated_PullRequest() {
 		final PullRequest pullRequest = mock( PullRequest.class );
+		when( pullRequest.getUrl() ).thenReturn( "url:dummy" );
 		final String json = "{\"updated_on\": \"someTimestamp\"}";
 		when( bitbucketTemplate.getForObject( anyString(), eq( String.class ) ) ).thenReturn( json );
 
