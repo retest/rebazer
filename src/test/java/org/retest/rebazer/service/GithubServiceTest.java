@@ -1,8 +1,8 @@
 package org.retest.rebazer.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -127,6 +127,7 @@ public class GithubServiceTest {
 	@Test
 	public void getLatestUpdate_should_return_updated_PullRequest() {
 		final PullRequest pullRequest = mock( PullRequest.class );
+		when( pullRequest.getUrl() ).thenReturn( "url:dummy" );
 		final String json = "{\"updated_at\": \"someTimestamp\"}";
 		when( githubTemplate.getForObject( anyString(), eq( String.class ) ) ).thenReturn( json );
 
