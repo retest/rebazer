@@ -2,6 +2,8 @@ package org.retest.rebazer.service;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.apache.commons.io.FileUtils;
 import org.eclipse.jgit.api.Git;
@@ -15,7 +17,9 @@ import org.eclipse.jgit.api.errors.NotMergedException;
 import org.eclipse.jgit.transport.CredentialsProvider;
 import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider;
 import org.retest.rebazer.config.RebazerConfig;
-import org.retest.rebazer.config.RebazerConfig.Repository;
+import org.retest.rebazer.config.RebazerConfig.RepositoryConfig;
+import org.retest.rebazer.config.RebazerConfig.RepositoryHost;
+import org.retest.rebazer.config.RebazerConfig.Team;
 import org.retest.rebazer.domain.PullRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -31,38 +35,52 @@ public class RebaseService {
 
 	private int currentGcCountdown;
 
+	private final Map<String, CredentialsProvider> repoCredentials = new HashMap<>();
+	private final Map<String, Git> repoGit = new HashMap<>();
+	private final Map<String, String> repoUrl = new HashMap<>();
+
 	@Autowired
 	public RebaseService( final RebazerConfig config ) {
 		this.config = config;
 		currentGcCountdown = config.getGarbageCollectionCountdown();
+		config.getHosts().forEach( host -> {
+			host.getTeams().forEach( team -> {
+				team.getRepos().forEach( repo -> {
+					repoCredentials.put( repo.getName(),
+							new UsernamePasswordCredentialsProvider( team.getUser(), team.getPass() ) );
+					final Git localRepo = createUrl( config, host, team, repoCredentials.get( repo.getName() ), repo );
+					repoGit.put( repo.getName(), localRepo );
+					cleanUp( repo );
+				} );
+			} );
+		} );
+	}
 
-		final CredentialsProvider credentials =
-				new UsernamePasswordCredentialsProvider( config.getUser(), config.getPass() );
+	private Git createUrl( final RebazerConfig config, final RepositoryHost host, final Team team,
+			CredentialsProvider credentials, final RepositoryConfig repo ) {
+		credentials = repoCredentials.get( repo.getName() );
+		final File repoFolder = new File( config.getWorkspace(), repo.getName() );
+		Git localRepo = null;
+		repoUrl.put( repo.getName(), host.getUrl() + team.getName() + "/" + repo.getName() + ".git" );
+		return localRepo = checkRepoFolder( credentials, repoFolder, localRepo, repoUrl.get( repo.getName() ) );
+	}
 
-		config.getRepos().forEach( repo -> {
-			final File repoFolder = new File( config.getWorkspace(), repo.getName() );
-			Git localRepo = null;
-			final String repoUrl = "https://bitbucket.org/" + config.getTeam() + "/" + repo.getName() + ".git";
-			repo.setUrl( repoUrl );
-			repo.setCredentials( credentials );
-
-			if ( repoFolder.exists() ) {
-				localRepo = tryToOpenExistingRepoAndCheckRemote( repoFolder, repoUrl );
-				if ( localRepo == null ) {
-					try {
-						FileUtils.deleteDirectory( repoFolder );
-					} catch ( final IOException e ) {
-						throw new RuntimeException( e );
-					}
+	private Git checkRepoFolder( final CredentialsProvider credentials, final File repoFolder, Git localRepo,
+			final String repoUrl ) {
+		if ( repoFolder.exists() ) {
+			localRepo = tryToOpenExistingRepoAndCheckRemote( repoFolder, repoUrl );
+			if ( localRepo == null ) {
+				try {
+					FileUtils.deleteDirectory( repoFolder );
+				} catch ( final IOException e ) {
+					throw new RuntimeException( e );
 				}
 			}
-			if ( localRepo == null ) {
-				localRepo = cloneNewRepo( repoFolder, repoUrl, credentials );
-			}
-			repo.setGit( localRepo );
-			cleanUp( repo );
-		} );
-
+		}
+		if ( localRepo == null ) {
+			localRepo = cloneNewRepo( repoFolder, repoUrl, credentials );
+		}
+		return localRepo;
 	}
 
 	private static Git tryToOpenExistingRepoAndCheckRemote( final File repoFolder, final String expectedRepoUrl ) {
@@ -95,12 +113,12 @@ public class RebaseService {
 	}
 
 	@SneakyThrows
-	public boolean rebase( final Repository repo, final PullRequest pullRequest ) {
+	public boolean rebase( final RepositoryConfig repo, final PullRequest pullRequest ) {
 		log.info( "Rebasing {}.", pullRequest );
 
 		try {
-			final Git repository = repo.getGit();
-			final CredentialsProvider credentials = repo.getCredentials();
+			final Git repository = repoGit.get( repo.getName() );
+			final CredentialsProvider credentials = repoCredentials.get( repo.getName() );
 			repository.fetch().setCredentialsProvider( credentials ).setRemoveDeletedRefs( true ).call();
 			repository.checkout().setCreateBranch( true ).setName( pullRequest.getSource() )
 					.setStartPoint( "origin/" + pullRequest.getSource() ).call();
@@ -137,8 +155,8 @@ public class RebaseService {
 	}
 
 	@SneakyThrows
-	private void cleanUp( final Repository repo ) {
-		final Git repository = repo.getGit();
+	private void cleanUp( final RepositoryConfig repo ) {
+		final Git repository = repoGit.get( repo.getName() );
 		resetAndRemoveUntrackedFiles( repository );
 		repository.checkout().setName( "remotes/origin/" + repo.getBranch() ).call();
 		removeAllLocalBranches( repository );

@@ -6,12 +6,12 @@ import static org.mockito.Mockito.when;
 
 import org.junit.Before;
 import org.junit.Test;
-import org.retest.rebazer.config.RebazerConfig.Repository;
+import org.retest.rebazer.config.RebazerConfig.RepositoryConfig;
 import org.retest.rebazer.domain.PullRequest;
 
 public class PullRequestLastUpdateStoreTest {
 
-	Repository repo;
+	RepositoryConfig repo;
 	PullRequest pr;
 	String lastUpdate;
 
@@ -21,7 +21,7 @@ public class PullRequestLastUpdateStoreTest {
 	public void setUp() {
 		cut = new PullRequestLastUpdateStore();
 
-		repo = mock( Repository.class );
+		repo = mock( RepositoryConfig.class );
 		pr = mock( PullRequest.class );
 		when( pr.getId() ).thenReturn( 1 );
 		lastUpdate = "2017-11-30T10:05:28+00:00";
