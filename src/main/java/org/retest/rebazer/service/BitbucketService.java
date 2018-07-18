@@ -9,6 +9,7 @@ import org.retest.rebazer.config.RebazerConfig.RepositoryConfig;
 import org.retest.rebazer.config.RebazerConfig.Team;
 import org.retest.rebazer.domain.PullRequest;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
@@ -21,17 +22,24 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor( onConstructor = @__( @Autowired ) )
 public class BitbucketService implements Repository {
 
-	private RestTemplate bitbucketLegacyTemplate;
-	private RestTemplate bitbucketTemplate;
+	private final static String baseUrlV1 = "https://api.bitbucket.org/1.0";
+	private final static String baseUrlV2 = "https://api.bitbucket.org/2.0";
+
 	private Team team;
 	RepositoryConfig repo;
 
-	public BitbucketService( final Team team, final RepositoryConfig repo, final RestTemplate bitbucketLegacyTemplate,
-			final RestTemplate bitbucketTemplate ) {
+	private RestTemplate legacyTemplate;
+	private RestTemplate template;
+
+	public BitbucketService( final Team team, final RepositoryConfig repo, final RestTemplateBuilder builder ) {
 		this.team = team;
-		this.bitbucketLegacyTemplate = bitbucketLegacyTemplate;
-		this.bitbucketTemplate = bitbucketTemplate;
 		this.repo = repo;
+
+		legacyTemplate = builder //
+				.basicAuthorization( team.getUser(), team.getPass() ) //
+				.rootUri( baseUrlV1 ) //
+				.build();
+		template = builder.basicAuthorization( team.getUser(), team.getPass() ).rootUri( baseUrlV2 ).build();
 	}
 
 	@Override
@@ -92,7 +100,7 @@ public class BitbucketService implements Repository {
 		request.put( "message", message );
 		request.put( "merge_strategy", "merge_commit" );
 
-		bitbucketTemplate.postForObject( pullRequest.getUrl() + "/merge", request, Object.class );
+		template.postForObject( pullRequest.getUrl() + "/merge", request, Object.class );
 	}
 
 	@Override
@@ -130,7 +138,7 @@ public class BitbucketService implements Repository {
 	}
 
 	private DocumentContext jsonPathForPath( final String urlPath ) {
-		final String json = bitbucketTemplate.getForObject( urlPath, String.class );
+		final String json = template.getForObject( urlPath, String.class );
 		return JsonPath.parse( json );
 	}
 
@@ -139,7 +147,7 @@ public class BitbucketService implements Repository {
 		final Map<String, String> request = new HashMap<>();
 		request.put( "content", "This pull request needs some manual love ..." );
 
-		bitbucketLegacyTemplate.postForObject( pullRequest.getUrl() + "/comments", request, String.class );
+		legacyTemplate.postForObject( pullRequest.getUrl() + "/comments", request, String.class );
 	}
 
 }

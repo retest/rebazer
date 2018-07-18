@@ -1,6 +1,7 @@
 package org.retest.rebazer.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -18,6 +19,7 @@ import org.retest.rebazer.config.RebazerConfig;
 import org.retest.rebazer.config.RebazerConfig.RepositoryConfig;
 import org.retest.rebazer.config.RebazerConfig.Team;
 import org.retest.rebazer.domain.PullRequest;
+import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.web.client.RestTemplate;
 
 import com.jayway.jsonpath.DocumentContext;
@@ -26,7 +28,7 @@ import com.jayway.jsonpath.JsonPath;
 public class BitbucketServiceTest {
 
 	PullRequestLastUpdateStore pullRequestUpdateStates;
-	RestTemplate bitbucketTemplate;
+	RestTemplate template;
 	RebazerConfig config;
 	Team team;
 
@@ -34,15 +36,17 @@ public class BitbucketServiceTest {
 
 	@Before
 	public void setUp() {
-		bitbucketTemplate = mock( RestTemplate.class );
+		template = mock( RestTemplate.class );
 		config = mock( RebazerConfig.class );
 		team = mock( Team.class );
 		final RepositoryConfig repo = mock( RepositoryConfig.class );
-		final RebaseService rebaseService = mock( RebaseService.class );
-		final RestTemplate bitbucketLegacyTemplate = mock( RestTemplate.class );
+		final RestTemplateBuilder builder = mock( RestTemplateBuilder.class );
+		when( builder.basicAuthorization( any(), any() ) ).thenReturn( builder );
+		when( builder.rootUri( anyString() ) ).thenReturn( builder );
+		when( builder.build() ).thenReturn( template );
 		pullRequestUpdateStates = mock( PullRequestLastUpdateStore.class );
 
-		cut = new BitbucketService( rebaseService, team, repo, bitbucketLegacyTemplate, bitbucketTemplate );
+		cut = new BitbucketService( team, repo, builder );
 	}
 
 	@Test
@@ -75,7 +79,7 @@ public class BitbucketServiceTest {
 		final PullRequest pullRequest = mock( PullRequest.class );
 		when( pullRequest.getUrl() ).thenReturn( "url:dummy" );
 		final String json = "{participants: [{\"approved\": false}]}\"";
-		when( bitbucketTemplate.getForObject( anyString(), eq( String.class ) ) ).thenReturn( json );
+		when( template.getForObject( anyString(), eq( String.class ) ) ).thenReturn( json );
 
 		assertThat( cut.isApproved( pullRequest ) ).isFalse();
 	}
@@ -85,7 +89,7 @@ public class BitbucketServiceTest {
 		final PullRequest pullRequest = mock( PullRequest.class );
 		when( pullRequest.getUrl() ).thenReturn( "url:dummy" );
 		final String json = "{participants: [{\"approved\": true}]}\"";
-		when( bitbucketTemplate.getForObject( anyString(), eq( String.class ) ) ).thenReturn( json );
+		when( template.getForObject( anyString(), eq( String.class ) ) ).thenReturn( json );
 
 		assertThat( cut.isApproved( pullRequest ) ).isTrue();
 	}
@@ -94,7 +98,7 @@ public class BitbucketServiceTest {
 	public void greenBuildExists_should_return_false_if_state_is_failed() {
 		final PullRequest pullRequest = mock( PullRequest.class );
 		final String json = "{values: [{\"state\": FAILED}]}";
-		when( bitbucketTemplate.getForObject( anyString(), eq( String.class ) ) ).thenReturn( json );
+		when( template.getForObject( anyString(), eq( String.class ) ) ).thenReturn( json );
 
 		assertThat( cut.greenBuildExists( pullRequest ) ).isFalse();
 	}
@@ -103,7 +107,7 @@ public class BitbucketServiceTest {
 	public void greenBuildExists_should_return_true_if_state_is_successful() {
 		final PullRequest pullRequest = mock( PullRequest.class );
 		final String json = "{values: [{\"state\": SUCCESSFUL}]}";
-		when( bitbucketTemplate.getForObject( anyString(), eq( String.class ) ) ).thenReturn( json );
+		when( template.getForObject( anyString(), eq( String.class ) ) ).thenReturn( json );
 
 		assertThat( cut.greenBuildExists( pullRequest ) ).isTrue();
 	}
@@ -117,7 +121,7 @@ public class BitbucketServiceTest {
 
 		when( team.getName() ).thenReturn( "test_team" );
 		when( repo.getName() ).thenReturn( "test_repo_name" );
-		when( bitbucketTemplate.getForObject( anyString(), eq( String.class ) ) ).thenReturn( json );
+		when( template.getForObject( anyString(), eq( String.class ) ) ).thenReturn( json );
 
 		final int expectedId = (int) documentContext.read( "$.values[0].id" );
 		final String expectedUrl =
@@ -136,7 +140,7 @@ public class BitbucketServiceTest {
 		final PullRequest pullRequest = mock( PullRequest.class );
 		when( pullRequest.getUrl() ).thenReturn( "url:dummy" );
 		final String json = "{\"updated_on\": \"someTimestamp\"}";
-		when( bitbucketTemplate.getForObject( anyString(), eq( String.class ) ) ).thenReturn( json );
+		when( template.getForObject( anyString(), eq( String.class ) ) ).thenReturn( json );
 
 		assertThat( cut.getLatestUpdate( pullRequest ).getLastUpdate() ).isEqualTo( "someTimestamp" );
 	}

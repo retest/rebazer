@@ -1,6 +1,7 @@
 package org.retest.rebazer.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -18,6 +19,7 @@ import org.retest.rebazer.config.RebazerConfig;
 import org.retest.rebazer.config.RebazerConfig.RepositoryConfig;
 import org.retest.rebazer.config.RebazerConfig.Team;
 import org.retest.rebazer.domain.PullRequest;
+import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.web.client.RestTemplate;
 
 import com.jayway.jsonpath.DocumentContext;
@@ -25,7 +27,7 @@ import com.jayway.jsonpath.JsonPath;
 
 public class GithubServiceTest {
 
-	RestTemplate githubTemplate;
+	RestTemplate template;
 	RebazerConfig config;
 	Team team;
 
@@ -33,13 +35,16 @@ public class GithubServiceTest {
 
 	@Before
 	public void setUp() {
-		githubTemplate = mock( RestTemplate.class );
+		template = mock( RestTemplate.class );
 		config = mock( RebazerConfig.class );
 		team = mock( Team.class );
 		final RepositoryConfig repo = mock( RepositoryConfig.class );
-		final RebaseService rebaseService = mock( RebaseService.class );
+		final RestTemplateBuilder builder = mock( RestTemplateBuilder.class );
+		when( builder.basicAuthorization( any(), any() ) ).thenReturn( builder );
+		when( builder.rootUri( anyString() ) ).thenReturn( builder );
+		when( builder.build() ).thenReturn( template );
 
-		cut = new GithubService( rebaseService, team, repo, githubTemplate );
+		cut = new GithubService( team, repo, builder );
 	}
 
 	@Test
@@ -71,7 +76,7 @@ public class GithubServiceTest {
 	public void isApproved_should_return_false_if_approved_is_false() {
 		final PullRequest pullRequest = mock( PullRequest.class );
 		final String json = "{review: [{\"state\": \"CHANGES_REQUESTED\"}]}\"";
-		when( githubTemplate.getForObject( anyString(), eq( String.class ) ) ).thenReturn( json );
+		when( template.getForObject( anyString(), eq( String.class ) ) ).thenReturn( json );
 
 		assertThat( cut.isApproved( pullRequest ) ).isFalse();
 	}
@@ -80,7 +85,7 @@ public class GithubServiceTest {
 	public void isApproved_should_return_true_if_approved_is_true() {
 		final PullRequest pullRequest = mock( PullRequest.class );
 		final String json = "{review: [{\"state\": \"APPROVED\"}]}\"";
-		when( githubTemplate.getForObject( anyString(), eq( String.class ) ) ).thenReturn( json );
+		when( template.getForObject( anyString(), eq( String.class ) ) ).thenReturn( json );
 
 		assertThat( cut.isApproved( pullRequest ) ).isTrue();
 	}
@@ -89,7 +94,7 @@ public class GithubServiceTest {
 	public void greenBuildExists_should_return_false_if_state_is_failed() {
 		final PullRequest pullRequest = mock( PullRequest.class );
 		final String json = "{statuses: [{\"state\": \"failure_or_error\"}]}";
-		when( githubTemplate.getForObject( anyString(), eq( String.class ) ) ).thenReturn( json );
+		when( template.getForObject( anyString(), eq( String.class ) ) ).thenReturn( json );
 
 		assertThat( cut.greenBuildExists( pullRequest ) ).isFalse();
 	}
@@ -98,7 +103,7 @@ public class GithubServiceTest {
 	public void greenBuildExists_should_return_true_if_state_is_successful() {
 		final PullRequest pullRequest = mock( PullRequest.class );
 		final String json = "{statuses: [{\"state\": \"success\"}]}";
-		when( githubTemplate.getForObject( anyString(), eq( String.class ) ) ).thenReturn( json );
+		when( template.getForObject( anyString(), eq( String.class ) ) ).thenReturn( json );
 
 		assertThat( cut.greenBuildExists( pullRequest ) ).isTrue();
 	}
@@ -111,7 +116,7 @@ public class GithubServiceTest {
 		final DocumentContext documentContext = JsonPath.parse( json );
 		when( team.getName() ).thenReturn( "test_team" );
 		when( repo.getName() ).thenReturn( "test_repo_name" );
-		when( githubTemplate.getForObject( anyString(), eq( String.class ) ) ).thenReturn( json );
+		when( template.getForObject( anyString(), eq( String.class ) ) ).thenReturn( json );
 
 		final int expectedId = (int) documentContext.read( "$.[0].number" );
 		final String expectedUrl = "/repos/" + team.getName() + "/" + repo.getName() + "/pulls/" + expectedId;
@@ -129,7 +134,7 @@ public class GithubServiceTest {
 		final PullRequest pullRequest = mock( PullRequest.class );
 		when( pullRequest.getUrl() ).thenReturn( "url:dummy" );
 		final String json = "{\"updated_at\": \"someTimestamp\"}";
-		when( githubTemplate.getForObject( anyString(), eq( String.class ) ) ).thenReturn( json );
+		when( template.getForObject( anyString(), eq( String.class ) ) ).thenReturn( json );
 
 		assertThat( cut.getLatestUpdate( pullRequest ).getLastUpdate() ).isEqualTo( "someTimestamp" );
 	}

@@ -9,6 +9,7 @@ import org.retest.rebazer.config.RebazerConfig.RepositoryConfig;
 import org.retest.rebazer.config.RebazerConfig.Team;
 import org.retest.rebazer.domain.PullRequest;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
@@ -23,14 +24,18 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor( onConstructor = @__( @Autowired ) )
 public class GithubService implements Repository {
 
-	private RestTemplate githubTemplate;
+	private final static String baseUrl = "https://api.github.com/";
+
 	private Team team;
 	RepositoryConfig repo;
 
-	public GithubService( final Team team, final RepositoryConfig repo, final RestTemplate githubTemplate ) {
+	private RestTemplate template;
+
+	public GithubService( final Team team, final RepositoryConfig repo, final RestTemplateBuilder builder ) {
 		this.team = team;
-		this.githubTemplate = githubTemplate;
 		this.repo = repo;
+
+		template = builder.basicAuthorization( team.getUser(), team.getPass() ).rootUri( baseUrl ).build();
 	}
 
 	@Override
@@ -91,7 +96,7 @@ public class GithubService implements Repository {
 		request.put( "commit_title", message );
 		request.put( "merge_method", "merge" );
 
-		githubTemplate.put( pullRequest.getUrl() + "/merge", request, Object.class );
+		template.put( pullRequest.getUrl() + "/merge", request, Object.class );
 	}
 
 	@Override
@@ -132,7 +137,7 @@ public class GithubService implements Repository {
 	}
 
 	private DocumentContext jsonPathForPath( final String urlPath ) {
-		final String json = githubTemplate.getForObject( urlPath, String.class );
+		final String json = template.getForObject( urlPath, String.class );
 		return JsonPath.parse( json );
 	}
 
@@ -140,7 +145,7 @@ public class GithubService implements Repository {
 	public void addComment( final PullRequest pullRequest ) {
 		final Map<String, String> request = new HashMap<>();
 		request.put( "body", "This pull request needs some manual love ..." );
-		githubTemplate.postForObject( "/repos/" + team.getName() + "/" + pullRequest.getRepo() + "/issues/"
+		template.postForObject( "/repos/" + team.getName() + "/" + pullRequest.getRepo() + "/issues/"
 				+ pullRequest.getId() + "/comments", request, String.class );
 	}
 

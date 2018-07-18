@@ -1,7 +1,5 @@
 package org.retest.rebazer.service;
 
-import org.retest.rebazer.config.BitbucketConfig;
-import org.retest.rebazer.config.GithubConfig;
 import org.retest.rebazer.config.RebazerConfig;
 import org.retest.rebazer.config.RebazerConfig.RepositoryConfig;
 import org.retest.rebazer.config.RebazerConfig.RepositoryHost;
@@ -11,7 +9,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -25,8 +22,6 @@ public class HandleServices {
 	private final RebazerConfig config;
 	private final PullRequestLastUpdateStore pullRequestLastUpdateStore;
 
-	private final BitbucketConfig bitbucketConfig = new BitbucketConfig();
-	private final GithubConfig githubConfig = new GithubConfig();
 	private final RestTemplateBuilder builder;
 	private Repository provider;
 
@@ -38,16 +33,10 @@ public class HandleServices {
 					log.debug( "Processing {}.", repo );
 					switch ( host.getType() ) {
 						case BITBUCKET:
-							final RestTemplate bitbucketLegacyTemplate =
-									bitbucketConfig.bitbucketLegacyTemplate( builder, team.getUser(), team.getPass() );
-							final RestTemplate bitbucketTemplate =
-									bitbucketConfig.bitbucketTemplate( builder, team.getUser(), team.getPass() );
-							provider = new BitbucketService( team, repo, bitbucketLegacyTemplate, bitbucketTemplate );
+							provider = new BitbucketService( team, repo, builder );
 							break;
 						case GITHUB:
-							final RestTemplate githubTemplate =
-									githubConfig.githubTemplate( builder, team.getUser(), team.getPass() );
-							provider = new GithubService( team, repo, githubTemplate );
+							provider = new GithubService( team, repo, builder );
 							break;
 						default:
 							log.info( "The hosting Service via: {} is not supported", host.getType() );
