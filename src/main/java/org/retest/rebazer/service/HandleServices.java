@@ -42,13 +42,12 @@ public class HandleServices {
 									bitbucketConfig.bitbucketLegacyTemplate( builder, team.getUser(), team.getPass() );
 							final RestTemplate bitbucketTemplate =
 									bitbucketConfig.bitbucketTemplate( builder, team.getUser(), team.getPass() );
-							provider = new BitbucketService( rebaseService, team, repo, bitbucketLegacyTemplate,
-									bitbucketTemplate );
+							provider = new BitbucketService( team, repo, bitbucketLegacyTemplate, bitbucketTemplate );
 							break;
 						case GITHUB:
 							final RestTemplate githubTemplate =
 									githubConfig.githubTemplate( builder, team.getUser(), team.getPass() );
-							provider = new GithubService( rebaseService, team, repo, githubTemplate );
+							provider = new GithubService( team, repo, githubTemplate );
 							break;
 						default:
 							log.info( "The hosting Service via: {} is not supported", host.getType() );
@@ -75,7 +74,9 @@ public class HandleServices {
 			pullRequestLastUpdateStore.setHandled( repositories, pullRequest );
 
 		} else if ( provider.rebaseNeeded( pullRequest ) ) {
-			provider.rebase( repositories, pullRequest );
+			if ( !rebaseService.rebase( repositories, pullRequest ) ) {
+				provider.addComment( pullRequest );
+			}
 			// we need to update the "lastUpdate" of a PullRequest to counteract if addComment is called
 			pullRequestLastUpdateStore.setHandled( repositories, provider.getLatestUpdate( pullRequest ) );
 

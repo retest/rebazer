@@ -19,6 +19,6 @@ public interface Repository {
 
 	List<PullRequest> getAllPullRequests( RepositoryConfig repo );
 
-	void rebase( RepositoryConfig repo, PullRequest pullRequest );
+	void addComment( PullRequest pullRequest );
 
 }

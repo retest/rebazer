@@ -23,15 +23,11 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor( onConstructor = @__( @Autowired ) )
 public class GithubService implements Repository {
 
-	private final RebaseService rebaseService;
-
 	private RestTemplate githubTemplate;
 	private Team team;
 	RepositoryConfig repo;
 
-	public GithubService( final RebaseService rebaseService, final Team team, final RepositoryConfig repo,
-			final RestTemplate githubTemplate ) {
-		this.rebaseService = rebaseService;
+	public GithubService( final Team team, final RepositoryConfig repo, final RestTemplate githubTemplate ) {
 		this.team = team;
 		this.githubTemplate = githubTemplate;
 		this.repo = repo;
@@ -141,13 +137,7 @@ public class GithubService implements Repository {
 	}
 
 	@Override
-	public void rebase( final RepositoryConfig repo, final PullRequest pullRequest ) {
-		if ( !rebaseService.rebase( repo, pullRequest ) ) {
-			addComment( pullRequest );
-		}
-	}
-
-	private void addComment( final PullRequest pullRequest ) {
+	public void addComment( final PullRequest pullRequest ) {
 		final Map<String, String> request = new HashMap<>();
 		request.put( "body", "This pull request needs some manual love ..." );
 		githubTemplate.postForObject( "/repos/" + team.getName() + "/" + pullRequest.getRepo() + "/issues/"

@@ -21,16 +21,13 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor( onConstructor = @__( @Autowired ) )
 public class BitbucketService implements Repository {
 
-	private final RebaseService rebaseService;
-
 	private RestTemplate bitbucketLegacyTemplate;
 	private RestTemplate bitbucketTemplate;
 	private Team team;
 	RepositoryConfig repo;
 
-	public BitbucketService( final RebaseService rebaseService, final Team team, final RepositoryConfig repo,
-			final RestTemplate bitbucketLegacyTemplate, final RestTemplate bitbucketTemplate ) {
-		this.rebaseService = rebaseService;
+	public BitbucketService( final Team team, final RepositoryConfig repo, final RestTemplate bitbucketLegacyTemplate,
+			final RestTemplate bitbucketTemplate ) {
 		this.team = team;
 		this.bitbucketLegacyTemplate = bitbucketLegacyTemplate;
 		this.bitbucketTemplate = bitbucketTemplate;
@@ -138,13 +135,7 @@ public class BitbucketService implements Repository {
 	}
 
 	@Override
-	public void rebase( final RepositoryConfig repo, final PullRequest pullRequest ) {
-		if ( !rebaseService.rebase( repo, pullRequest ) ) {
-			addComment( pullRequest );
-		}
-	}
-
-	private void addComment( final PullRequest pullRequest ) {
+	public void addComment( final PullRequest pullRequest ) {
 		final Map<String, String> request = new HashMap<>();
 		request.put( "content", "This pull request needs some manual love ..." );
 
