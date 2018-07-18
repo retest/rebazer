@@ -19,7 +19,7 @@ import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor( onConstructor = @__( @Autowired ) )
-public class BitbucketService implements Provider {
+public class BitbucketService implements Repository {
 
 	private final RebaseService rebaseService;
 

@@ -28,7 +28,7 @@ public class HandleServices {
 	private final BitbucketConfig bitbucketConfig = new BitbucketConfig();
 	private final GithubConfig githubConfig = new GithubConfig();
 	private final RestTemplateBuilder builder;
-	private Provider provider;
+	private Repository provider;
 
 	@Scheduled( fixedDelayString = "${rebazer.pollInterval:60}000" )
 	public void pollToHandleAllPullRequests() {
@@ -62,7 +62,7 @@ public class HandleServices {
 
 	}
 
-	public void handlePR( final Provider provider, final RepositoryConfig repositories,
+	public void handlePR( final Repository provider, final RepositoryConfig repositories,
 			final PullRequest pullRequest ) {
 		log.debug( "Processing {}.", pullRequest );
 

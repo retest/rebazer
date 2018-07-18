@@ -21,7 +21,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Service
 @RequiredArgsConstructor( onConstructor = @__( @Autowired ) )
-public class GithubService implements Provider {
+public class GithubService implements Repository {
 
 	private final RebaseService rebaseService;
 
