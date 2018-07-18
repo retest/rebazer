@@ -31,7 +31,7 @@ public class HandleServices {
 	private Provider provider;
 
 	@Scheduled( fixedDelayString = "${rebazer.pollInterval:60}000" )
-	public void pollBitbucket() {
+	public void pollToHandleAllPullRequests() {
 		for ( final RepositoryHost host : config.getHosts() ) {
 			for ( final Team team : host.getTeams() ) {
 				for ( final RepositoryConfig repo : team.getRepos() ) {

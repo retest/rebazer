@@ -13,8 +13,12 @@ import lombok.Data;
 @Configuration
 @ConfigurationProperties( "rebazer" )
 public class RebazerConfig {
+
 	private String workspace = "./rebazer-workspace";
 	private int garbageCollectionCountdown = 20;
+	/**
+	 * For default value see {@link org.retest.rebazer.service.HandleServices#pollToHandleAllPullRequests()}
+	 */
 	private long pollInterval;
 	private List<RepositoryHost> hosts;
 
