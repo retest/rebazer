@@ -31,38 +31,42 @@ import lombok.extern.slf4j.Slf4j;
 @Service
 public class RebaseService {
 
-	private final RebazerConfig config;
+	private final String workspace;
+	private final int gcCountdownResetValue;
 
-	private int currentGcCountdown;
+	private int gcCountdownCurrent;
 
-	private final Map<String, CredentialsProvider> repoCredentials = new HashMap<>();
-	private final Map<String, Git> repoGit = new HashMap<>();
+	private final Map<RepositoryConfig, CredentialsProvider> repoCredentials = new HashMap<>();
+	private final Map<RepositoryConfig, Git> repoGit = new HashMap<>();
 
 	@Autowired
 	public RebaseService( final RebazerConfig config ) {
-		this.config = config;
-		currentGcCountdown = config.getGarbageCollectionCountdown();
+		workspace = config.getWorkspace();
+		gcCountdownResetValue = config.getGarbageCollectionCountdown();
+		gcCountdownCurrent = config.getGarbageCollectionCountdown();
+
 		config.getHosts().forEach( host -> {
 			host.getTeams().forEach( team -> {
 				team.getRepos().forEach( repo -> {
-					setupRepo( config, host, team, repo );
+					setupRepo( host, team, repo );
 				} );
 			} );
 		} );
 	}
 
-	private void setupRepo( final RebazerConfig config, final RepositoryHost host, final Team team,
-			final RepositoryConfig repo ) {
-		repoCredentials.put( repo.getName(),
-				new UsernamePasswordCredentialsProvider( team.getUser(), team.getPass() ) );
-		final Git localRepo = createUrl( config, host, team, repoCredentials.get( repo.getName() ), repo );
-		repoGit.put( repo.getName(), localRepo );
+	private void setupRepo( final RepositoryHost host, final Team team, final RepositoryConfig repo ) {
+		final CredentialsProvider credentials =
+				new UsernamePasswordCredentialsProvider( team.getUser(), team.getPass() );
+		final Git localRepo = createUrl( host, team, credentials, repo );
+
+		repoCredentials.put( repo, credentials );
+		repoGit.put( repo, localRepo );
 		cleanUp( repo );
 	}
 
-	private Git createUrl( final RebazerConfig config, final RepositoryHost host, final Team team,
-			final CredentialsProvider credentials, final RepositoryConfig repo ) {
-		final File repoFolder = new File( config.getWorkspace(), repo.getName() );
+	private Git createUrl( final RepositoryHost host, final Team team, final CredentialsProvider credentials,
+			final RepositoryConfig repo ) {
+		final File repoFolder = new File( workspace, repo.getName() );
 		final String url = host.getUrl() + "/" + team.getName() + "/" + repo.getName() + ".git";
 		return checkRepoFolder( credentials, repoFolder, url );
 	}
@@ -119,8 +123,8 @@ public class RebaseService {
 		log.info( "Rebasing {}.", pullRequest );
 
 		try {
-			final Git repository = repoGit.get( repo.getName() );
-			final CredentialsProvider credentials = repoCredentials.get( repo.getName() );
+			final Git repository = repoGit.get( repo );
+			final CredentialsProvider credentials = repoCredentials.get( repo );
 			repository.fetch().setCredentialsProvider( credentials ).setRemoveDeletedRefs( true ).call();
 			repository.checkout().setCreateBranch( true ).setName( pullRequest.getSource() )
 					.setStartPoint( "origin/" + pullRequest.getSource() ).call();
@@ -158,7 +162,7 @@ public class RebaseService {
 
 	@SneakyThrows
 	private void cleanUp( final RepositoryConfig repo ) {
-		final Git repository = repoGit.get( repo.getName() );
+		final Git repository = repoGit.get( repo );
 		resetAndRemoveUntrackedFiles( repository );
 		repository.checkout().setName( "remotes/origin/" + repo.getBranch() ).call();
 		removeAllLocalBranches( repository );
@@ -194,10 +198,10 @@ public class RebaseService {
 	}
 
 	private void triggerGc( final Git repository ) throws GitAPIException {
-		currentGcCountdown--;
-		if ( currentGcCountdown == 0 ) {
-			currentGcCountdown = config.getGarbageCollectionCountdown();
-			log.info( "Running git gc on {}, next gc after {} rebases.", repository, currentGcCountdown );
+		gcCountdownCurrent--;
+		if ( gcCountdownCurrent == 0 ) {
+			gcCountdownCurrent = gcCountdownResetValue;
+			log.info( "Running git gc on {}, next gc after {} rebases.", repository, gcCountdownCurrent );
 			repository.gc() //
 					.setPrunePreserved( true ) //
 					.setExpire( null ) //
