@@ -46,14 +46,19 @@ public class RebaseService {
 		config.getHosts().forEach( host -> {
 			host.getTeams().forEach( team -> {
 				team.getRepos().forEach( repo -> {
-					repoCredentials.put( repo.getName(),
-							new UsernamePasswordCredentialsProvider( team.getUser(), team.getPass() ) );
-					final Git localRepo = createUrl( config, host, team, repoCredentials.get( repo.getName() ), repo );
-					repoGit.put( repo.getName(), localRepo );
-					cleanUp( repo );
+					setupRepo( config, host, team, repo );
 				} );
 			} );
 		} );
+	}
+
+	private void setupRepo( final RebazerConfig config, final RepositoryHost host, final Team team,
+			final RepositoryConfig repo ) {
+		repoCredentials.put( repo.getName(),
+				new UsernamePasswordCredentialsProvider( team.getUser(), team.getPass() ) );
+		final Git localRepo = createUrl( config, host, team, repoCredentials.get( repo.getName() ), repo );
+		repoGit.put( repo.getName(), localRepo );
+		cleanUp( repo );
 	}
 
 	private Git createUrl( final RebazerConfig config, final RepositoryHost host, final Team team,
