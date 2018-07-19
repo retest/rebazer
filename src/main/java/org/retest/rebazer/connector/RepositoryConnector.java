@@ -7,17 +7,17 @@ import org.retest.rebazer.domain.PullRequest;
 
 public interface RepositoryConnector {
 
+	List<PullRequest> getAllPullRequests( RepositoryConfig repo );
+
 	PullRequest getLatestUpdate( PullRequest pullRequest );
 
 	boolean isApproved( PullRequest pullRequest );
 
 	boolean rebaseNeeded( PullRequest pullRequest );
 
-	void merge( PullRequest pullRequest );
-
 	boolean greenBuildExists( PullRequest pullRequest );
 
-	List<PullRequest> getAllPullRequests( RepositoryConfig repo );
+	void merge( PullRequest pullRequest );
 
 	void addComment( PullRequest pullRequest );
 
