@@ -1,11 +1,11 @@
-package org.retest.rebazer.service;
+package org.retest.rebazer.connector;
 
 import java.util.List;
 
 import org.retest.rebazer.config.RebazerConfig.RepositoryConfig;
 import org.retest.rebazer.domain.PullRequest;
 
-public interface Repository {
+public interface RepositoryConnector {
 
 	PullRequest getLatestUpdate( PullRequest pullRequest );
 

@@ -1,4 +1,4 @@
-package org.retest.rebazer.service;
+package org.retest.rebazer;
 
 import static org.retest.rebazer.config.RebazerConfig.POLL_INTERVAL_DEFAULT;
 import static org.retest.rebazer.config.RebazerConfig.POLL_INTERVAL_KEY;
@@ -7,7 +7,12 @@ import org.retest.rebazer.config.RebazerConfig;
 import org.retest.rebazer.config.RebazerConfig.RepositoryConfig;
 import org.retest.rebazer.config.RebazerConfig.RepositoryHost;
 import org.retest.rebazer.config.RebazerConfig.Team;
+import org.retest.rebazer.connector.BitbucketConnector;
+import org.retest.rebazer.connector.GithubConnector;
+import org.retest.rebazer.connector.RepositoryConnector;
 import org.retest.rebazer.domain.PullRequest;
+import org.retest.rebazer.service.PullRequestLastUpdateStore;
+import org.retest.rebazer.service.RebaseService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -19,14 +24,14 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Service
 @RequiredArgsConstructor( onConstructor = @__( @Autowired ) )
-public class HandleServices {
+public class RebazerService {
 
 	private final RebaseService rebaseService;
 	private final RebazerConfig config;
 	private final PullRequestLastUpdateStore pullRequestLastUpdateStore;
 
 	private final RestTemplateBuilder builder;
-	private Repository provider;
+	private RepositoryConnector provider;
 
 	@Scheduled( fixedDelayString = "${" + POLL_INTERVAL_KEY + ":" + POLL_INTERVAL_DEFAULT + "}000" )
 	public void pollToHandleAllPullRequests() {
@@ -43,10 +48,10 @@ public class HandleServices {
 		log.debug( "Processing {}.", repo );
 		switch ( host.getType() ) {
 			case BITBUCKET:
-				provider = new BitbucketService( team, repo, builder );
+				provider = new BitbucketConnector( team, repo, builder );
 				break;
 			case GITHUB:
-				provider = new GithubService( team, repo, builder );
+				provider = new GithubConnector( team, repo, builder );
 				break;
 			default:
 				log.info( "The hosting Service via: {} is not supported", host.getType() );
@@ -57,7 +62,7 @@ public class HandleServices {
 		log.debug( "Processing done for {}.", repo );
 	}
 
-	public void handlePR( final Repository provider, final RepositoryConfig repositories,
+	public void handlePR( final RepositoryConnector provider, final RepositoryConfig repositories,
 			final PullRequest pullRequest ) {
 		log.debug( "Processing {}.", pullRequest );
 

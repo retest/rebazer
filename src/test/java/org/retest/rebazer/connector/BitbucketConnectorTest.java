@@ -1,4 +1,4 @@
-package org.retest.rebazer.service;
+package org.retest.rebazer.connector;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -19,20 +19,21 @@ import org.retest.rebazer.config.RebazerConfig;
 import org.retest.rebazer.config.RebazerConfig.RepositoryConfig;
 import org.retest.rebazer.config.RebazerConfig.Team;
 import org.retest.rebazer.domain.PullRequest;
+import org.retest.rebazer.service.PullRequestLastUpdateStore;
 import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.web.client.RestTemplate;
 
 import com.jayway.jsonpath.DocumentContext;
 import com.jayway.jsonpath.JsonPath;
 
-public class BitbucketServiceTest {
+public class BitbucketConnectorTest {
 
 	PullRequestLastUpdateStore pullRequestUpdateStates;
 	RestTemplate template;
 	RebazerConfig config;
 	Team team;
 
-	BitbucketService cut;
+	BitbucketConnector cut;
 
 	@Before
 	public void setUp() {
@@ -46,13 +47,13 @@ public class BitbucketServiceTest {
 		when( builder.build() ).thenReturn( template );
 		pullRequestUpdateStates = mock( PullRequestLastUpdateStore.class );
 
-		cut = new BitbucketService( team, repo, builder );
+		cut = new BitbucketConnector( team, repo, builder );
 	}
 
 	@Test
 	public void rebaseNeeded_should_return_false_if_headOfBranch_is_equal_to_lastCommonCommitId() {
 		final PullRequest pullRequest = mock( PullRequest.class );
-		final BitbucketService cut = mock( BitbucketService.class );
+		final BitbucketConnector cut = mock( BitbucketConnector.class );
 		final String head = "12325345923759135";
 		when( cut.getHeadOfBranch( pullRequest ) ).thenReturn( head );
 		when( cut.getLastCommonCommitId( pullRequest ) ).thenReturn( head );
@@ -64,7 +65,7 @@ public class BitbucketServiceTest {
 	@Test
 	public void rebaseNeeded_should_return_true_if_headOfBranch_isnt_equal_to_lastCommonCommitId() {
 		final PullRequest pullRequest = mock( PullRequest.class );
-		final BitbucketService cut = mock( BitbucketService.class );
+		final BitbucketConnector cut = mock( BitbucketConnector.class );
 		final String head = "12325345923759135";
 		final String lcci = "21342343253253452";
 		when( cut.getHeadOfBranch( pullRequest ) ).thenReturn( head );

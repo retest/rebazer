@@ -1,4 +1,4 @@
-package org.retest.rebazer.service;
+package org.retest.rebazer;
 
 public enum KnownProvider {
 

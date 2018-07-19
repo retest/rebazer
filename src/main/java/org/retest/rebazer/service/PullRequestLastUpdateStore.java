@@ -12,7 +12,7 @@ public class PullRequestLastUpdateStore {
 
 	private final Map<RepositoryConfig, Map<Integer, String>> pullRequestUpdateStates = new HashMap<>();
 
-	void setHandled( final RepositoryConfig repo, final PullRequest pullRequest ) {
+	public void setHandled( final RepositoryConfig repo, final PullRequest pullRequest ) {
 		Map<Integer, String> repoMap = pullRequestUpdateStates.get( repo );
 		if ( repoMap == null ) {
 			repoMap = new HashMap<>();
@@ -21,19 +21,19 @@ public class PullRequestLastUpdateStore {
 		repoMap.put( pullRequest.getId(), pullRequest.getLastUpdate() );
 	}
 
-	String getLastDate( final RepositoryConfig repo, final PullRequest pullRequest ) {
+	public String getLastDate( final RepositoryConfig repo, final PullRequest pullRequest ) {
 		final Map<Integer, String> repoMap = pullRequestUpdateStates.get( repo );
 		return repoMap != null ? repoMap.get( pullRequest.getId() ) : null;
 	}
 
-	void resetAllInThisRepo( final RepositoryConfig repo ) {
+	public void resetAllInThisRepo( final RepositoryConfig repo ) {
 		final Map<Integer, String> repoMap = pullRequestUpdateStates.get( repo );
 		if ( repoMap != null ) {
 			repoMap.clear();
 		}
 	}
 
-	boolean isHandled( final RepositoryConfig repo, final PullRequest pullRequest ) {
+	public boolean isHandled( final RepositoryConfig repo, final PullRequest pullRequest ) {
 		return pullRequest.getLastUpdate().equals( getLastDate( repo, pullRequest ) );
 	}
 

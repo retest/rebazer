@@ -3,7 +3,7 @@ package org.retest.rebazer.config;
 import java.net.URL;
 import java.util.List;
 
-import org.retest.rebazer.service.KnownProvider;
+import org.retest.rebazer.KnownProvider;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 
@@ -15,7 +15,7 @@ import lombok.Data;
 public class RebazerConfig {
 
 	/**
-	 * Values used for {@link org.retest.rebazer.service.HandleServices#pollToHandleAllPullRequests()}
+	 * Values used for {@link org.retest.rebazer.RebazerService#pollToHandleAllPullRequests()}
 	 */
 	public final static String POLL_INTERVAL_KEY = "rebazer.pollInterval";
 	public final static int POLL_INTERVAL_DEFAULT = 60;
