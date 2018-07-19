@@ -1,7 +1,10 @@
 package org.retest.rebazer.service;
 
+import java.util.List;
+
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.ResetCommand.ResetType;
+import org.eclipse.jgit.lib.Ref;
 
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
@@ -37,11 +40,10 @@ public class GitRepoCleaner {
 
 	@SneakyThrows
 	private void removeAllLocalBranches( final Git repoGit ) {
-		final String[] localBranches = repoGit.branchList() //
-				.call().stream() //
-				.filter( r -> r.getName() //
-						.startsWith( "refs/heads/" ) ) //
-				.map( r -> r.getName() ) //
+		final List<Ref> allBranches = repoGit.branchList().call();
+		final String[] localBranches = allBranches.stream() //
+				.map( branch -> branch.getName() ) //
+				.filter( name -> name.startsWith( "refs/heads/" ) ) //
 				.toArray( String[]::new );
 
 		repoGit.branchDelete().setForce( true ).setBranchNames( localBranches ).call();
