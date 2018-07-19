@@ -37,7 +37,6 @@ public class RebaseService {
 
 	private final Map<String, CredentialsProvider> repoCredentials = new HashMap<>();
 	private final Map<String, Git> repoGit = new HashMap<>();
-	private final Map<String, String> repoUrl = new HashMap<>();
 
 	@Autowired
 	public RebaseService( final RebazerConfig config ) {
@@ -64,13 +63,12 @@ public class RebaseService {
 	private Git createUrl( final RebazerConfig config, final RepositoryHost host, final Team team,
 			final CredentialsProvider credentials, final RepositoryConfig repo ) {
 		final File repoFolder = new File( config.getWorkspace(), repo.getName() );
-		Git localRepo = null;
-		repoUrl.put( repo.getName(), host.getUrl() + team.getName() + "/" + repo.getName() + ".git" );
-		return localRepo = checkRepoFolder( credentials, repoFolder, localRepo, repoUrl.get( repo.getName() ) );
+		final String url = host.getUrl() + "/" + team.getName() + "/" + repo.getName() + ".git";
+		return checkRepoFolder( credentials, repoFolder, url );
 	}
 
-	private Git checkRepoFolder( final CredentialsProvider credentials, final File repoFolder, Git localRepo,
-			final String repoUrl ) {
+	private Git checkRepoFolder( final CredentialsProvider credentials, final File repoFolder, final String repoUrl ) {
+		Git localRepo = null;
 		if ( repoFolder.exists() ) {
 			localRepo = tryToOpenExistingRepoAndCheckRemote( repoFolder, repoUrl );
 			if ( localRepo == null ) {
