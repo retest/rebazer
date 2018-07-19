@@ -14,12 +14,16 @@ import lombok.Data;
 @ConfigurationProperties( "rebazer" )
 public class RebazerConfig {
 
+	/**
+	 * Values used for {@link org.retest.rebazer.service.HandleServices#pollToHandleAllPullRequests()}
+	 */
+	public final static String POLL_INTERVAL_KEY = "rebazer.pollInterval";
+	public final static int POLL_INTERVAL_DEFAULT = 60;
+	private long pollInterval = POLL_INTERVAL_DEFAULT;
+
 	private String workspace = "./rebazer-workspace";
 	private int garbageCollectionCountdown = 20;
-	/**
-	 * For default value see {@link org.retest.rebazer.service.HandleServices#pollToHandleAllPullRequests()}
-	 */
-	private long pollInterval;
+
 	private List<RepositoryHost> hosts;
 
 	@Data

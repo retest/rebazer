@@ -25,7 +25,8 @@ public class HandleServices {
 	private final RestTemplateBuilder builder;
 	private Repository provider;
 
-	@Scheduled( fixedDelayString = "${rebazer.pollInterval:60}000" )
+	@Scheduled( fixedDelayString = "${" + RebazerConfig.POLL_INTERVAL_KEY + ":" + RebazerConfig.POLL_INTERVAL_DEFAULT
+			+ "}000" )
 	public void pollToHandleAllPullRequests() {
 		for ( final RepositoryHost host : config.getHosts() ) {
 			for ( final Team team : host.getTeams() ) {
