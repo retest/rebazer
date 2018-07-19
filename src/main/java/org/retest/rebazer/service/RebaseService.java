@@ -32,9 +32,7 @@ import lombok.extern.slf4j.Slf4j;
 public class RebaseService {
 
 	private final String workspace;
-	private final int gcCountdownResetValue;
-
-	private int gcCountdownCurrent;
+	private final GitRepoCleaner cleaner;
 
 	private final Map<RepositoryConfig, CredentialsProvider> repoCredentials = new HashMap<>();
 	private final Map<RepositoryConfig, Git> repoGit = new HashMap<>();
@@ -42,8 +40,7 @@ public class RebaseService {
 	@Autowired
 	public RebaseService( final RebazerConfig config ) {
 		workspace = config.getWorkspace();
-		gcCountdownResetValue = config.getGarbageCollectionCountdown();
-		gcCountdownCurrent = config.getGarbageCollectionCountdown();
+		cleaner = new GitRepoCleaner( config.getGarbageCollectionCountdown() );
 
 		config.getHosts().forEach( host -> {
 			host.getTeams().forEach( team -> {
@@ -160,53 +157,8 @@ public class RebaseService {
 		}
 	}
 
-	@SneakyThrows
-	private void cleanUp( final RepositoryConfig repo ) {
-		final Git repository = repoGit.get( repo );
-		resetAndRemoveUntrackedFiles( repository );
-		repository.checkout().setName( "remotes/origin/" + repo.getBranch() ).call();
-		removeAllLocalBranches( repository );
-		triggerGc( repository );
-	}
-
-	private void resetAndRemoveUntrackedFiles( final Git repository )
-			throws GitAPIException, CheckoutConflictException {
-		repository.clean() //
-				.setCleanDirectories( true ) //
-				.setForce( true ) //
-				.setIgnore( false ) //
-				.call(); //
-
-		repository.reset() //
-				.setMode( ResetType.HARD ) //
-				.call(); //
-	}
-
-	private void removeAllLocalBranches( final Git repository )
-			throws GitAPIException, NotMergedException, CannotDeleteCurrentBranchException {
-		final String[] localBranches = repository.branchList() //
-				.call().stream() //
-				.filter( r -> r.getName() //
-						.startsWith( "refs/heads/" ) ) //
-				.map( r -> r.getName() ) //
-				.toArray( String[]::new ); //
-
-		repository.branchDelete() //
-				.setForce( true ) //
-				.setBranchNames( localBranches ) //
-				.call(); //
-	}
-
-	private void triggerGc( final Git repository ) throws GitAPIException {
-		gcCountdownCurrent--;
-		if ( gcCountdownCurrent == 0 ) {
-			gcCountdownCurrent = gcCountdownResetValue;
-			log.info( "Running git gc on {}, next gc after {} rebases.", repository, gcCountdownCurrent );
-			repository.gc() //
-					.setPrunePreserved( true ) //
-					.setExpire( null ) //
-					.call(); //
-		}
+	private void cleanUp( final RepositoryConfig repoConfig ) {
+		cleaner.cleanUp( repoGit.get( repoConfig ), repoConfig.getBranch() );
 	}
 
 }
