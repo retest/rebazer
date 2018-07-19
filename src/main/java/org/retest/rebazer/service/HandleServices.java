@@ -28,27 +28,31 @@ public class HandleServices {
 	@Scheduled( fixedDelayString = "${" + RebazerConfig.POLL_INTERVAL_KEY + ":" + RebazerConfig.POLL_INTERVAL_DEFAULT
 			+ "}000" )
 	public void pollToHandleAllPullRequests() {
-		for ( final RepositoryHost host : config.getHosts() ) {
-			for ( final Team team : host.getTeams() ) {
-				for ( final RepositoryConfig repo : team.getRepos() ) {
-					log.debug( "Processing {}.", repo );
-					switch ( host.getType() ) {
-						case BITBUCKET:
-							provider = new BitbucketService( team, repo, builder );
-							break;
-						case GITHUB:
-							provider = new GithubService( team, repo, builder );
-							break;
-						default:
-							log.info( "The hosting Service via: {} is not supported", host.getType() );
-					}
-					for ( final PullRequest pr : provider.getAllPullRequests( repo ) ) {
-						handlePR( provider, repo, pr );
-					}
-				}
-			}
-		}
+		config.getHosts().forEach( host -> {
+			host.getTeams().forEach( team -> {
+				team.getRepos().forEach( repo -> {
+					handleRepo( host, team, repo );
+				} );
+			} );
+		} );
+	}
 
+	private void handleRepo( final RepositoryHost host, final Team team, final RepositoryConfig repo ) {
+		log.debug( "Processing {}.", repo );
+		switch ( host.getType() ) {
+			case BITBUCKET:
+				provider = new BitbucketService( team, repo, builder );
+				break;
+			case GITHUB:
+				provider = new GithubService( team, repo, builder );
+				break;
+			default:
+				log.info( "The hosting Service via: {} is not supported", host.getType() );
+		}
+		for ( final PullRequest pr : provider.getAllPullRequests( repo ) ) {
+			handlePR( provider, repo, pr );
+		}
+		log.debug( "Processing done for {}.", repo );
 	}
 
 	public void handlePR( final Repository provider, final RepositoryConfig repositories,
