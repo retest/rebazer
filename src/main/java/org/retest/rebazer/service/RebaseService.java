@@ -1,7 +1,6 @@
 package org.retest.rebazer.service;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -9,11 +8,6 @@ import org.apache.commons.io.FileUtils;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.RebaseCommand.Operation;
 import org.eclipse.jgit.api.RebaseResult;
-import org.eclipse.jgit.api.ResetCommand.ResetType;
-import org.eclipse.jgit.api.errors.CannotDeleteCurrentBranchException;
-import org.eclipse.jgit.api.errors.CheckoutConflictException;
-import org.eclipse.jgit.api.errors.GitAPIException;
-import org.eclipse.jgit.api.errors.NotMergedException;
 import org.eclipse.jgit.transport.CredentialsProvider;
 import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider;
 import org.retest.rebazer.config.RebazerConfig;
@@ -31,7 +25,7 @@ import lombok.extern.slf4j.Slf4j;
 @Service
 public class RebaseService {
 
-	private final String workspace;
+	private final File workspace;
 	private final GitRepoCleaner cleaner;
 
 	private final Map<RepositoryConfig, CredentialsProvider> repoCredentials = new HashMap<>();
@@ -39,7 +33,7 @@ public class RebaseService {
 
 	@Autowired
 	public RebaseService( final RebazerConfig config ) {
-		workspace = config.getWorkspace();
+		workspace = new File( config.getWorkspace() ).getAbsoluteFile();
 		cleaner = new GitRepoCleaner( config.getGarbageCollectionCountdown() );
 
 		config.getHosts().forEach( host -> {
@@ -52,38 +46,44 @@ public class RebaseService {
 	}
 
 	private void setupRepo( final RepositoryHost host, final Team team, final RepositoryConfig repo ) {
-		final CredentialsProvider credentials =
-				new UsernamePasswordCredentialsProvider( team.getUser(), team.getPass() );
-		final Git localRepo = createUrl( host, team, credentials, repo );
+		final CredentialsProvider credentials = repoCredentials( team );
+		final File repoFolder = repoFolder( host, team, repo );
+		final String url = repoUrl( host, team, repo );
+
+		final Git localRepo = setupLocalGitRepo( credentials, repoFolder, url );
 
 		repoCredentials.put( repo, credentials );
 		repoGit.put( repo, localRepo );
 		cleanUp( repo );
 	}
 
-	private Git createUrl( final RepositoryHost host, final Team team, final CredentialsProvider credentials,
-			final RepositoryConfig repo ) {
-		final File repoFolder = new File( workspace, repo.getName() );
-		final String url = host.getUrl() + "/" + team.getName() + "/" + repo.getName() + ".git";
-		return checkRepoFolder( credentials, repoFolder, url );
+	private CredentialsProvider repoCredentials( final Team team ) {
+		return new UsernamePasswordCredentialsProvider( team.getUser(), team.getPass() );
 	}
 
-	private Git checkRepoFolder( final CredentialsProvider credentials, final File repoFolder, final String repoUrl ) {
-		Git localRepo = null;
+	private File repoFolder( final RepositoryHost host, final Team team, final RepositoryConfig repo ) {
+		return new File( new File( new File( workspace, host.getUrl().getHost() ), team.getName() ), repo.getName() );
+	}
+
+	private String repoUrl( final RepositoryHost host, final Team team, final RepositoryConfig repo ) {
+		return host.getUrl() + "/" + team.getName() + "/" + repo.getName() + ".git";
+	}
+
+	private Git setupLocalGitRepo( final CredentialsProvider credentials, final File repoFolder,
+			final String repoUrl ) {
 		if ( repoFolder.exists() ) {
-			localRepo = tryToOpenExistingRepoAndCheckRemote( repoFolder, repoUrl );
-			if ( localRepo == null ) {
-				try {
-					FileUtils.deleteDirectory( repoFolder );
-				} catch ( final IOException e ) {
-					throw new RuntimeException( e );
-				}
+			final Git localRepo = tryToOpenExistingRepoAndCheckRemote( repoFolder, repoUrl );
+			if ( localRepo != null ) {
+				return localRepo;
 			}
+			deleteDirectory( repoFolder );
 		}
-		if ( localRepo == null ) {
-			localRepo = cloneNewRepo( repoFolder, repoUrl, credentials );
-		}
-		return localRepo;
+		return cloneNewRepo( repoFolder, repoUrl, credentials );
+	}
+
+	@SneakyThrows
+	private void deleteDirectory( final File repoFolder ) {
+		FileUtils.deleteDirectory( repoFolder );
 	}
 
 	private static Git tryToOpenExistingRepoAndCheckRemote( final File repoFolder, final String expectedRepoUrl ) {
