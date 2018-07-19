@@ -1,5 +1,8 @@
 package org.retest.rebazer.service;
 
+import static org.retest.rebazer.config.RebazerConfig.POLL_INTERVAL_DEFAULT;
+import static org.retest.rebazer.config.RebazerConfig.POLL_INTERVAL_KEY;
+
 import org.retest.rebazer.config.RebazerConfig;
 import org.retest.rebazer.config.RebazerConfig.RepositoryConfig;
 import org.retest.rebazer.config.RebazerConfig.RepositoryHost;
@@ -25,8 +28,7 @@ public class HandleServices {
 	private final RestTemplateBuilder builder;
 	private Repository provider;
 
-	@Scheduled( fixedDelayString = "${" + RebazerConfig.POLL_INTERVAL_KEY + ":" + RebazerConfig.POLL_INTERVAL_DEFAULT
-			+ "}000" )
+	@Scheduled( fixedDelayString = "${" + POLL_INTERVAL_KEY + ":" + POLL_INTERVAL_DEFAULT + "}000" )
 	public void pollToHandleAllPullRequests() {
 		config.getHosts().forEach( host -> {
 			host.getTeams().forEach( team -> {

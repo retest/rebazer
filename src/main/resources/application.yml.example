@@ -5,7 +5,7 @@ spring:
 rebazer:
   workspace: ./rebazer-workspace
   garbageCollectionCountdown: 20
-  pollInterval: 10000
+  pollInterval: 60
   hosts:
     - type: BITBUCKET
       url: https://bitbucket.org/
