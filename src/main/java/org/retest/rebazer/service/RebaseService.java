@@ -62,8 +62,7 @@ public class RebaseService {
 	}
 
 	private Git createUrl( final RebazerConfig config, final RepositoryHost host, final Team team,
-			CredentialsProvider credentials, final RepositoryConfig repo ) {
-		credentials = repoCredentials.get( repo.getName() );
+			final CredentialsProvider credentials, final RepositoryConfig repo ) {
 		final File repoFolder = new File( config.getWorkspace(), repo.getName() );
 		Git localRepo = null;
 		repoUrl.put( repo.getName(), host.getUrl() + team.getName() + "/" + repo.getName() + ".git" );
