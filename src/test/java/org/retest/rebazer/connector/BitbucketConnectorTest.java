@@ -125,8 +125,7 @@ public class BitbucketConnectorTest {
 		when( template.getForObject( anyString(), eq( String.class ) ) ).thenReturn( json );
 
 		final int expectedId = (int) documentContext.read( "$.values[0].id" );
-		final String expectedUrl =
-				"/repositories/" + team.getName() + "/" + repo.getName() + "/pullrequests/" + expectedId;
+		final String expectedUrl = "/pullrequests/" + expectedId;
 		final List<PullRequest> expected = Arrays.asList( PullRequest.builder().id( expectedId ).repo( repo.getName() )
 				.source( documentContext.read( "$.values[0].source.branch.name" ) )
 				.destination( documentContext.read( "$.values[0].destination.branch.name" ) ).url( expectedUrl )

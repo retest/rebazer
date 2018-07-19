@@ -20,21 +20,15 @@ public class BitbucketConnector implements RepositoryConnector {
 	private final static String baseUrlV1 = "https://api.bitbucket.org/1.0";
 	private final static String baseUrlV2 = "https://api.bitbucket.org/2.0";
 
-	private Team team;
-	RepositoryConfig repo;
-
-	private RestTemplate legacyTemplate;
-	private RestTemplate template;
+	private final RestTemplate legacyTemplate;
+	private final RestTemplate template;
 
 	public BitbucketConnector( final Team team, final RepositoryConfig repo, final RestTemplateBuilder builder ) {
-		this.team = team;
-		this.repo = repo;
+		final String basePath = "/repositories/" + team.getName() + "/" + repo.getName();
 
-		legacyTemplate = builder //
-				.basicAuthorization( team.getUser(), team.getPass() ) //
-				.rootUri( baseUrlV1 ) //
-				.build();
-		template = builder.basicAuthorization( team.getUser(), team.getPass() ).rootUri( baseUrlV2 ).build();
+		legacyTemplate =
+				builder.basicAuthorization( team.getUser(), team.getPass() ).rootUri( baseUrlV1 + basePath ).build();
+		template = builder.basicAuthorization( team.getUser(), team.getPass() ).rootUri( baseUrlV2 + basePath ).build();
 	}
 
 	@Override
@@ -63,8 +57,7 @@ public class BitbucketConnector implements RepositoryConnector {
 	}
 
 	String getHeadOfBranch( final PullRequest pullRequest ) {
-		final String url = "/repositories/" + team.getName() + "/" + pullRequest.getRepo() + "/";
-		return jsonPathForPath( url + "refs/branches/" + pullRequest.getDestination() ).read( "$.target.hash" );
+		return jsonPathForPath( "/refs/branches/" + pullRequest.getDestination() ).read( "$.target.hash" );
 	}
 
 	String getLastCommonCommitId( final PullRequest pullRequest ) {
@@ -106,13 +99,11 @@ public class BitbucketConnector implements RepositoryConnector {
 
 	@Override
 	public List<PullRequest> getAllPullRequests( final RepositoryConfig repo ) {
-		final String urlPath = "/repositories/" + team.getName() + "/" + repo.getName() + "/pullrequests";
-		final DocumentContext jp = jsonPathForPath( urlPath );
-		return parsePullRequestsJson( repo, urlPath, jp );
+		final DocumentContext jp = jsonPathForPath( "/pullrequests" );
+		return parsePullRequestsJson( repo, jp );
 	}
 
-	public static List<PullRequest> parsePullRequestsJson( final RepositoryConfig repo, final String urlPath,
-			final DocumentContext jp ) {
+	public List<PullRequest> parsePullRequestsJson( final RepositoryConfig repo, final DocumentContext jp ) {
 		final int numPullRequests = (int) jp.read( "$.size" );
 		final List<PullRequest> results = new ArrayList<>( numPullRequests );
 		for ( int i = 0; i < numPullRequests; i++ ) {
@@ -125,7 +116,7 @@ public class BitbucketConnector implements RepositoryConnector {
 					.repo( repo.getName() ) //
 					.source( source ) //
 					.destination( destination ) //
-					.url( urlPath + "/" + id ) //
+					.url( "/pullrequests/" + id ) //
 					.lastUpdate( lastUpdate ) //
 					.build() ); //
 		}
