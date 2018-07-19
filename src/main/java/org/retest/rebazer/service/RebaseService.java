@@ -32,9 +32,9 @@ public class RebaseService {
 	private final Map<RepositoryConfig, Git> repoGit = new HashMap<>();
 
 	@Autowired
-	public RebaseService( final RebazerConfig config ) {
+	public RebaseService( final RebazerConfig config, final GitRepoCleaner cleaner ) {
+		this.cleaner = cleaner;
 		workspace = new File( config.getWorkspace() ).getAbsoluteFile();
-		cleaner = new GitRepoCleaner( config.getGarbageCollectionCountdown() );
 
 		config.getHosts().forEach( host -> {
 			host.getTeams().forEach( team -> {

@@ -5,19 +5,24 @@ import java.util.List;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.ResetCommand.ResetType;
 import org.eclipse.jgit.lib.Ref;
+import org.retest.rebazer.config.RebazerConfig;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
+@Service
 public class GitRepoCleaner {
 
 	private final int gcCountdownResetValue;
 	private int gcCountdownCurrent;
 
-	public GitRepoCleaner( final int gcCountdown ) {
-		gcCountdownResetValue = gcCountdown;
-		gcCountdownCurrent = gcCountdown;
+	@Autowired
+	public GitRepoCleaner( final RebazerConfig config ) {
+		gcCountdownResetValue = config.getGarbageCollectionCountdown();
+		gcCountdownCurrent = gcCountdownResetValue;
 	}
 
 	public void cleanUp( final Git repoGit, final String fallbackBranchName ) {

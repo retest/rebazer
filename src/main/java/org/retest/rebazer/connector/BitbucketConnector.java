@@ -8,18 +8,13 @@ import java.util.Map;
 import org.retest.rebazer.config.RebazerConfig.RepositoryConfig;
 import org.retest.rebazer.config.RebazerConfig.Team;
 import org.retest.rebazer.domain.PullRequest;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.web.client.RestTemplateBuilder;
-import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 import com.jayway.jsonpath.DocumentContext;
 import com.jayway.jsonpath.JsonPath;
 
-import lombok.RequiredArgsConstructor;
 
-@Service
-@RequiredArgsConstructor( onConstructor = @__( @Autowired ) )
 public class BitbucketConnector implements RepositoryConnector {
 
 	private final static String baseUrlV1 = "https://api.bitbucket.org/1.0";

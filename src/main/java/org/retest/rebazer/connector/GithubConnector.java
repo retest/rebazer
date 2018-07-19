@@ -8,28 +8,23 @@ import java.util.Map;
 import org.retest.rebazer.config.RebazerConfig.RepositoryConfig;
 import org.retest.rebazer.config.RebazerConfig.Team;
 import org.retest.rebazer.domain.PullRequest;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.web.client.RestTemplateBuilder;
-import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 import com.jayway.jsonpath.DocumentContext;
 import com.jayway.jsonpath.JsonPath;
 
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-@Service
-@RequiredArgsConstructor( onConstructor = @__( @Autowired ) )
 public class GithubConnector implements RepositoryConnector {
 
 	private final static String baseUrl = "https://api.github.com/";
 
-	private Team team;
+	private final Team team;
 	RepositoryConfig repo;
 
-	private RestTemplate template;
+	private final RestTemplate template;
 
 	public GithubConnector( final Team team, final RepositoryConfig repo, final RestTemplateBuilder builder ) {
 		this.team = team;
