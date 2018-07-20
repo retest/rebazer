@@ -11,7 +11,7 @@ rebazer:
       url: https://bitbucket.org/
       teams:
       - name: your_company
-        user: service_user
+        user: service_user # optional value, default is $name
         pass: dont_use_this_pass_at_home
         repos:
         - name: blub
@@ -23,7 +23,6 @@ rebazer:
       url: https://github.com/
       teams:
       - name: your_company
-        user: service_user
         pass: dont_use_this_pass_at_home
         repos:
         - name: foo

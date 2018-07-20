@@ -47,6 +47,14 @@ public class RebazerConfig {
 		private String user;
 		private String pass;
 		private List<RepositoryConfig> repos;
+
+		public String getUser() {
+			if ( user != null && !user.isEmpty() ) {
+				return user;
+			} else {
+				return name;
+			}
+		}
 	}
 
 	@Data
