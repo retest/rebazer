@@ -15,7 +15,7 @@ rebazer:
         pass: dont_use_this_pass_at_home
         repos:
         - name: blub
-          branch: blub
+          branch: blub # optional value, default is "master"
         - name: bla
           branch: bla          
 
@@ -26,4 +26,3 @@ rebazer:
         pass: dont_use_this_pass_at_home
         repos:
         - name: foo
-          branch: foo

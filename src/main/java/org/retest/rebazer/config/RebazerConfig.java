@@ -60,7 +60,7 @@ public class RebazerConfig {
 	@Data
 	public static class RepositoryConfig {
 		private String name;
-		private String branch;
+		private String branch = "master";
 	}
 
 }
