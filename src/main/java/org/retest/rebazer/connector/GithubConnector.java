@@ -97,13 +97,12 @@ public class GithubConnector implements RepositoryConnector {
 	}
 
 	@Override
-	public List<PullRequest> getAllPullRequests( final RepositoryConfig repoConfig ) {
+	public List<PullRequest> getAllPullRequests() {
 		final DocumentContext jsonPath = jsonPathForPath( "/pulls" );
-		return parsePullRequestsJson( repoConfig, jsonPath );
+		return parsePullRequestsJson( jsonPath );
 	}
 
-	public static List<PullRequest> parsePullRequestsJson( final RepositoryConfig repoConfig,
-			final DocumentContext jsonPath ) {
+	public static List<PullRequest> parsePullRequestsJson( final DocumentContext jsonPath ) {
 		final List<Integer> pullRequestAmount = jsonPath.read( "$..number" );
 		final int numPullRequests = pullRequestAmount.size();
 		final List<PullRequest> results = new ArrayList<>( numPullRequests );

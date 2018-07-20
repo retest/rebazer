@@ -127,7 +127,7 @@ public class BitbucketConnectorTest {
 				.source( documentContext.read( "$.values[0].source.branch.name" ) )
 				.destination( documentContext.read( "$.values[0].destination.branch.name" ) )
 				.lastUpdate( documentContext.read( "$.values[0].updated_on" ) ).build() );
-		final List<PullRequest> actual = cut.getAllPullRequests( repo );
+		final List<PullRequest> actual = cut.getAllPullRequests();
 
 		assertThat( actual ).isEqualTo( expected );
 	}

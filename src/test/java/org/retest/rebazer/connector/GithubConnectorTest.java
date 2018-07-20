@@ -123,7 +123,7 @@ public class GithubConnectorTest {
 				Arrays.asList( PullRequest.builder().id( expectedId ).source( documentContext.read( "$.[0].head.ref" ) )
 						.destination( documentContext.read( "$.[0].base.ref" ) )
 						.lastUpdate( documentContext.read( "$.[0].updated_at" ) ).build() );
-		final List<PullRequest> actual = cut.getAllPullRequests( repo );
+		final List<PullRequest> actual = cut.getAllPullRequests();
 
 		assertThat( actual ).isEqualTo( expected );
 	}

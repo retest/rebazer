@@ -45,7 +45,7 @@ public class RebazerService {
 			final RepositoryConfig repoConfig ) {
 		log.debug( "Processing {}.", repoConfig );
 		final RepositoryConnector repoConnector = repoHost.getType().getRepository( repoTeam, repoConfig, builder );
-		for ( final PullRequest pullRequest : repoConnector.getAllPullRequests( repoConfig ) ) {
+		for ( final PullRequest pullRequest : repoConnector.getAllPullRequests() ) {
 			handlePullRequest( repoConnector, repoConfig, pullRequest );
 		}
 		log.debug( "Processing done for {}.", repoConfig );

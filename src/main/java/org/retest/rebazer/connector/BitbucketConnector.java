@@ -98,13 +98,12 @@ public class BitbucketConnector implements RepositoryConnector {
 	}
 
 	@Override
-	public List<PullRequest> getAllPullRequests( final RepositoryConfig repoConfig ) {
+	public List<PullRequest> getAllPullRequests() {
 		final DocumentContext jsonPath = jsonPathForPath( "/pullrequests" );
-		return parsePullRequestsJson( repoConfig, jsonPath );
+		return parsePullRequestsJson( jsonPath );
 	}
 
-	public List<PullRequest> parsePullRequestsJson( final RepositoryConfig repoConfig,
-			final DocumentContext jsonPath ) {
+	public List<PullRequest> parsePullRequestsJson( final DocumentContext jsonPath ) {
 		final int numPullRequests = (int) jsonPath.read( "$.size" );
 		final List<PullRequest> results = new ArrayList<>( numPullRequests );
 		for ( int i = 0; i < numPullRequests; i++ ) {
