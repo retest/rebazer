@@ -21,17 +21,14 @@ public class GithubConnector implements RepositoryConnector {
 
 	private final static String baseUrl = "https://api.github.com/";
 
-	private final RepositoryTeam team;
-	RepositoryConfig repo;
-
 	private final RestTemplate template;
 
 	public GithubConnector( final RepositoryTeam repoTeam, final RepositoryConfig repoConfig,
 			final RestTemplateBuilder builder ) {
-		team = repoTeam;
-		repo = repoConfig;
+		final String basePath = "/repos/" + repoTeam.getName() + "/" + repoConfig.getName();
 
-		template = builder.basicAuthorization( repoTeam.getUser(), repoTeam.getPass() ).rootUri( baseUrl ).build();
+		template = builder.basicAuthorization( repoTeam.getUser(), repoTeam.getPass() ).rootUri( baseUrl + basePath )
+				.build();
 	}
 
 	@Override
@@ -69,8 +66,7 @@ public class GithubConnector implements RepositoryConnector {
 	}
 
 	String getHeadOfBranch( final PullRequest pullRequest ) {
-		final String url = "/repos/" + team.getName() + "/" + pullRequest.getRepo() + "/";
-		return jsonPathForPath( url + "git/refs/heads/" + pullRequest.getDestination() ).read( "$.object.sha" );
+		return jsonPathForPath( "/git/refs/heads/" + pullRequest.getDestination() ).read( "$.object.sha" );
 	}
 
 	String getLastCommonCommitId( final PullRequest pullRequest ) {
@@ -97,20 +93,18 @@ public class GithubConnector implements RepositoryConnector {
 
 	@Override
 	public boolean greenBuildExists( final PullRequest pullRequest ) {
-		final String urlPath = "/repos/" + team.getName() + "/" + pullRequest.getRepo() + "/commits/"
-				+ pullRequest.getSource() + "/status";
+		final String urlPath = "/commits/" + pullRequest.getSource() + "/status";
 		final DocumentContext jsonPath = jsonPathForPath( urlPath );
 		return jsonPath.<List<String>> read( "$.statuses[*].state" ).stream().anyMatch( s -> s.equals( "success" ) );
 	}
 
 	@Override
 	public List<PullRequest> getAllPullRequests( final RepositoryConfig repoConfig ) {
-		final String urlPath = "/repos/" + team.getName() + "/" + repoConfig.getName() + "/pulls";
-		final DocumentContext jsonPath = jsonPathForPath( urlPath );
-		return parsePullRequestsJson( repoConfig, urlPath, jsonPath );
+		final DocumentContext jsonPath = jsonPathForPath( "/pulls" );
+		return parsePullRequestsJson( repoConfig, jsonPath );
 	}
 
-	public static List<PullRequest> parsePullRequestsJson( final RepositoryConfig repoConfig, final String urlPath,
+	public static List<PullRequest> parsePullRequestsJson( final RepositoryConfig repoConfig,
 			final DocumentContext jsonPath ) {
 		final List<Integer> pullRequestAmount = jsonPath.read( "$..number" );
 		final int numPullRequests = pullRequestAmount.size();
@@ -125,7 +119,7 @@ public class GithubConnector implements RepositoryConnector {
 					.repo( repoConfig.getName() ) //
 					.source( source ) //
 					.destination( destination ) //
-					.url( urlPath + "/" + id ) //
+					.url( "/pulls/" + id ) //
 					.lastUpdate( lastUpdate ) //
 					.build() ); //
 		}
@@ -141,8 +135,7 @@ public class GithubConnector implements RepositoryConnector {
 	public void addComment( final PullRequest pullRequest ) {
 		final Map<String, String> request = new HashMap<>();
 		request.put( "body", "This pull request needs some manual love ..." );
-		template.postForObject( "/repos/" + team.getName() + "/" + pullRequest.getRepo() + "/issues/"
-				+ pullRequest.getId() + "/comments", request, String.class );
+		template.postForObject( "/issues/" + pullRequest.getId() + "/comments", request, String.class );
 	}
 
 }
