@@ -119,11 +119,10 @@ public class GithubConnectorTest {
 		when( template.getForObject( anyString(), eq( String.class ) ) ).thenReturn( json );
 
 		final int expectedId = (int) documentContext.read( "$.[0].number" );
-		final String expectedUrl = "/repos/" + team.getName() + "/" + repo.getName() + "/pulls/" + expectedId;
-		final List<PullRequest> expected = Arrays.asList( PullRequest.builder().id( expectedId ).repo( repo.getName() )
-				.source( documentContext.read( "$.[0].head.ref" ) )
-				.destination( documentContext.read( "$.[0].base.ref" ) ).url( expectedUrl )
-				.lastUpdate( documentContext.read( "$.[0].updated_at" ) ).build() );
+		final List<PullRequest> expected =
+				Arrays.asList( PullRequest.builder().id( expectedId ).source( documentContext.read( "$.[0].head.ref" ) )
+						.destination( documentContext.read( "$.[0].base.ref" ) )
+						.lastUpdate( documentContext.read( "$.[0].updated_at" ) ).build() );
 		final List<PullRequest> actual = cut.getAllPullRequests( repo );
 
 		assertThat( actual ).isEqualTo( expected );
@@ -132,7 +131,6 @@ public class GithubConnectorTest {
 	@Test
 	public void getLatestUpdate_should_return_updated_PullRequest() {
 		final PullRequest pullRequest = mock( PullRequest.class );
-		when( pullRequest.getUrl() ).thenReturn( "url:dummy" );
 		final String json = "{\"updated_at\": \"someTimestamp\"}";
 		when( template.getForObject( anyString(), eq( String.class ) ) ).thenReturn( json );
 

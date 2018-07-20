@@ -78,7 +78,6 @@ public class BitbucketConnectorTest {
 	@Test
 	public void isApproved_should_return_false_if_approved_is_false() {
 		final PullRequest pullRequest = mock( PullRequest.class );
-		when( pullRequest.getUrl() ).thenReturn( "url:dummy" );
 		final String json = "{participants: [{\"approved\": false}]}\"";
 		when( template.getForObject( anyString(), eq( String.class ) ) ).thenReturn( json );
 
@@ -88,7 +87,6 @@ public class BitbucketConnectorTest {
 	@Test
 	public void isApproved_should_return_ture_if_approved_is_true() {
 		final PullRequest pullRequest = mock( PullRequest.class );
-		when( pullRequest.getUrl() ).thenReturn( "url:dummy" );
 		final String json = "{participants: [{\"approved\": true}]}\"";
 		when( template.getForObject( anyString(), eq( String.class ) ) ).thenReturn( json );
 
@@ -125,10 +123,9 @@ public class BitbucketConnectorTest {
 		when( template.getForObject( anyString(), eq( String.class ) ) ).thenReturn( json );
 
 		final int expectedId = (int) documentContext.read( "$.values[0].id" );
-		final String expectedUrl = "/pullrequests/" + expectedId;
-		final List<PullRequest> expected = Arrays.asList( PullRequest.builder().id( expectedId ).repo( repo.getName() )
+		final List<PullRequest> expected = Arrays.asList( PullRequest.builder().id( expectedId )
 				.source( documentContext.read( "$.values[0].source.branch.name" ) )
-				.destination( documentContext.read( "$.values[0].destination.branch.name" ) ).url( expectedUrl )
+				.destination( documentContext.read( "$.values[0].destination.branch.name" ) )
 				.lastUpdate( documentContext.read( "$.values[0].updated_on" ) ).build() );
 		final List<PullRequest> actual = cut.getAllPullRequests( repo );
 
@@ -138,7 +135,6 @@ public class BitbucketConnectorTest {
 	@Test
 	public void getLatestUpdate_should_return_updated_PullRequest() {
 		final PullRequest pullRequest = mock( PullRequest.class );
-		when( pullRequest.getUrl() ).thenReturn( "url:dummy" );
 		final String json = "{\"updated_on\": \"someTimestamp\"}";
 		when( template.getForObject( anyString(), eq( String.class ) ) ).thenReturn( json );
 

@@ -8,10 +8,8 @@ import lombok.Data;
 public class PullRequest {
 
 	private final Integer id;
-	private final String repo;
 	private final String source;
 	private final String destination;
-	private final String url;
 	private final String lastUpdate;
 
 	@Override

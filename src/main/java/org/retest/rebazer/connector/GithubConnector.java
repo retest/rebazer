@@ -33,13 +33,11 @@ public class GithubConnector implements RepositoryConnector {
 
 	@Override
 	public PullRequest getLatestUpdate( final PullRequest pullRequest ) {
-		final DocumentContext jsonPath = jsonPathForPath( pullRequest.getUrl() );
+		final DocumentContext jsonPath = jsonPathForPath( requestPath( pullRequest ) );
 		final PullRequest updatedPullRequest = PullRequest.builder() //
 				.id( pullRequest.getId() ) //
-				.repo( pullRequest.getRepo() ) //
 				.source( pullRequest.getSource() ) //
 				.destination( pullRequest.getDestination() ) //
-				.url( pullRequest.getUrl() ) //
 				.lastUpdate( jsonPath.read( "$.updated_at" ) ) //
 				.build();
 		return updatedPullRequest;
@@ -47,7 +45,7 @@ public class GithubConnector implements RepositoryConnector {
 
 	@Override
 	public boolean isApproved( final PullRequest pullRequest ) {
-		final DocumentContext jsonPath = jsonPathForPath( pullRequest.getUrl() + "/reviews" );
+		final DocumentContext jsonPath = jsonPathForPath( requestPath( pullRequest ) + "/reviews" );
 		final List<String> states = jsonPath.read( "$..state" );
 		boolean approved = false;
 		for ( final String state : states ) {
@@ -70,7 +68,7 @@ public class GithubConnector implements RepositoryConnector {
 	}
 
 	String getLastCommonCommitId( final PullRequest pullRequest ) {
-		final DocumentContext jsonPath = jsonPathForPath( pullRequest.getUrl() + "/commits" );
+		final DocumentContext jsonPath = jsonPathForPath( requestPath( pullRequest ) + "/commits" );
 
 		final List<String> commitIds = jsonPath.read( "$..sha" );
 		final List<String> parentIds = jsonPath.read( "$..parents..sha" );
@@ -88,7 +86,7 @@ public class GithubConnector implements RepositoryConnector {
 		request.put( "commit_title", message );
 		request.put( "merge_method", "merge" );
 
-		template.put( pullRequest.getUrl() + "/merge", request, Object.class );
+		template.put( requestPath( pullRequest ) + "/merge", request, Object.class );
 	}
 
 	@Override
@@ -116,14 +114,16 @@ public class GithubConnector implements RepositoryConnector {
 			final String lastUpdate = jsonPath.read( "$.[" + i + "].updated_at" );
 			results.add( PullRequest.builder() //
 					.id( id ) //
-					.repo( repoConfig.getName() ) //
 					.source( source ) //
 					.destination( destination ) //
-					.url( "/pulls/" + id ) //
 					.lastUpdate( lastUpdate ) //
 					.build() ); //
 		}
 		return results;
+	}
+
+	private String requestPath( final PullRequest pullRequest ) {
+		return "/pulls/" + pullRequest.getId();
 	}
 
 	private DocumentContext jsonPathForPath( final String urlPath ) {

@@ -35,13 +35,11 @@ public class BitbucketConnector implements RepositoryConnector {
 
 	@Override
 	public PullRequest getLatestUpdate( final PullRequest pullRequest ) {
-		final DocumentContext jsonPath = jsonPathForPath( pullRequest.getUrl() );
+		final DocumentContext jsonPath = jsonPathForPath( requestPath( pullRequest ) );
 		final PullRequest updatedPullRequest = PullRequest.builder() //
 				.id( pullRequest.getId() ) //
-				.repo( pullRequest.getRepo() ) //
 				.source( pullRequest.getSource() ) //
 				.destination( pullRequest.getDestination() ) //
-				.url( pullRequest.getUrl() ) //
 				.lastUpdate( jsonPath.read( "$.updated_on" ) ) //
 				.build();
 		return updatedPullRequest;
@@ -49,7 +47,7 @@ public class BitbucketConnector implements RepositoryConnector {
 
 	@Override
 	public boolean isApproved( final PullRequest pullRequest ) {
-		final DocumentContext jsonPath = jsonPathForPath( pullRequest.getUrl() );
+		final DocumentContext jsonPath = jsonPathForPath( requestPath( pullRequest ) );
 		return jsonPath.<List<Boolean>> read( "$.participants[*].approved" ).stream().anyMatch( approved -> approved );
 	}
 
@@ -63,14 +61,14 @@ public class BitbucketConnector implements RepositoryConnector {
 	}
 
 	String getLastCommonCommitId( final PullRequest pullRequest ) {
-		DocumentContext jsonPath = jsonPathForPath( pullRequest.getUrl() + "/commits" );
+		DocumentContext jsonPath = jsonPathForPath( requestPath( pullRequest ) + "/commits" );
 
 		final int pageLength = jsonPath.read( "$.pagelen" );
 		final int size = jsonPath.read( "$.size" );
 		final int lastPage = (pageLength + size - 1) / pageLength;
 
 		if ( lastPage > 1 ) {
-			jsonPath = jsonPathForPath( pullRequest.getUrl() + "/commits?page=" + lastPage );
+			jsonPath = jsonPathForPath( requestPath( pullRequest ) + "/commits?page=" + lastPage );
 		}
 
 		final List<String> commitIds = jsonPath.read( "$.values[*].hash" );
@@ -90,12 +88,12 @@ public class BitbucketConnector implements RepositoryConnector {
 		request.put( "message", message );
 		request.put( "merge_strategy", "merge_commit" );
 
-		template.postForObject( pullRequest.getUrl() + "/merge", request, Object.class );
+		template.postForObject( requestPath( pullRequest ) + "/merge", request, Object.class );
 	}
 
 	@Override
 	public boolean greenBuildExists( final PullRequest pullRequest ) {
-		final DocumentContext jsonPath = jsonPathForPath( pullRequest.getUrl() + "/statuses" );
+		final DocumentContext jsonPath = jsonPathForPath( requestPath( pullRequest ) + "/statuses" );
 		return jsonPath.<List<String>> read( "$.values[*].state" ).stream().anyMatch( s -> s.equals( "SUCCESSFUL" ) );
 	}
 
@@ -116,14 +114,16 @@ public class BitbucketConnector implements RepositoryConnector {
 			final String lastUpdate = jsonPath.read( "$.values[" + i + "].updated_on" );
 			results.add( PullRequest.builder() //
 					.id( id ) //
-					.repo( repoConfig.getName() ) //
 					.source( source ) //
 					.destination( destination ) //
-					.url( "/pullrequests/" + id ) //
 					.lastUpdate( lastUpdate ) //
 					.build() ); //
 		}
 		return results;
+	}
+
+	private String requestPath( final PullRequest pullRequest ) {
+		return "/pullrequests/" + pullRequest.getId();
 	}
 
 	private DocumentContext jsonPathForPath( final String urlPath ) {
@@ -136,7 +136,7 @@ public class BitbucketConnector implements RepositoryConnector {
 		final Map<String, String> request = new HashMap<>();
 		request.put( "content", "This pull request needs some manual love ..." );
 
-		legacyTemplate.postForObject( pullRequest.getUrl() + "/comments", request, String.class );
+		legacyTemplate.postForObject( requestPath( pullRequest ) + "/comments", request, String.class );
 	}
 
 }
