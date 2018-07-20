@@ -1,7 +1,7 @@
 package org.retest.rebazer;
 
 import org.retest.rebazer.config.RebazerConfig.RepositoryConfig;
-import org.retest.rebazer.config.RebazerConfig.Team;
+import org.retest.rebazer.config.RebazerConfig.RepositoryTeam;
 import org.retest.rebazer.connector.BitbucketConnector;
 import org.retest.rebazer.connector.GithubConnector;
 import org.retest.rebazer.connector.RepositoryConnector;
@@ -12,7 +12,7 @@ public enum KnownProvider {
 	BITBUCKET,
 	GITHUB;
 
-	public RepositoryConnector getRepository( final Team team, final RepositoryConfig repo,
+	public RepositoryConnector getRepository( final RepositoryTeam team, final RepositoryConfig repo,
 			final RestTemplateBuilder builder ) {
 		switch ( this ) {
 			case BITBUCKET:

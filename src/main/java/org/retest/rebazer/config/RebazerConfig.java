@@ -30,11 +30,11 @@ public class RebazerConfig {
 	public static class RepositoryHost {
 		private KnownProvider type;
 		private URL url;
-		private List<Team> teams;
+		private List<RepositoryTeam> teams;
 	}
 
 	@Data
-	public static class Team {
+	public static class RepositoryTeam {
 		private String name;
 		private String user;
 		private String pass;

@@ -17,7 +17,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.retest.rebazer.config.RebazerConfig;
 import org.retest.rebazer.config.RebazerConfig.RepositoryConfig;
-import org.retest.rebazer.config.RebazerConfig.Team;
+import org.retest.rebazer.config.RebazerConfig.RepositoryTeam;
 import org.retest.rebazer.domain.PullRequest;
 import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.web.client.RestTemplate;
@@ -29,7 +29,7 @@ public class GithubConnectorTest {
 
 	RestTemplate template;
 	RebazerConfig config;
-	Team team;
+	RepositoryTeam team;
 
 	GithubConnector cut;
 
@@ -37,7 +37,7 @@ public class GithubConnectorTest {
 	public void setUp() {
 		template = mock( RestTemplate.class );
 		config = mock( RebazerConfig.class );
-		team = mock( Team.class );
+		team = mock( RepositoryTeam.class );
 		final RepositoryConfig repo = mock( RepositoryConfig.class );
 		final RestTemplateBuilder builder = mock( RestTemplateBuilder.class );
 		when( builder.basicAuthorization( any(), any() ) ).thenReturn( builder );

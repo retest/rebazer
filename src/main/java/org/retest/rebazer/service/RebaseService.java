@@ -13,7 +13,7 @@ import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider;
 import org.retest.rebazer.config.RebazerConfig;
 import org.retest.rebazer.config.RebazerConfig.RepositoryConfig;
 import org.retest.rebazer.config.RebazerConfig.RepositoryHost;
-import org.retest.rebazer.config.RebazerConfig.Team;
+import org.retest.rebazer.config.RebazerConfig.RepositoryTeam;
 import org.retest.rebazer.domain.PullRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -45,8 +45,8 @@ public class RebaseService {
 		} );
 	}
 
-	private void setupRepo( final RepositoryHost host, final Team team, final RepositoryConfig repo ) {
-		final CredentialsProvider credentials = repoCredentials( team );
+	private void setupRepo( final RepositoryHost host, final RepositoryTeam team, final RepositoryConfig repo ) {
+		final CredentialsProvider credentials = repoCredential( team );
 		final File repoFolder = repoFolder( host, team, repo );
 		final String url = repoUrl( host, team, repo );
 
@@ -57,15 +57,15 @@ public class RebaseService {
 		cleanUp( repo );
 	}
 
-	private CredentialsProvider repoCredentials( final Team team ) {
+	private CredentialsProvider repoCredential( final RepositoryTeam team ) {
 		return new UsernamePasswordCredentialsProvider( team.getUser(), team.getPass() );
 	}
 
-	private File repoFolder( final RepositoryHost host, final Team team, final RepositoryConfig repo ) {
+	private File repoFolder( final RepositoryHost host, final RepositoryTeam team, final RepositoryConfig repo ) {
 		return new File( new File( new File( workspace, host.getUrl().getHost() ), team.getName() ), repo.getName() );
 	}
 
-	private String repoUrl( final RepositoryHost host, final Team team, final RepositoryConfig repo ) {
+	private String repoUrl( final RepositoryHost host, final RepositoryTeam team, final RepositoryConfig repo ) {
 		return host.getUrl() + "/" + team.getName() + "/" + repo.getName() + ".git";
 	}
 

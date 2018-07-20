@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.retest.rebazer.config.RebazerConfig.RepositoryConfig;
-import org.retest.rebazer.config.RebazerConfig.Team;
+import org.retest.rebazer.config.RebazerConfig.RepositoryTeam;
 import org.retest.rebazer.domain.PullRequest;
 import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.web.client.RestTemplate;
@@ -21,12 +21,12 @@ public class GithubConnector implements RepositoryConnector {
 
 	private final static String baseUrl = "https://api.github.com/";
 
-	private final Team team;
+	private final RepositoryTeam team;
 	RepositoryConfig repo;
 
 	private final RestTemplate template;
 
-	public GithubConnector( final Team team, final RepositoryConfig repo, final RestTemplateBuilder builder ) {
+	public GithubConnector( final RepositoryTeam team, final RepositoryConfig repo, final RestTemplateBuilder builder ) {
 		this.team = team;
 		this.repo = repo;
 

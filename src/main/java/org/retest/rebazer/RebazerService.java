@@ -6,7 +6,7 @@ import static org.retest.rebazer.config.RebazerConfig.POLL_INTERVAL_KEY;
 import org.retest.rebazer.config.RebazerConfig;
 import org.retest.rebazer.config.RebazerConfig.RepositoryConfig;
 import org.retest.rebazer.config.RebazerConfig.RepositoryHost;
-import org.retest.rebazer.config.RebazerConfig.Team;
+import org.retest.rebazer.config.RebazerConfig.RepositoryTeam;
 import org.retest.rebazer.connector.RepositoryConnector;
 import org.retest.rebazer.domain.PullRequest;
 import org.retest.rebazer.service.PullRequestLastUpdateStore;
@@ -41,7 +41,7 @@ public class RebazerService {
 		} );
 	}
 
-	private void handleRepo( final RepositoryHost host, final Team team, final RepositoryConfig repoConfig ) {
+	private void handleRepo( final RepositoryHost host, final RepositoryTeam team, final RepositoryConfig repoConfig ) {
 		log.debug( "Processing {}.", repoConfig );
 		final RepositoryConnector repoConnector = host.getType().getRepository( team, repoConfig, builder );
 		for ( final PullRequest pullRequest : repoConnector.getAllPullRequests( repoConfig ) ) {

@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.retest.rebazer.config.RebazerConfig.RepositoryConfig;
-import org.retest.rebazer.config.RebazerConfig.Team;
+import org.retest.rebazer.config.RebazerConfig.RepositoryTeam;
 import org.retest.rebazer.domain.PullRequest;
 import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.web.client.RestTemplate;
@@ -23,7 +23,7 @@ public class BitbucketConnector implements RepositoryConnector {
 	private final RestTemplate legacyTemplate;
 	private final RestTemplate template;
 
-	public BitbucketConnector( final Team team, final RepositoryConfig repo, final RestTemplateBuilder builder ) {
+	public BitbucketConnector( final RepositoryTeam team, final RepositoryConfig repo, final RestTemplateBuilder builder ) {
 		final String basePath = "/repositories/" + team.getName() + "/" + repo.getName();
 
 		legacyTemplate =
