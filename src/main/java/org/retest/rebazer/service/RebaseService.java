@@ -28,49 +28,52 @@ public class RebaseService {
 	private final File workspace;
 	private final GitRepoCleaner cleaner;
 
-	private final Map<RepositoryConfig, CredentialsProvider> repoCredentials = new HashMap<>();
-	private final Map<RepositoryConfig, Git> repoGit = new HashMap<>();
+	private final Map<RepositoryConfig, CredentialsProvider> credentials = new HashMap<>();
+	private final Map<RepositoryConfig, Git> localGitRepos = new HashMap<>();
 
 	@Autowired
-	public RebaseService( final RebazerConfig config, final GitRepoCleaner cleaner ) {
+	public RebaseService( final RebazerConfig rebazerConfig, final GitRepoCleaner cleaner ) {
 		this.cleaner = cleaner;
-		workspace = new File( config.getWorkspace() ).getAbsoluteFile();
+		workspace = new File( rebazerConfig.getWorkspace() ).getAbsoluteFile();
 
-		config.getHosts().forEach( host -> {
-			host.getTeams().forEach( team -> {
-				team.getRepos().forEach( repo -> {
-					setupRepo( host, team, repo );
+		rebazerConfig.getHosts().forEach( repoHost -> {
+			repoHost.getTeams().forEach( repoTeam -> {
+				repoTeam.getRepos().forEach( repoConfig -> {
+					setupRepo( repoHost, repoTeam, repoConfig );
 				} );
 			} );
 		} );
 	}
 
-	private void setupRepo( final RepositoryHost host, final RepositoryTeam team, final RepositoryConfig repo ) {
-		final CredentialsProvider credentials = repoCredential( team );
-		final File repoFolder = repoFolder( host, team, repo );
-		final String url = repoUrl( host, team, repo );
+	private void setupRepo( final RepositoryHost repoHost, final RepositoryTeam repoTeam,
+			final RepositoryConfig repoConfig ) {
+		final CredentialsProvider credential = repoCredential( repoTeam );
+		final File repoFolder = repoFolder( repoHost, repoTeam, repoConfig );
+		final String url = repoUrl( repoHost, repoTeam, repoConfig );
 
-		final Git localRepo = setupLocalGitRepo( credentials, repoFolder, url );
+		final Git localRepo = setupLocalGitRepo( credential, repoFolder, url );
 
-		repoCredentials.put( repo, credentials );
-		repoGit.put( repo, localRepo );
-		cleanUp( repo );
+		credentials.put( repoConfig, credential );
+		localGitRepos.put( repoConfig, localRepo );
+		cleaner.cleanUp( localRepo, repoConfig.getBranch() );
 	}
 
-	private CredentialsProvider repoCredential( final RepositoryTeam team ) {
-		return new UsernamePasswordCredentialsProvider( team.getUser(), team.getPass() );
+	private CredentialsProvider repoCredential( final RepositoryTeam repoTeam ) {
+		return new UsernamePasswordCredentialsProvider( repoTeam.getUser(), repoTeam.getPass() );
 	}
 
-	private File repoFolder( final RepositoryHost host, final RepositoryTeam team, final RepositoryConfig repo ) {
-		return new File( new File( new File( workspace, host.getUrl().getHost() ), team.getName() ), repo.getName() );
+	private File repoFolder( final RepositoryHost repoHost, final RepositoryTeam repoTeam,
+			final RepositoryConfig repoConfig ) {
+		return new File( new File( new File( workspace, repoHost.getUrl().getHost() ), repoTeam.getName() ),
+				repoConfig.getName() );
 	}
 
-	private String repoUrl( final RepositoryHost host, final RepositoryTeam team, final RepositoryConfig repo ) {
-		return host.getUrl() + "/" + team.getName() + "/" + repo.getName() + ".git";
+	private String repoUrl( final RepositoryHost repoHost, final RepositoryTeam repoTeam,
+			final RepositoryConfig repoConfig ) {
+		return repoHost.getUrl() + "/" + repoTeam.getName() + "/" + repoConfig.getName() + ".git";
 	}
 
-	private Git setupLocalGitRepo( final CredentialsProvider credentials, final File repoFolder,
-			final String repoUrl ) {
+	private Git setupLocalGitRepo( final CredentialsProvider credential, final File repoFolder, final String repoUrl ) {
 		if ( repoFolder.exists() ) {
 			final Git localRepo = tryToOpenExistingRepoAndCheckRemote( repoFolder, repoUrl );
 			if ( localRepo != null ) {
@@ -78,7 +81,7 @@ public class RebaseService {
 			}
 			deleteDirectory( repoFolder );
 		}
-		return cloneNewRepo( repoFolder, repoUrl, credentials );
+		return cloneNewRepo( repoFolder, repoUrl, credential );
 	}
 
 	@SneakyThrows
@@ -86,11 +89,11 @@ public class RebaseService {
 		FileUtils.deleteDirectory( repoFolder );
 	}
 
-	private static Git tryToOpenExistingRepoAndCheckRemote( final File repoFolder, final String expectedRepoUrl ) {
+	private static Git tryToOpenExistingRepoAndCheckRemote( final File repoFolder, final String repoUrl ) {
 		try {
-			final Git repo = Git.open( repoFolder );
-			if ( originIsRepoUrl( repo, expectedRepoUrl ) ) {
-				return repo;
+			final Git localRepo = Git.open( repoFolder );
+			if ( originIsRepoUrl( localRepo, repoUrl ) ) {
+				return localRepo;
 			} else {
 				log.error( "Repo has wrong remote URL!" );
 				return null;
@@ -102,32 +105,33 @@ public class RebaseService {
 	}
 
 	@SneakyThrows
-	private static boolean originIsRepoUrl( final Git repo, final String expectedRepoUrl ) {
-		return repo.remoteList().call().stream().anyMatch( r -> r.getName().equals( "origin" )
-				&& r.getURIs().stream().anyMatch( url -> url.toString().equals( expectedRepoUrl ) ) );
+	private static boolean originIsRepoUrl( final Git localRepo, final String repoUrl ) {
+		return localRepo.remoteList().call().stream().anyMatch( r -> r.getName().equals( "origin" )
+				&& r.getURIs().stream().anyMatch( url -> url.toString().equals( repoUrl ) ) );
 	}
 
 	@SneakyThrows
-	private static Git cloneNewRepo( final File repoFolder, final String gitRepoUrl,
+	private static Git cloneNewRepo( final File repoFolder, final String repoUrl,
 			final CredentialsProvider credentialsProvider ) {
-		log.info( "Cloning repository {} to folder {} ...", gitRepoUrl, repoFolder );
-		return Git.cloneRepository().setURI( gitRepoUrl ).setCredentialsProvider( credentialsProvider )
+		log.info( "Cloning repository {} to folder {} ...", repoUrl, repoFolder );
+		return Git.cloneRepository().setURI( repoUrl ).setCredentialsProvider( credentialsProvider )
 				.setDirectory( repoFolder ).call();
 	}
 
 	@SneakyThrows
-	public boolean rebase( final RepositoryConfig repo, final PullRequest pullRequest ) {
+	public boolean rebase( final RepositoryConfig repoConfig, final PullRequest pullRequest ) {
 		log.info( "Rebasing {}.", pullRequest );
 
+		final Git localRepo = localGitRepos.get( repoConfig );
+		final CredentialsProvider credential = credentials.get( repoConfig );
+
 		try {
-			final Git repository = repoGit.get( repo );
-			final CredentialsProvider credentials = repoCredentials.get( repo );
-			repository.fetch().setCredentialsProvider( credentials ).setRemoveDeletedRefs( true ).call();
-			repository.checkout().setCreateBranch( true ).setName( pullRequest.getSource() )
+			localRepo.fetch().setCredentialsProvider( credential ).setRemoveDeletedRefs( true ).call();
+			localRepo.checkout().setCreateBranch( true ).setName( pullRequest.getSource() )
 					.setStartPoint( "origin/" + pullRequest.getSource() ).call();
 
 			final RebaseResult rebaseResult =
-					repository.rebase().setUpstream( "origin/" + pullRequest.getDestination() ).call();
+					localRepo.rebase().setUpstream( "origin/" + pullRequest.getDestination() ).call();
 
 			switch ( rebaseResult.getStatus() ) {
 				case UP_TO_DATE:
@@ -139,26 +143,22 @@ public class RebaseService {
 					// fall-through
 
 				case OK:
-					repository.push().setCredentialsProvider( credentials ).setForce( true ).call();
+					localRepo.push().setCredentialsProvider( credential ).setForce( true ).call();
 					return true;
 
 				case STOPPED:
 					log.info( "Merge conflict in {}", pullRequest );
-					repository.rebase().setOperation( Operation.ABORT ).call();
+					localRepo.rebase().setOperation( Operation.ABORT ).call();
 					return false;
 
 				default:
-					repository.rebase().setOperation( Operation.ABORT ).call();
+					localRepo.rebase().setOperation( Operation.ABORT ).call();
 					throw new RuntimeException(
 							"For " + pullRequest + " rebase causes an unexpected result: " + rebaseResult.getStatus() );
 			}
 		} finally {
-			cleanUp( repo );
+			cleaner.cleanUp( localRepo, repoConfig.getBranch() );
 		}
-	}
-
-	private void cleanUp( final RepositoryConfig repoConfig ) {
-		cleaner.cleanUp( repoGit.get( repoConfig ), repoConfig.getBranch() );
 	}
 
 }

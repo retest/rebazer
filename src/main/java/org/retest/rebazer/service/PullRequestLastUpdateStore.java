@@ -12,29 +12,29 @@ public class PullRequestLastUpdateStore {
 
 	private final Map<RepositoryConfig, Map<Integer, String>> pullRequestUpdateStates = new HashMap<>();
 
-	public void setHandled( final RepositoryConfig repo, final PullRequest pullRequest ) {
-		Map<Integer, String> repoMap = pullRequestUpdateStates.get( repo );
+	public void setHandled( final RepositoryConfig repoConfig, final PullRequest pullRequest ) {
+		Map<Integer, String> repoMap = pullRequestUpdateStates.get( repoConfig );
 		if ( repoMap == null ) {
 			repoMap = new HashMap<>();
-			pullRequestUpdateStates.put( repo, repoMap );
+			pullRequestUpdateStates.put( repoConfig, repoMap );
 		}
 		repoMap.put( pullRequest.getId(), pullRequest.getLastUpdate() );
 	}
 
-	public String getLastDate( final RepositoryConfig repo, final PullRequest pullRequest ) {
-		final Map<Integer, String> repoMap = pullRequestUpdateStates.get( repo );
+	public String getLastDate( final RepositoryConfig repoConfig, final PullRequest pullRequest ) {
+		final Map<Integer, String> repoMap = pullRequestUpdateStates.get( repoConfig );
 		return repoMap != null ? repoMap.get( pullRequest.getId() ) : null;
 	}
 
-	public void resetAllInThisRepo( final RepositoryConfig repo ) {
-		final Map<Integer, String> repoMap = pullRequestUpdateStates.get( repo );
+	public void resetAllInThisRepo( final RepositoryConfig repoConfig ) {
+		final Map<Integer, String> repoMap = pullRequestUpdateStates.get( repoConfig );
 		if ( repoMap != null ) {
 			repoMap.clear();
 		}
 	}
 
-	public boolean isHandled( final RepositoryConfig repo, final PullRequest pullRequest ) {
-		return pullRequest.getLastUpdate().equals( getLastDate( repo, pullRequest ) );
+	public boolean isHandled( final RepositoryConfig repoConfig, final PullRequest pullRequest ) {
+		return pullRequest.getLastUpdate().equals( getLastDate( repoConfig, pullRequest ) );
 	}
 
 }

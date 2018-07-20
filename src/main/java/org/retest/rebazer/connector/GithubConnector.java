@@ -26,31 +26,32 @@ public class GithubConnector implements RepositoryConnector {
 
 	private final RestTemplate template;
 
-	public GithubConnector( final RepositoryTeam team, final RepositoryConfig repo, final RestTemplateBuilder builder ) {
-		this.team = team;
-		this.repo = repo;
+	public GithubConnector( final RepositoryTeam repoTeam, final RepositoryConfig repoConfig,
+			final RestTemplateBuilder builder ) {
+		team = repoTeam;
+		repo = repoConfig;
 
-		template = builder.basicAuthorization( team.getUser(), team.getPass() ).rootUri( baseUrl ).build();
+		template = builder.basicAuthorization( repoTeam.getUser(), repoTeam.getPass() ).rootUri( baseUrl ).build();
 	}
 
 	@Override
 	public PullRequest getLatestUpdate( final PullRequest pullRequest ) {
-		final DocumentContext jp = jsonPathForPath( pullRequest.getUrl() );
+		final DocumentContext jsonPath = jsonPathForPath( pullRequest.getUrl() );
 		final PullRequest updatedPullRequest = PullRequest.builder() //
 				.id( pullRequest.getId() ) //
 				.repo( pullRequest.getRepo() ) //
 				.source( pullRequest.getSource() ) //
 				.destination( pullRequest.getDestination() ) //
 				.url( pullRequest.getUrl() ) //
-				.lastUpdate( jp.read( "$.updated_at" ) ) //
+				.lastUpdate( jsonPath.read( "$.updated_at" ) ) //
 				.build();
 		return updatedPullRequest;
 	}
 
 	@Override
 	public boolean isApproved( final PullRequest pullRequest ) {
-		final DocumentContext jp = jsonPathForPath( pullRequest.getUrl() + "/reviews" );
-		final List<String> states = jp.read( "$..state" );
+		final DocumentContext jsonPath = jsonPathForPath( pullRequest.getUrl() + "/reviews" );
+		final List<String> states = jsonPath.read( "$..state" );
 		boolean approved = false;
 		for ( final String state : states ) {
 			if ( state.equals( "APPROVED" ) ) {
@@ -73,10 +74,10 @@ public class GithubConnector implements RepositoryConnector {
 	}
 
 	String getLastCommonCommitId( final PullRequest pullRequest ) {
-		final DocumentContext jp = jsonPathForPath( pullRequest.getUrl() + "/commits" );
+		final DocumentContext jsonPath = jsonPathForPath( pullRequest.getUrl() + "/commits" );
 
-		final List<String> commitIds = jp.read( "$..sha" );
-		final List<String> parentIds = jp.read( "$..parents..sha" );
+		final List<String> commitIds = jsonPath.read( "$..sha" );
+		final List<String> parentIds = jsonPath.read( "$..parents..sha" );
 
 		return parentIds.stream().filter( parent -> commitIds.contains( parent ) ).findFirst()
 				.orElseThrow( IllegalStateException::new );
@@ -98,30 +99,30 @@ public class GithubConnector implements RepositoryConnector {
 	public boolean greenBuildExists( final PullRequest pullRequest ) {
 		final String urlPath = "/repos/" + team.getName() + "/" + pullRequest.getRepo() + "/commits/"
 				+ pullRequest.getSource() + "/status";
-		final DocumentContext jp = jsonPathForPath( urlPath );
-		return jp.<List<String>> read( "$.statuses[*].state" ).stream().anyMatch( s -> s.equals( "success" ) );
+		final DocumentContext jsonPath = jsonPathForPath( urlPath );
+		return jsonPath.<List<String>> read( "$.statuses[*].state" ).stream().anyMatch( s -> s.equals( "success" ) );
 	}
 
 	@Override
-	public List<PullRequest> getAllPullRequests( final RepositoryConfig repo ) {
-		final String urlPath = "/repos/" + team.getName() + "/" + repo.getName() + "/pulls";
-		final DocumentContext jp = jsonPathForPath( urlPath );
-		return parsePullRequestsJson( repo, urlPath, jp );
+	public List<PullRequest> getAllPullRequests( final RepositoryConfig repoConfig ) {
+		final String urlPath = "/repos/" + team.getName() + "/" + repoConfig.getName() + "/pulls";
+		final DocumentContext jsonPath = jsonPathForPath( urlPath );
+		return parsePullRequestsJson( repoConfig, urlPath, jsonPath );
 	}
 
-	public static List<PullRequest> parsePullRequestsJson( final RepositoryConfig repo, final String urlPath,
-			final DocumentContext jp ) {
-		final List<Integer> pullRequestAmount = jp.read( "$..number" );
+	public static List<PullRequest> parsePullRequestsJson( final RepositoryConfig repoConfig, final String urlPath,
+			final DocumentContext jsonPath ) {
+		final List<Integer> pullRequestAmount = jsonPath.read( "$..number" );
 		final int numPullRequests = pullRequestAmount.size();
 		final List<PullRequest> results = new ArrayList<>( numPullRequests );
 		for ( int i = 0; i < numPullRequests; i++ ) {
 			final int id = pullRequestAmount.get( i );
-			final String source = jp.read( "$.[" + i + "].head.ref" );
-			final String destination = jp.read( "$.[" + i + "].base.ref" );
-			final String lastUpdate = jp.read( "$.[" + i + "].updated_at" );
+			final String source = jsonPath.read( "$.[" + i + "].head.ref" );
+			final String destination = jsonPath.read( "$.[" + i + "].base.ref" );
+			final String lastUpdate = jsonPath.read( "$.[" + i + "].updated_at" );
 			results.add( PullRequest.builder() //
 					.id( id ) //
-					.repo( repo.getName() ) //
+					.repo( repoConfig.getName() ) //
 					.source( source ) //
 					.destination( destination ) //
 					.url( urlPath + "/" + id ) //

@@ -7,7 +7,7 @@ import org.retest.rebazer.domain.PullRequest;
 
 public interface RepositoryConnector {
 
-	List<PullRequest> getAllPullRequests( RepositoryConfig repo );
+	List<PullRequest> getAllPullRequests( RepositoryConfig repoConfig );
 
 	PullRequest getLatestUpdate( PullRequest pullRequest );
 

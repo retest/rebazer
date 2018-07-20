@@ -12,13 +12,13 @@ public enum KnownProvider {
 	BITBUCKET,
 	GITHUB;
 
-	public RepositoryConnector getRepository( final RepositoryTeam team, final RepositoryConfig repo,
-			final RestTemplateBuilder builder ) {
+	public RepositoryConnector getRepository( final RepositoryTeam repoTeam, final RepositoryConfig repoConfig,
+			final RestTemplateBuilder templateBuilder ) {
 		switch ( this ) {
 			case BITBUCKET:
-				return new BitbucketConnector( team, repo, builder );
+				return new BitbucketConnector( repoTeam, repoConfig, templateBuilder );
 			case GITHUB:
-				return new GithubConnector( team, repo, builder );
+				return new GithubConnector( repoTeam, repoConfig, templateBuilder );
 			default:
 				throw new RuntimeException( "No Repository defined for provider: " + this );
 		}

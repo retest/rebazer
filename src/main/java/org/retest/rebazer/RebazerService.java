@@ -25,32 +25,33 @@ import lombok.extern.slf4j.Slf4j;
 public class RebazerService {
 
 	private final RebaseService rebaseService;
-	private final RebazerConfig config;
+	private final RebazerConfig rebazerConfig;
 	private final PullRequestLastUpdateStore pullRequestLastUpdateStore;
 
 	private final RestTemplateBuilder builder;
 
 	@Scheduled( fixedDelayString = "${" + POLL_INTERVAL_KEY + ":" + POLL_INTERVAL_DEFAULT + "}000" )
 	public void pollToHandleAllPullRequests() {
-		config.getHosts().forEach( host -> {
-			host.getTeams().forEach( team -> {
-				team.getRepos().forEach( repoConfig -> {
-					handleRepo( host, team, repoConfig );
+		rebazerConfig.getHosts().forEach( repoHost -> {
+			repoHost.getTeams().forEach( repoTeam -> {
+				repoTeam.getRepos().forEach( repoConfig -> {
+					handleRepo( repoHost, repoTeam, repoConfig );
 				} );
 			} );
 		} );
 	}
 
-	private void handleRepo( final RepositoryHost host, final RepositoryTeam team, final RepositoryConfig repoConfig ) {
+	private void handleRepo( final RepositoryHost repoHost, final RepositoryTeam repoTeam,
+			final RepositoryConfig repoConfig ) {
 		log.debug( "Processing {}.", repoConfig );
-		final RepositoryConnector repoConnector = host.getType().getRepository( team, repoConfig, builder );
+		final RepositoryConnector repoConnector = repoHost.getType().getRepository( repoTeam, repoConfig, builder );
 		for ( final PullRequest pullRequest : repoConnector.getAllPullRequests( repoConfig ) ) {
 			handlePullRequest( repoConnector, repoConfig, pullRequest );
 		}
 		log.debug( "Processing done for {}.", repoConfig );
 	}
 
-	public void handlePullRequest( final RepositoryConnector provider, final RepositoryConfig repoConfig,
+	public void handlePullRequest( final RepositoryConnector repoConnector, final RepositoryConfig repoConfig,
 			final PullRequest pullRequest ) {
 		log.debug( "Processing {}.", pullRequest );
 
@@ -58,24 +59,24 @@ public class RebazerService {
 			log.info( "{} is unchanged since last run (last change: {}).", pullRequest,
 					pullRequestLastUpdateStore.getLastDate( repoConfig, pullRequest ) );
 
-		} else if ( !provider.greenBuildExists( pullRequest ) ) {
+		} else if ( !repoConnector.greenBuildExists( pullRequest ) ) {
 			log.info( "Waiting for green build of {}.", pullRequest );
 			pullRequestLastUpdateStore.setHandled( repoConfig, pullRequest );
 
-		} else if ( provider.rebaseNeeded( pullRequest ) ) {
+		} else if ( repoConnector.rebaseNeeded( pullRequest ) ) {
 			if ( !rebaseService.rebase( repoConfig, pullRequest ) ) {
-				provider.addComment( pullRequest );
+				repoConnector.addComment( pullRequest );
 			}
 			// we need to update the "lastUpdate" of a PullRequest to counteract if addComment is called
-			pullRequestLastUpdateStore.setHandled( repoConfig, provider.getLatestUpdate( pullRequest ) );
+			pullRequestLastUpdateStore.setHandled( repoConfig, repoConnector.getLatestUpdate( pullRequest ) );
 
-		} else if ( !provider.isApproved( pullRequest ) ) {
+		} else if ( !repoConnector.isApproved( pullRequest ) ) {
 			log.info( "Waiting for approval of {}.", pullRequest );
 			pullRequestLastUpdateStore.setHandled( repoConfig, pullRequest );
 
 		} else {
 			log.info( "Merging pull request " + pullRequest );
-			provider.merge( pullRequest );
+			repoConnector.merge( pullRequest );
 			pullRequestLastUpdateStore.resetAllInThisRepo( repoConfig );
 		}
 	}

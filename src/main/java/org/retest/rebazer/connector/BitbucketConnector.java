@@ -23,32 +23,34 @@ public class BitbucketConnector implements RepositoryConnector {
 	private final RestTemplate legacyTemplate;
 	private final RestTemplate template;
 
-	public BitbucketConnector( final RepositoryTeam team, final RepositoryConfig repo, final RestTemplateBuilder builder ) {
-		final String basePath = "/repositories/" + team.getName() + "/" + repo.getName();
+	public BitbucketConnector( final RepositoryTeam repoTeam, final RepositoryConfig repoConfig,
+			final RestTemplateBuilder templateBuilder ) {
+		final String basePath = "/repositories/" + repoTeam.getName() + "/" + repoConfig.getName();
 
-		legacyTemplate =
-				builder.basicAuthorization( team.getUser(), team.getPass() ).rootUri( baseUrlV1 + basePath ).build();
-		template = builder.basicAuthorization( team.getUser(), team.getPass() ).rootUri( baseUrlV2 + basePath ).build();
+		legacyTemplate = templateBuilder.basicAuthorization( repoTeam.getUser(), repoTeam.getPass() )
+				.rootUri( baseUrlV1 + basePath ).build();
+		template = templateBuilder.basicAuthorization( repoTeam.getUser(), repoTeam.getPass() )
+				.rootUri( baseUrlV2 + basePath ).build();
 	}
 
 	@Override
 	public PullRequest getLatestUpdate( final PullRequest pullRequest ) {
-		final DocumentContext jp = jsonPathForPath( pullRequest.getUrl() );
+		final DocumentContext jsonPath = jsonPathForPath( pullRequest.getUrl() );
 		final PullRequest updatedPullRequest = PullRequest.builder() //
 				.id( pullRequest.getId() ) //
 				.repo( pullRequest.getRepo() ) //
 				.source( pullRequest.getSource() ) //
 				.destination( pullRequest.getDestination() ) //
 				.url( pullRequest.getUrl() ) //
-				.lastUpdate( jp.read( "$.updated_on" ) ) //
+				.lastUpdate( jsonPath.read( "$.updated_on" ) ) //
 				.build();
 		return updatedPullRequest;
 	}
 
 	@Override
 	public boolean isApproved( final PullRequest pullRequest ) {
-		final DocumentContext jp = jsonPathForPath( pullRequest.getUrl() );
-		return jp.<List<Boolean>> read( "$.participants[*].approved" ).stream().anyMatch( approved -> approved );
+		final DocumentContext jsonPath = jsonPathForPath( pullRequest.getUrl() );
+		return jsonPath.<List<Boolean>> read( "$.participants[*].approved" ).stream().anyMatch( approved -> approved );
 	}
 
 	@Override
@@ -61,18 +63,18 @@ public class BitbucketConnector implements RepositoryConnector {
 	}
 
 	String getLastCommonCommitId( final PullRequest pullRequest ) {
-		DocumentContext jp = jsonPathForPath( pullRequest.getUrl() + "/commits" );
+		DocumentContext jsonPath = jsonPathForPath( pullRequest.getUrl() + "/commits" );
 
-		final int pageLength = jp.read( "$.pagelen" );
-		final int size = jp.read( "$.size" );
+		final int pageLength = jsonPath.read( "$.pagelen" );
+		final int size = jsonPath.read( "$.size" );
 		final int lastPage = (pageLength + size - 1) / pageLength;
 
 		if ( lastPage > 1 ) {
-			jp = jsonPathForPath( pullRequest.getUrl() + "/commits?page=" + lastPage );
+			jsonPath = jsonPathForPath( pullRequest.getUrl() + "/commits?page=" + lastPage );
 		}
 
-		final List<String> commitIds = jp.read( "$.values[*].hash" );
-		final List<String> parentIds = jp.read( "$.values[*].parents[0].hash" );
+		final List<String> commitIds = jsonPath.read( "$.values[*].hash" );
+		final List<String> parentIds = jsonPath.read( "$.values[*].parents[0].hash" );
 
 		return parentIds.stream().filter( parent -> !commitIds.contains( parent ) ).findFirst()
 				.orElseThrow( IllegalStateException::new );
@@ -93,27 +95,28 @@ public class BitbucketConnector implements RepositoryConnector {
 
 	@Override
 	public boolean greenBuildExists( final PullRequest pullRequest ) {
-		final DocumentContext jp = jsonPathForPath( pullRequest.getUrl() + "/statuses" );
-		return jp.<List<String>> read( "$.values[*].state" ).stream().anyMatch( s -> s.equals( "SUCCESSFUL" ) );
+		final DocumentContext jsonPath = jsonPathForPath( pullRequest.getUrl() + "/statuses" );
+		return jsonPath.<List<String>> read( "$.values[*].state" ).stream().anyMatch( s -> s.equals( "SUCCESSFUL" ) );
 	}
 
 	@Override
-	public List<PullRequest> getAllPullRequests( final RepositoryConfig repo ) {
-		final DocumentContext jp = jsonPathForPath( "/pullrequests" );
-		return parsePullRequestsJson( repo, jp );
+	public List<PullRequest> getAllPullRequests( final RepositoryConfig repoConfig ) {
+		final DocumentContext jsonPath = jsonPathForPath( "/pullrequests" );
+		return parsePullRequestsJson( repoConfig, jsonPath );
 	}
 
-	public List<PullRequest> parsePullRequestsJson( final RepositoryConfig repo, final DocumentContext jp ) {
-		final int numPullRequests = (int) jp.read( "$.size" );
+	public List<PullRequest> parsePullRequestsJson( final RepositoryConfig repoConfig,
+			final DocumentContext jsonPath ) {
+		final int numPullRequests = (int) jsonPath.read( "$.size" );
 		final List<PullRequest> results = new ArrayList<>( numPullRequests );
 		for ( int i = 0; i < numPullRequests; i++ ) {
-			final int id = jp.read( "$.values[" + i + "].id" );
-			final String source = jp.read( "$.values[" + i + "].source.branch.name" );
-			final String destination = jp.read( "$.values[" + i + "].destination.branch.name" );
-			final String lastUpdate = jp.read( "$.values[" + i + "].updated_on" );
+			final int id = jsonPath.read( "$.values[" + i + "].id" );
+			final String source = jsonPath.read( "$.values[" + i + "].source.branch.name" );
+			final String destination = jsonPath.read( "$.values[" + i + "].destination.branch.name" );
+			final String lastUpdate = jsonPath.read( "$.values[" + i + "].updated_on" );
 			results.add( PullRequest.builder() //
 					.id( id ) //
-					.repo( repo.getName() ) //
+					.repo( repoConfig.getName() ) //
 					.source( source ) //
 					.destination( destination ) //
 					.url( "/pullrequests/" + id ) //
