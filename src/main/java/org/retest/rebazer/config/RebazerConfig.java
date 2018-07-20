@@ -31,6 +31,14 @@ public class RebazerConfig {
 		private KnownProvider type;
 		private URL url;
 		private List<RepositoryTeam> teams;
+
+		public URL getUrl() {
+			if ( url != null ) {
+				return url;
+			} else {
+				return type.getDefaultUrl();
+			}
+		}
 	}
 
 	@Data
