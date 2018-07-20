@@ -1,6 +1,9 @@
 package org.retest.rebazer.service;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.ResetCommand.ResetType;
@@ -17,12 +20,12 @@ import lombok.extern.slf4j.Slf4j;
 public class GitRepoCleaner {
 
 	private final int gcCountdownResetValue;
-	private int gcCountdownCurrent;
+	private final Map<Git, AtomicInteger> gcCountdownCurrents;
 
 	@Autowired
 	public GitRepoCleaner( final RebazerConfig repoConfig ) {
 		gcCountdownResetValue = repoConfig.getGarbageCollectionCountdown();
-		gcCountdownCurrent = gcCountdownResetValue;
+		gcCountdownCurrents = new HashMap<>();
 	}
 
 	public void cleanUp( final Git localRepo, final String fallbackBranchName ) {
@@ -56,9 +59,10 @@ public class GitRepoCleaner {
 
 	@SneakyThrows
 	private void triggerGcIfNeeded( final Git localRepo ) {
-		gcCountdownCurrent--;
-		if ( gcCountdownCurrent == 0 ) {
-			gcCountdownCurrent = gcCountdownResetValue;
+		final AtomicInteger gcCountdownCurrent =
+				gcCountdownCurrents.computeIfAbsent( localRepo, key -> new AtomicInteger( gcCountdownResetValue ) );
+		if ( gcCountdownCurrent.decrementAndGet() <= 0 ) {
+			gcCountdownCurrent.set( gcCountdownResetValue );
 			log.info( "Running git gc on {}, next gc after {} cleanups.", localRepo, gcCountdownResetValue );
 			localRepo.gc().setPrunePreserved( true ).setExpire( null ).call();
 		}
