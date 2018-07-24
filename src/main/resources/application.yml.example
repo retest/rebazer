@@ -3,24 +3,23 @@ spring:
     web-environment: false
 
 rebazer:
-  workspace: ./rebazer-workspace
-  garbageCollectionCountdown: 20
-  pollInterval: 60
+  workspace: ./rebazer-workspace # optional
+  garbageCollectionCountdown: 20 # optional
+  pollInterval: 60 # optional
   hosts:
-    - type: BITBUCKET
-      url: https://bitbucket.org/
+    - type: BITBUCKET # possible values GITHUB or BITBUCKET
+      url: https://bitbucket.org/ # optional, default is type dependent (github.com, bitbucket.org)
       teams:
       - name: your_company
         user: service_user # optional value, default is $name
         pass: dont_use_this_pass_at_home
         repos:
-        - name: blub
-          branch: blub # optional value, default is "master"
-        - name: bla
-          branch: bla          
+        - name: the_repo_name
+          masterBranch: develop # optional value, default is "master"
+        - name: otherRepo
+          masterBranch: trunk
 
     - type: GITHUB
-      url: https://github.com/
       teams:
       - name: your_company
         pass: dont_use_this_pass_at_home

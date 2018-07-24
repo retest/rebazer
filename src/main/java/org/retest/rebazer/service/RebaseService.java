@@ -55,7 +55,7 @@ public class RebaseService {
 
 		credentials.put( repoConfig, credential );
 		localGitRepos.put( repoConfig, localRepo );
-		cleaner.cleanUp( localRepo, repoConfig.getBranch() );
+		cleaner.cleanUp( localRepo, repoConfig.getMasterBranch() );
 	}
 
 	private CredentialsProvider repoCredential( final RepositoryTeam repoTeam ) {
@@ -157,7 +157,7 @@ public class RebaseService {
 							"For " + pullRequest + " rebase causes an unexpected result: " + rebaseResult.getStatus() );
 			}
 		} finally {
-			cleaner.cleanUp( localRepo, repoConfig.getBranch() );
+			cleaner.cleanUp( localRepo, repoConfig.getMasterBranch() );
 		}
 	}
 
