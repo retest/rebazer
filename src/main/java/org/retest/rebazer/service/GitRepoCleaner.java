@@ -36,18 +36,18 @@ public class GitRepoCleaner {
 	}
 
 	@SneakyThrows
-	private void resetAndRemoveUntrackedFiles( final Git localRepo ) {
+	private static void resetAndRemoveUntrackedFiles( final Git localRepo ) {
 		localRepo.clean().setCleanDirectories( true ).setForce( true ).setIgnore( false ).call();
 		localRepo.reset().setMode( ResetType.HARD ).call();
 	}
 
 	@SneakyThrows
-	private void checkoutFallbackBranch( final Git localRepo, final String fallbackBranchName ) {
+	private static void checkoutFallbackBranch( final Git localRepo, final String fallbackBranchName ) {
 		localRepo.checkout().setName( "remotes/origin/" + fallbackBranchName ).call();
 	}
 
 	@SneakyThrows
-	private void removeAllLocalBranches( final Git localRepo ) {
+	private static void removeAllLocalBranches( final Git localRepo ) {
 		final List<Ref> allBranches = localRepo.branchList().call();
 		final String[] localBranches = allBranches.stream() //
 				.map( branch -> branch.getName() ) //

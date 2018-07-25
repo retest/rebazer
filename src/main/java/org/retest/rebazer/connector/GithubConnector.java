@@ -121,7 +121,7 @@ public class GithubConnector implements RepositoryConnector {
 		return results;
 	}
 
-	private String requestPath( final PullRequest pullRequest ) {
+	private static String requestPath( final PullRequest pullRequest ) {
 		return "/pulls/" + pullRequest.getId();
 	}
 

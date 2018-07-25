@@ -103,7 +103,7 @@ public class BitbucketConnector implements RepositoryConnector {
 		return parsePullRequestsJson( jsonPath );
 	}
 
-	public List<PullRequest> parsePullRequestsJson( final DocumentContext jsonPath ) {
+	public static List<PullRequest> parsePullRequestsJson( final DocumentContext jsonPath ) {
 		final int numPullRequests = (int) jsonPath.read( "$.size" );
 		final List<PullRequest> results = new ArrayList<>( numPullRequests );
 		for ( int i = 0; i < numPullRequests; i++ ) {
@@ -121,7 +121,7 @@ public class BitbucketConnector implements RepositoryConnector {
 		return results;
 	}
 
-	private String requestPath( final PullRequest pullRequest ) {
+	private static String requestPath( final PullRequest pullRequest ) {
 		return "/pullrequests/" + pullRequest.getId();
 	}
 

@@ -58,7 +58,7 @@ public class RebaseService {
 		cleaner.cleanUp( localRepo, repoConfig.getMasterBranch() );
 	}
 
-	private CredentialsProvider repoCredential( final RepositoryTeam repoTeam ) {
+	private static CredentialsProvider repoCredential( final RepositoryTeam repoTeam ) {
 		return new UsernamePasswordCredentialsProvider( repoTeam.getUser(), repoTeam.getPass() );
 	}
 
@@ -68,12 +68,13 @@ public class RebaseService {
 				repoConfig.getName() );
 	}
 
-	private String repoUrl( final RepositoryHost repoHost, final RepositoryTeam repoTeam,
+	private static String repoUrl( final RepositoryHost repoHost, final RepositoryTeam repoTeam,
 			final RepositoryConfig repoConfig ) {
 		return repoHost.getUrl() + "/" + repoTeam.getName() + "/" + repoConfig.getName() + ".git";
 	}
 
-	private Git setupLocalGitRepo( final CredentialsProvider credential, final File repoFolder, final String repoUrl ) {
+	private static Git setupLocalGitRepo( final CredentialsProvider credential, final File repoFolder,
+			final String repoUrl ) {
 		if ( repoFolder.exists() ) {
 			final Git localRepo = tryToOpenExistingRepoAndCheckRemote( repoFolder, repoUrl );
 			if ( localRepo != null ) {
@@ -85,7 +86,7 @@ public class RebaseService {
 	}
 
 	@SneakyThrows
-	private void deleteDirectory( final File repoFolder ) {
+	private static void deleteDirectory( final File repoFolder ) {
 		FileUtils.deleteDirectory( repoFolder );
 	}
 
