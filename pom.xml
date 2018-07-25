@@ -27,6 +27,9 @@
 		<project.resources.sourceEncoding>UTF-8</project.resources.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 
+		<git.repo.host>github.com</git.repo.host>
+		<git.repo.path>retest/rebazer</git.repo.path>
+
 		<java.version>1.8</java.version>
 	</properties>
 
@@ -201,9 +204,9 @@
 	</licenses>
 
 	<scm>
-		<connection>scm:git:https://github.com/retest/rebazer.git</connection>
-		<developerConnection>scm:git:ssh://git@github.com:retest/rebazer.git</developerConnection>
-		<url>https://github.com/retest/rebazer</url>
+		<connection>scm:git:https://${git.repo.host}/${git.repo.path}.git</connection>
+		<developerConnection>scm:git:ssh://git@${git.repo.host}/${git.repo.path}.git</developerConnection>
+		<url>https://${git.repo.host}/${git.repo.path}/</url>
 		<tag>HEAD</tag>
 	</scm>
 </project>
