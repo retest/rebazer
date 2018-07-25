@@ -3,7 +3,7 @@ package org.retest.rebazer.config;
 import java.net.URL;
 import java.util.List;
 
-import org.retest.rebazer.KnownProvider;
+import org.retest.rebazer.RepositoryHostingTypes;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 
@@ -28,7 +28,7 @@ public class RebazerConfig {
 
 	@Data
 	public static class RepositoryHost {
-		private KnownProvider type;
+		private RepositoryHostingTypes type;
 		private URL url;
 		private List<RepositoryTeam> teams;
 

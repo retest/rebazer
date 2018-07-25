@@ -13,7 +13,7 @@ import org.springframework.boot.web.client.RestTemplateBuilder;
 import lombok.Getter;
 import lombok.SneakyThrows;
 
-public enum KnownProvider {
+public enum RepositoryHostingTypes {
 
 	BITBUCKET( "https://bitbucket.org/" ),
 	GITHUB( "https://github.com/" ),
@@ -24,7 +24,7 @@ public enum KnownProvider {
 	final URL defaultUrl;
 
 	@SneakyThrows( MalformedURLException.class )
-	private KnownProvider( final String defaultUrl ) {
+	private RepositoryHostingTypes( final String defaultUrl ) {
 		this.defaultUrl = new URL( defaultUrl );
 	}
 
