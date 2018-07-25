@@ -14,9 +14,6 @@ import org.springframework.web.client.RestTemplate;
 import com.jayway.jsonpath.DocumentContext;
 import com.jayway.jsonpath.JsonPath;
 
-import lombok.extern.slf4j.Slf4j;
-
-@Slf4j
 public class GithubConnector implements RepositoryConnector {
 
 	private final static String baseUrl = "https://api.github.com/";
@@ -79,7 +76,6 @@ public class GithubConnector implements RepositoryConnector {
 
 	@Override
 	public void merge( final PullRequest pullRequest ) {
-		log.warn( "Merging pull request {}", pullRequest );
 		final String message = String.format( "Merged in %s (pull request #%d) by ReBaZer", pullRequest.getSource(),
 				pullRequest.getId() );
 		final Map<String, String> request = new HashMap<>();

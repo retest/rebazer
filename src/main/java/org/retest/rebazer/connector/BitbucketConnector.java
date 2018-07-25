@@ -14,7 +14,6 @@ import org.springframework.web.client.RestTemplate;
 import com.jayway.jsonpath.DocumentContext;
 import com.jayway.jsonpath.JsonPath;
 
-
 public class BitbucketConnector implements RepositoryConnector {
 
 	private final static String baseUrlV1 = "https://api.bitbucket.org/1.0";
