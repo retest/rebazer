@@ -13,7 +13,6 @@
 	<groupId>org.retest</groupId>
 	<artifactId>rebazer</artifactId>
 	<version>0.9.1-SNAPSHOT</version>
-	<packaging>jar</packaging>
 
 	<name>rebazer</name>
 	<description>
