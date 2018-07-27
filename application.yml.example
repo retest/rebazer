@@ -1,7 +1,3 @@
-spring:
-  main:
-    web-environment: false
-
 rebazer:
   workspace: ./rebazer-workspace # optional
   garbageCollectionCountdown: 20 # optional
