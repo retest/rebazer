@@ -18,6 +18,6 @@ public interface RepositoryConnector {
 
 	void merge( PullRequest pullRequest );
 
-	void addComment( PullRequest pullRequest );
+	void addComment( final PullRequest pullRequest, String message );
 
 }

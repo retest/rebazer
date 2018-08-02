@@ -130,9 +130,9 @@ public class BitbucketConnector implements RepositoryConnector {
 	}
 
 	@Override
-	public void addComment( final PullRequest pullRequest ) {
+	public void addComment( final PullRequest pullRequest, final String message ) {
 		final Map<String, String> request = new HashMap<>();
-		request.put( "content", "This pull request needs some manual love ..." );
+		request.put( "content", message );
 
 		legacyTemplate.postForObject( requestPath( pullRequest ) + "/comments", request, String.class );
 	}

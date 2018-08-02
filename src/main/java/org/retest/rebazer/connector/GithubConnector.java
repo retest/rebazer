@@ -127,9 +127,9 @@ public class GithubConnector implements RepositoryConnector {
 	}
 
 	@Override
-	public void addComment( final PullRequest pullRequest ) {
+	public void addComment( final PullRequest pullRequest, final String message ) {
 		final Map<String, String> request = new HashMap<>();
-		request.put( "body", "This pull request needs some manual love ..." );
+		request.put( "body", message );
 		template.postForObject( "/issues/" + pullRequest.getId() + "/comments", request, String.class );
 	}
 

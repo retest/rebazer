@@ -24,6 +24,8 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor( onConstructor = @__( @Autowired ) )
 public class RebazerService {
 
+	private static final String MSG_REBASE_FAILED = "Rebase failed, this pull request needs some manual love ...";
+
 	private final RebaseService rebaseService;
 	private final RebazerConfig rebazerConfig;
 	private final PullRequestLastUpdateStore pullRequestLastUpdateStore;
@@ -65,7 +67,7 @@ public class RebazerService {
 
 		} else if ( repoConnector.rebaseNeeded( pullRequest ) ) {
 			if ( !rebaseService.rebase( repoConfig, pullRequest ) ) {
-				repoConnector.addComment( pullRequest );
+				repoConnector.addComment( pullRequest, MSG_REBASE_FAILED );
 			}
 			// we need to update the "lastUpdate" of a PullRequest to counteract if addComment is called
 			pullRequestLastUpdateStore.setHandled( repoConfig, repoConnector.getLatestUpdate( pullRequest ) );
