@@ -43,16 +43,7 @@ public class GithubConnector implements RepositoryConnector {
 	@Override
 	public boolean isApproved( final PullRequest pullRequest ) {
 		final DocumentContext jsonPath = jsonPathForPath( requestPath( pullRequest ) + "/reviews" );
-		final List<String> states = jsonPath.read( "$..state" );
-		boolean approved = false;
-		for ( final String state : states ) {
-			if ( state.equals( "APPROVED" ) ) {
-				approved = true;
-			} else {
-				approved = false;
-			}
-		}
-		return approved;
+		return jsonPath.<List<String>> read( "$..state" ).stream().anyMatch( s -> s.equals( "APPROVED" ) );
 	}
 
 	@Override
