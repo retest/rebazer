@@ -79,12 +79,9 @@ public class BitbucketConnector implements RepositoryConnector {
 
 	@Override
 	public void merge( final PullRequest pullRequest ) {
-		final String message = String.format( "Merged in %s (pull request #%d) by ReBaZer", pullRequest.getSource(),
-				pullRequest.getId() );
-		// TODO add approver to message?
 		final Map<String, Object> request = new HashMap<>();
 		request.put( "close_source_branch", true );
-		request.put( "message", message );
+		request.put( "message", pullRequest.mergeCommitMessage() );
 		request.put( "merge_strategy", "merge_commit" );
 
 		template.postForObject( requestPath( pullRequest ) + "/merge", request, Object.class );

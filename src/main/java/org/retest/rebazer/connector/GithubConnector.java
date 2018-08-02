@@ -67,10 +67,8 @@ public class GithubConnector implements RepositoryConnector {
 
 	@Override
 	public void merge( final PullRequest pullRequest ) {
-		final String message = String.format( "Merged in %s (pull request #%d) by ReBaZer", pullRequest.getSource(),
-				pullRequest.getId() );
 		final Map<String, String> request = new HashMap<>();
-		request.put( "commit_title", message );
+		request.put( "commit_title", pullRequest.mergeCommitMessage() );
 		request.put( "merge_method", "merge" );
 
 		template.put( requestPath( pullRequest ) + "/merge", request, Object.class );

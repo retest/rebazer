@@ -18,4 +18,9 @@ public class PullRequest {
 	public String toString() {
 		return "PR #" + id + " (" + source + " -> " + destination + ")";
 	}
+
+	public String mergeCommitMessage() {
+		return String.format( "Merged in %s (pull request #%d) by ReBaZer", source, id );
+	}
+
 }
