@@ -9,6 +9,7 @@ import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.RebaseCommand.Operation;
 import org.eclipse.jgit.api.RebaseResult;
 import org.eclipse.jgit.transport.CredentialsProvider;
+import org.eclipse.jgit.transport.RemoteConfig;
 import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider;
 import org.retest.rebazer.config.RebazerConfig;
 import org.retest.rebazer.config.RebazerConfig.RepositoryConfig;
@@ -106,8 +107,14 @@ public class RebaseService {
 
 	@SneakyThrows
 	private static boolean originIsRepoUrl( final Git localRepo, final String repoUrl ) {
-		return localRepo.remoteList().call().stream().anyMatch( r -> r.getName().equals( "origin" )
-				&& r.getURIs().stream().anyMatch( url -> url.toString().equals( repoUrl ) ) );
+		return localRepo.remoteList().call().stream() //
+				.filter( r -> r.getName().equals( "origin" ) ) //
+				.anyMatch( r -> remoteConfigContainsRepoUrl( r, repoUrl ) );
+
+	}
+
+	private static boolean remoteConfigContainsRepoUrl( final RemoteConfig remoteConfig, final String repoUrl ) {
+		return remoteConfig.getURIs().stream().anyMatch( url -> url.toString().equals( repoUrl ) );
 	}
 
 	@SneakyThrows
