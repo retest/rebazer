@@ -64,8 +64,7 @@ public class RebaseService {
 
 	private File repoFolder( final RepositoryHost repoHost, final RepositoryTeam repoTeam,
 			final RepositoryConfig repoConfig ) {
-		return new File( new File( new File( workspace, repoHost.getUrl().getHost() ), repoTeam.getName() ),
-				repoConfig.getName() );
+		return FileUtils.getFile( workspace, repoHost.getUrl().getHost(), repoTeam.getName(), repoConfig.getName() );
 	}
 
 	private static String repoUrl( final RepositoryHost repoHost, final RepositoryTeam repoTeam,
