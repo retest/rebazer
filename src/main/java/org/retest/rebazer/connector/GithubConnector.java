@@ -99,11 +99,10 @@ public class GithubConnector implements RepositoryConnector {
 	}
 
 	public static List<PullRequest> parsePullRequestsJson( final DocumentContext jsonPath ) {
-		final List<Integer> pullRequestAmount = jsonPath.read( "$..number" );
-		final int numPullRequests = pullRequestAmount.size();
-		final List<PullRequest> results = new ArrayList<>( numPullRequests );
-		for ( int i = 0; i < numPullRequests; i++ ) {
-			final int id = pullRequestAmount.get( i );
+		final int size = jsonPath.read( "$.length()" );
+		final List<PullRequest> results = new ArrayList<>( size );
+		for ( int i = 0; i < size; i++ ) {
+			final int id = jsonPath.read( "$.[" + i + "].number" );
 			final String source = jsonPath.read( "$.[" + i + "].head.ref" );
 			final String destination = jsonPath.read( "$.[" + i + "].base.ref" );
 			final String lastUpdate = jsonPath.read( "$.[" + i + "].updated_at" );
