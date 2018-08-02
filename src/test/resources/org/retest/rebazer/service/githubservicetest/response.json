@@ -1,0 +1,12 @@
+[
+    {
+			"number": 2,
+			"head": {
+				"ref": "test/source-branch"
+			},
+			"base": {
+				"ref": "master"
+			},
+			"updated_at": "yyyy-MM-ddThh:mm:ss.SSSZZ"
+    }
+]

@@ -4,14 +4,17 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import org.junit.Before;
 import org.junit.Test;
-import org.retest.rebazer.config.RebazerConfig.Repository;
+import org.retest.rebazer.config.RebazerConfig.RepositoryConfig;
 import org.retest.rebazer.domain.PullRequest;
 
 public class PullRequestLastUpdateStoreTest {
 
-	Repository repo;
+	RepositoryConfig repo;
 	PullRequest pr;
 	String lastUpdate;
 
@@ -21,7 +24,7 @@ public class PullRequestLastUpdateStoreTest {
 	public void setUp() {
 		cut = new PullRequestLastUpdateStore();
 
-		repo = mock( Repository.class );
+		repo = mock( RepositoryConfig.class );
 		pr = mock( PullRequest.class );
 		when( pr.getId() ).thenReturn( 1 );
 		lastUpdate = "2017-11-30T10:05:28+00:00";
@@ -65,6 +68,18 @@ public class PullRequestLastUpdateStoreTest {
 	public void getLastDate_should_return_the_date_if_pr_is_handled_before() {
 		cut.setHandled( repo, pr );
 		assertThat( cut.getLastDate( repo, pr ) ).isEqualTo( lastUpdate );
+	}
+
+	@Test
+	public void computeIfAbsent_should_add_value_if_key_not_exist() throws Exception {
+		final HashMap<RepositoryConfig, Map<Integer, String>> multiMap = new HashMap<>();
+		final RepositoryConfig key = new RepositoryConfig();
+
+		final Map<Integer, String> mapForKey = multiMap.computeIfAbsent( key, k -> new HashMap<>() );
+
+		assertThat( mapForKey ).isNotNull();
+		assertThat( multiMap.get( key ) ).isSameAs( mapForKey );
+		assertThat( multiMap.computeIfAbsent( key, k -> new HashMap<>() ) ).isSameAs( mapForKey );
 	}
 
 }
