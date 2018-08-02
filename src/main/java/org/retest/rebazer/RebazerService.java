@@ -77,7 +77,7 @@ public class RebazerService {
 			pullRequestLastUpdateStore.setHandled( repoConfig, pullRequest );
 
 		} else {
-			log.info( "Merging pull request " + pullRequest );
+			log.info( "Merging pull request {}.", pullRequest );
 			repoConnector.merge( pullRequest );
 			pullRequestLastUpdateStore.resetAllInThisRepo( repoConfig );
 		}

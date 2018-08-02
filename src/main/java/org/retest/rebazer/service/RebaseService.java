@@ -155,7 +155,7 @@ public class RebaseService {
 					return true;
 
 				case STOPPED:
-					log.info( "Merge conflict in {}", pullRequest );
+					log.info( "Merge conflict in {}.", pullRequest );
 					localRepo.rebase().setOperation( Operation.ABORT ).call();
 					return false;
 
