@@ -16,7 +16,7 @@ rebazer:
         repos:
         - name: the_repo_name
           masterBranch: develop # optional value, default is "master"
-        - name: otherRepo
+        - name: other_repo
           masterBranch: trunk
 
     - type: GITHUB
