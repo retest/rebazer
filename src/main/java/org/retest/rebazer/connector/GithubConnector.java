@@ -43,7 +43,7 @@ public class GithubConnector implements RepositoryConnector {
 	@Override
 	public boolean isApproved( final PullRequest pullRequest ) {
 		final DocumentContext jsonPath = jsonPathForPath( requestPath( pullRequest ) + "/reviews" );
-		return jsonPath.<List<String>> read( "$..state" ).stream().anyMatch( s -> s.equals( "APPROVED" ) );
+		return jsonPath.<List<String>> read( "$..state" ).stream().anyMatch( s -> "APPROVED".equals( s ) );
 	}
 
 	@Override
@@ -78,7 +78,7 @@ public class GithubConnector implements RepositoryConnector {
 	public boolean greenBuildExists( final PullRequest pullRequest ) {
 		final String urlPath = "/commits/" + pullRequest.getSource() + "/status";
 		final DocumentContext jsonPath = jsonPathForPath( urlPath );
-		return jsonPath.<List<String>> read( "$.statuses[*].state" ).stream().anyMatch( s -> s.equals( "success" ) );
+		return jsonPath.<List<String>> read( "$.statuses[*].state" ).stream().anyMatch( s -> "success".equals( s ) );
 	}
 
 	@Override
