@@ -14,8 +14,8 @@ import lombok.SneakyThrows;
 
 public enum RepositoryHostingTypes {
 
-	BITBUCKET( "https://bitbucket.org/" ),
-	GITHUB( "https://github.com/" ),
+	BITBUCKET( "https://bitbucket.org" ),
+	GITHUB( "https://github.com" ),
 
 	;
 
