@@ -3,8 +3,8 @@ package org.retest.rebazer.service;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.retest.rebazer.config.RebazerConfig.RepositoryConfig;
 import org.retest.rebazer.domain.PullRequest;
+import org.retest.rebazer.domain.RepositoryConfig;
 import org.springframework.stereotype.Service;
 
 @Service

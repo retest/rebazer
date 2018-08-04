@@ -5,9 +5,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.retest.rebazer.config.RebazerConfig.RepositoryConfig;
-import org.retest.rebazer.config.RebazerConfig.RepositoryTeam;
 import org.retest.rebazer.domain.PullRequest;
+import org.retest.rebazer.domain.RepositoryConfig;
 import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.web.client.RestTemplate;
 
@@ -20,12 +19,11 @@ public class GithubConnector implements RepositoryConnector {
 
 	private final RestTemplate template;
 
-	public GithubConnector( final RepositoryTeam repoTeam, final RepositoryConfig repoConfig,
-			final RestTemplateBuilder builder ) {
-		final String basePath = "/repos/" + repoTeam.getName() + "/" + repoConfig.getName();
+	public GithubConnector( final RepositoryConfig repoConfig, final RestTemplateBuilder builder ) {
+		final String basePath = "/repos/" + repoConfig.getTeam() + "/" + repoConfig.getRepo();
 
-		template = builder.basicAuthorization( repoTeam.getUser(), repoTeam.getPass() ).rootUri( baseUrl + basePath )
-				.build();
+		template = builder.basicAuthorization( repoConfig.getUser(), repoConfig.getPass() )
+				.rootUri( baseUrl + basePath ).build();
 	}
 
 	@Override

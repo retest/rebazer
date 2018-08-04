@@ -12,10 +12,8 @@ import org.eclipse.jgit.transport.CredentialsProvider;
 import org.eclipse.jgit.transport.RemoteConfig;
 import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider;
 import org.retest.rebazer.config.RebazerConfig;
-import org.retest.rebazer.config.RebazerConfig.RepositoryConfig;
-import org.retest.rebazer.config.RebazerConfig.RepositoryHost;
-import org.retest.rebazer.config.RebazerConfig.RepositoryTeam;
 import org.retest.rebazer.domain.PullRequest;
+import org.retest.rebazer.domain.RepositoryConfig;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -37,40 +35,31 @@ public class RebaseService {
 		this.cleaner = cleaner;
 		workspace = new File( rebazerConfig.getWorkspace() ).getAbsoluteFile();
 
-		rebazerConfig.getHosts().forEach( repoHost -> {
-			repoHost.getTeams().forEach( repoTeam -> {
-				repoTeam.getRepos().forEach( repoConfig -> {
-					setupRepo( repoHost, repoTeam, repoConfig );
-				} );
-			} );
+		rebazerConfig.getRepos().forEach( repoConfig -> {
+			try {
+				setupRepo( repoConfig );
+			} catch ( final Exception e ) {
+				log.error( "Error while handle {}!", repoConfig, e );
+			}
 		} );
 	}
 
-	private void setupRepo( final RepositoryHost repoHost, final RepositoryTeam repoTeam,
-			final RepositoryConfig repoConfig ) {
-		final CredentialsProvider credential = repoCredential( repoTeam );
-		final File repoFolder = repoFolder( repoHost, repoTeam, repoConfig );
-		final String url = repoUrl( repoHost, repoTeam, repoConfig );
-
-		final Git localRepo = setupLocalGitRepo( credential, repoFolder, url );
+	private void setupRepo( final RepositoryConfig repoConfig ) {
+		final CredentialsProvider credential = repoCredential( repoConfig );
+		final File repoFolder = repoFolder( repoConfig );
+		final Git localRepo = setupLocalGitRepo( credential, repoFolder, repoConfig.getUrl() );
 
 		credentials.put( repoConfig, credential );
 		localGitRepos.put( repoConfig, localRepo );
 		cleaner.cleanUp( localRepo, repoConfig.getMasterBranch() );
 	}
 
-	private static CredentialsProvider repoCredential( final RepositoryTeam repoTeam ) {
-		return new UsernamePasswordCredentialsProvider( repoTeam.getUser(), repoTeam.getPass() );
+	private static CredentialsProvider repoCredential( final RepositoryConfig repoConfig ) {
+		return new UsernamePasswordCredentialsProvider( repoConfig.getUser(), repoConfig.getPass() );
 	}
 
-	private File repoFolder( final RepositoryHost repoHost, final RepositoryTeam repoTeam,
-			final RepositoryConfig repoConfig ) {
-		return FileUtils.getFile( workspace, repoHost.getUrl().getHost(), repoTeam.getName(), repoConfig.getName() );
-	}
-
-	private static String repoUrl( final RepositoryHost repoHost, final RepositoryTeam repoTeam,
-			final RepositoryConfig repoConfig ) {
-		return repoHost.getUrl() + "/" + repoTeam.getName() + "/" + repoConfig.getName() + ".git";
+	private File repoFolder( final RepositoryConfig repoConfig ) {
+		return FileUtils.getFile( workspace, repoConfig.getQualifiers() );
 	}
 
 	private static Git setupLocalGitRepo( final CredentialsProvider credential, final File repoFolder,
@@ -130,6 +119,10 @@ public class RebaseService {
 		log.info( "Rebasing {}.", pullRequest );
 
 		final Git localRepo = localGitRepos.get( repoConfig );
+		if ( localRepo == null ) {
+			log.info( "Local repository isn't prepared for {}.", repoConfig );
+			return false;
+		}
 		final CredentialsProvider credential = credentials.get( repoConfig );
 
 		try {
@@ -155,7 +148,7 @@ public class RebaseService {
 					return true;
 
 				case STOPPED:
-					log.info( "Merge conflict in {}", pullRequest );
+					log.info( "Merge conflict in {}.", pullRequest );
 					localRepo.rebase().setOperation( Operation.ABORT ).call();
 					return false;
 

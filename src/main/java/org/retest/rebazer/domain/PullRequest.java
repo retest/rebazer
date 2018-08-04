@@ -1,10 +1,10 @@
 package org.retest.rebazer.domain;
 
 import lombok.Builder;
-import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.Value;
 
-@Data
+@Value
 @Builder
 public class PullRequest {
 
