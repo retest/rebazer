@@ -50,7 +50,7 @@ public class GithubConnectorTest {
 	@Test
 	public void rebaseNeeded_should_return_false_if_headOfBranch_is_equal_to_lastCommonCommitId() {
 		final PullRequest pullRequest = mock( PullRequest.class );
-		final GithubConnector cut = mock( GithubConnector.class );
+		cut = mock( GithubConnector.class );
 		final String head = "12325345923759135";
 		when( cut.getHeadOfBranch( pullRequest ) ).thenReturn( head );
 		when( cut.getLastCommonCommitId( pullRequest ) ).thenReturn( head );
@@ -62,7 +62,7 @@ public class GithubConnectorTest {
 	@Test
 	public void rebaseNeeded_should_return_true_if_headOfBranch_isnt_equal_to_lastCommonCommitId() {
 		final PullRequest pullRequest = mock( PullRequest.class );
-		final GithubConnector cut = mock( GithubConnector.class );
+		cut = mock( GithubConnector.class );
 		final String head = "12325345923759135";
 		final String lcci = "21342343253253452";
 		when( cut.getHeadOfBranch( pullRequest ) ).thenReturn( head );

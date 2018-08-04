@@ -147,7 +147,8 @@ public class RebaseService {
 
 				case FAST_FORWARD:
 					log.warn( "Why creating {} without changes?", pullRequest );
-					// fall-through
+					localRepo.push().setCredentialsProvider( credential ).setForce( true ).call();
+					return true;
 
 				case OK:
 					localRepo.push().setCredentialsProvider( credential ).setForce( true ).call();

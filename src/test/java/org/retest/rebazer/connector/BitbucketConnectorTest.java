@@ -53,7 +53,7 @@ public class BitbucketConnectorTest {
 	@Test
 	public void rebaseNeeded_should_return_false_if_headOfBranch_is_equal_to_lastCommonCommitId() {
 		final PullRequest pullRequest = mock( PullRequest.class );
-		final BitbucketConnector cut = mock( BitbucketConnector.class );
+		cut = mock( BitbucketConnector.class );
 		final String head = "12325345923759135";
 		when( cut.getHeadOfBranch( pullRequest ) ).thenReturn( head );
 		when( cut.getLastCommonCommitId( pullRequest ) ).thenReturn( head );
@@ -65,7 +65,7 @@ public class BitbucketConnectorTest {
 	@Test
 	public void rebaseNeeded_should_return_true_if_headOfBranch_isnt_equal_to_lastCommonCommitId() {
 		final PullRequest pullRequest = mock( PullRequest.class );
-		final BitbucketConnector cut = mock( BitbucketConnector.class );
+		cut = mock( BitbucketConnector.class );
 		final String head = "12325345923759135";
 		final String lcci = "21342343253253452";
 		when( cut.getHeadOfBranch( pullRequest ) ).thenReturn( head );

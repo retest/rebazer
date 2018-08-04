@@ -50,7 +50,7 @@ public class PullRequestLastUpdateStoreTest {
 	}
 
 	@Test
-	public void isHandled_should_return_false_if_pr_did_change() throws Exception {
+	public void isHandled_should_return_false_if_pr_did_change() {
 		cut.setHandled( repo, pr );
 
 		final String newDate = "2017-11-30T10:22:55+00:00";
@@ -71,7 +71,8 @@ public class PullRequestLastUpdateStoreTest {
 	}
 
 	@Test
-	public void computeIfAbsent_should_add_value_if_key_not_exist() throws Exception {
+	@SuppressWarnings( "static-method" )
+	public void computeIfAbsent_should_add_value_if_key_not_exist() {
 		final HashMap<RepositoryConfig, Map<Integer, String>> multiMap = new HashMap<>();
 		final RepositoryConfig key = new RepositoryConfig();
 
