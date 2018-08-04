@@ -26,7 +26,7 @@ public class RebazerConfig {
 	public final static int POLL_INTERVAL_DEFAULT = 60;
 	private long pollInterval = POLL_INTERVAL_DEFAULT;
 
-	private String workspace = "./rebazer-workspace";
+	private String workspace = "rebazer-workspace";
 	private int garbageCollectionCountdown = 20;
 
 	@Getter( AccessLevel.NONE )
