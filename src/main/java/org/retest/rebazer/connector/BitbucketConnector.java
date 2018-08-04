@@ -5,9 +5,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.retest.rebazer.config.RebazerConfig.RepositoryConfig;
-import org.retest.rebazer.config.RebazerConfig.RepositoryTeam;
 import org.retest.rebazer.domain.PullRequest;
+import org.retest.rebazer.domain.RepositoryConfig;
 import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.web.client.RestTemplate;
 
@@ -22,13 +21,12 @@ public class BitbucketConnector implements RepositoryConnector {
 	private final RestTemplate legacyTemplate;
 	private final RestTemplate template;
 
-	public BitbucketConnector( final RepositoryTeam repoTeam, final RepositoryConfig repoConfig,
-			final RestTemplateBuilder templateBuilder ) {
-		final String basePath = "/repositories/" + repoTeam.getName() + "/" + repoConfig.getName();
+	public BitbucketConnector( final RepositoryConfig repoConfig, final RestTemplateBuilder templateBuilder ) {
+		final String basePath = "/repositories/" + repoConfig.getTeam() + "/" + repoConfig.getRepo();
 
-		legacyTemplate = templateBuilder.basicAuthorization( repoTeam.getUser(), repoTeam.getPass() )
+		legacyTemplate = templateBuilder.basicAuthorization( repoConfig.getUser(), repoConfig.getPass() )
 				.rootUri( baseUrlV1 + basePath ).build();
-		template = templateBuilder.basicAuthorization( repoTeam.getUser(), repoTeam.getPass() )
+		template = templateBuilder.basicAuthorization( repoConfig.getUser(), repoConfig.getPass() )
 				.rootUri( baseUrlV2 + basePath ).build();
 	}
 

@@ -16,9 +16,8 @@ import java.util.List;
 import org.junit.Before;
 import org.junit.Test;
 import org.retest.rebazer.config.RebazerConfig;
-import org.retest.rebazer.config.RebazerConfig.RepositoryConfig;
-import org.retest.rebazer.config.RebazerConfig.RepositoryTeam;
 import org.retest.rebazer.domain.PullRequest;
+import org.retest.rebazer.domain.RepositoryConfig;
 import org.retest.rebazer.service.PullRequestLastUpdateStore;
 import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.web.client.RestTemplate;
@@ -31,7 +30,7 @@ public class BitbucketConnectorTest {
 	PullRequestLastUpdateStore pullRequestUpdateStates;
 	RestTemplate template;
 	RebazerConfig config;
-	RepositoryTeam team;
+	RepositoryConfig repoConfig;
 
 	BitbucketConnector cut;
 
@@ -39,15 +38,14 @@ public class BitbucketConnectorTest {
 	public void setUp() {
 		template = mock( RestTemplate.class );
 		config = mock( RebazerConfig.class );
-		team = mock( RepositoryTeam.class );
-		final RepositoryConfig repo = mock( RepositoryConfig.class );
+		repoConfig = mock( RepositoryConfig.class );
 		final RestTemplateBuilder builder = mock( RestTemplateBuilder.class );
 		when( builder.basicAuthorization( any(), any() ) ).thenReturn( builder );
 		when( builder.rootUri( anyString() ) ).thenReturn( builder );
 		when( builder.build() ).thenReturn( template );
 		pullRequestUpdateStates = mock( PullRequestLastUpdateStore.class );
 
-		cut = new BitbucketConnector( team, repo, builder );
+		cut = new BitbucketConnector( repoConfig, builder );
 	}
 
 	@Test
@@ -113,13 +111,12 @@ public class BitbucketConnectorTest {
 
 	@Test
 	public void getAllPullRequests_should_return_all_pull_requests_as_list() throws IOException {
-		final RepositoryConfig repo = mock( RepositoryConfig.class );
 		final String json = new String( Files.readAllBytes(
 				Paths.get( "src/test/resources/org/retest/rebazer/service/bitbucketservicetest/response.json" ) ) );
 		final DocumentContext documentContext = JsonPath.parse( json );
 
-		when( team.getName() ).thenReturn( "test_team" );
-		when( repo.getName() ).thenReturn( "test_repo_name" );
+		when( repoConfig.getTeam() ).thenReturn( "test_team" );
+		when( repoConfig.getRepo() ).thenReturn( "test_repo_name" );
 		when( template.getForObject( anyString(), eq( String.class ) ) ).thenReturn( json );
 
 		final int expectedId = (int) documentContext.read( "$.values[0].id" );

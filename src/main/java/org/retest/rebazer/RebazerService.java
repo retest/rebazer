@@ -4,11 +4,9 @@ import static org.retest.rebazer.config.RebazerConfig.POLL_INTERVAL_DEFAULT;
 import static org.retest.rebazer.config.RebazerConfig.POLL_INTERVAL_KEY;
 
 import org.retest.rebazer.config.RebazerConfig;
-import org.retest.rebazer.config.RebazerConfig.RepositoryConfig;
-import org.retest.rebazer.config.RebazerConfig.RepositoryHost;
-import org.retest.rebazer.config.RebazerConfig.RepositoryTeam;
 import org.retest.rebazer.connector.RepositoryConnector;
 import org.retest.rebazer.domain.PullRequest;
+import org.retest.rebazer.domain.RepositoryConfig;
 import org.retest.rebazer.service.PullRequestLastUpdateStore;
 import org.retest.rebazer.service.RebaseService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,19 +32,14 @@ public class RebazerService {
 
 	@Scheduled( fixedDelayString = "${" + POLL_INTERVAL_KEY + ":" + POLL_INTERVAL_DEFAULT + "}000" )
 	public void pollToHandleAllPullRequests() {
-		rebazerConfig.getHosts().forEach( repoHost -> {
-			repoHost.getTeams().forEach( repoTeam -> {
-				repoTeam.getRepos().forEach( repoConfig -> {
-					handleRepo( repoHost, repoTeam, repoConfig );
-				} );
-			} );
+		rebazerConfig.getRepos().forEach( repoConfig -> {
+			handleRepo( repoConfig );
 		} );
 	}
 
-	private void handleRepo( final RepositoryHost repoHost, final RepositoryTeam repoTeam,
-			final RepositoryConfig repoConfig ) {
+	private void handleRepo( final RepositoryConfig repoConfig ) {
 		log.debug( "Processing {}.", repoConfig );
-		final RepositoryConnector repoConnector = repoHost.getType().getRepository( repoTeam, repoConfig, builder );
+		final RepositoryConnector repoConnector = repoConfig.getConnector( builder );
 		for ( final PullRequest pullRequest : repoConnector.getAllPullRequests() ) {
 			handlePullRequest( repoConnector, repoConfig, pullRequest );
 		}

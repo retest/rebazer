@@ -16,9 +16,8 @@ import java.util.List;
 import org.junit.Before;
 import org.junit.Test;
 import org.retest.rebazer.config.RebazerConfig;
-import org.retest.rebazer.config.RebazerConfig.RepositoryConfig;
-import org.retest.rebazer.config.RebazerConfig.RepositoryTeam;
 import org.retest.rebazer.domain.PullRequest;
+import org.retest.rebazer.domain.RepositoryConfig;
 import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.web.client.RestTemplate;
 
@@ -29,7 +28,7 @@ public class GithubConnectorTest {
 
 	RestTemplate template;
 	RebazerConfig config;
-	RepositoryTeam team;
+	RepositoryConfig repoConfig;
 
 	GithubConnector cut;
 
@@ -37,14 +36,13 @@ public class GithubConnectorTest {
 	public void setUp() {
 		template = mock( RestTemplate.class );
 		config = mock( RebazerConfig.class );
-		team = mock( RepositoryTeam.class );
-		final RepositoryConfig repo = mock( RepositoryConfig.class );
+		repoConfig = mock( RepositoryConfig.class );
 		final RestTemplateBuilder builder = mock( RestTemplateBuilder.class );
 		when( builder.basicAuthorization( any(), any() ) ).thenReturn( builder );
 		when( builder.rootUri( anyString() ) ).thenReturn( builder );
 		when( builder.build() ).thenReturn( template );
 
-		cut = new GithubConnector( team, repo, builder );
+		cut = new GithubConnector( repoConfig, builder );
 	}
 
 	@Test
@@ -110,12 +108,11 @@ public class GithubConnectorTest {
 
 	@Test
 	public void getAllPullRequests_should_return_all_pull_requests_as_list() throws IOException {
-		final RepositoryConfig repo = mock( RepositoryConfig.class );
 		final String json = new String( Files.readAllBytes(
 				Paths.get( "src/test/resources/org/retest/rebazer/service/githubservicetest/response.json" ) ) );
 		final DocumentContext documentContext = JsonPath.parse( json );
-		when( team.getName() ).thenReturn( "test_team" );
-		when( repo.getName() ).thenReturn( "test_repo_name" );
+		when( repoConfig.getTeam() ).thenReturn( "test_team" );
+		when( repoConfig.getRepo() ).thenReturn( "test_repo_name" );
 		when( template.getForObject( anyString(), eq( String.class ) ) ).thenReturn( json );
 
 		final int expectedId = (int) documentContext.read( "$.[0].number" );

@@ -1,13 +1,18 @@
 package org.retest.rebazer.config;
 
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.List;
 
 import org.retest.rebazer.RepositoryHostingTypes;
+import org.retest.rebazer.domain.RepositoryConfig;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 
+import lombok.AccessLevel;
 import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
 @Data
 @Configuration
@@ -24,13 +29,14 @@ public class RebazerConfig {
 	private String workspace = "./rebazer-workspace";
 	private int garbageCollectionCountdown = 20;
 
-	private List<RepositoryHost> hosts;
+	@Getter( AccessLevel.NONE )
+	private List<Host> hosts;
 
-	@Data
-	public static class RepositoryHost {
-		private RepositoryHostingTypes type;
+	@Setter
+	private static class Host {
+		RepositoryHostingTypes type;
 		private URL url;
-		private List<RepositoryTeam> teams;
+		List<Team> teams;
 
 		public URL getUrl() {
 			if ( url != null ) {
@@ -39,14 +45,15 @@ public class RebazerConfig {
 				return type.getDefaultUrl();
 			}
 		}
+
 	}
 
-	@Data
-	public static class RepositoryTeam {
-		private String name;
+	@Setter
+	private static class Team {
+		String name;
 		private String user;
-		private String pass;
-		private List<RepositoryConfig> repos;
+		String pass;
+		List<Repo> repos;
 
 		public String getUser() {
 			if ( user != null && !user.isEmpty() ) {
@@ -57,10 +64,30 @@ public class RebazerConfig {
 		}
 	}
 
-	@Data
-	public static class RepositoryConfig {
-		private String name;
-		private String masterBranch = "master";
+	@Setter
+	private static class Repo {
+		String name;
+		String masterBranch = "master";
+	}
+
+	/**
+	 * This method converts the objects optimized for spring config to objects optimized for internal processing
+	 */
+	public List<RepositoryConfig> getRepos() {
+		final List<RepositoryConfig> configs = new ArrayList<>();
+		hosts.forEach( host -> {
+			host.teams.forEach( team -> {
+				team.repos.forEach( repo -> {
+					configs.add( RepositoryConfig.builder() //
+							.type( host.type ).host( host.getUrl() ) //
+							.team( team.name ).repo( repo.name ) //
+							.user( team.getUser() ).pass( team.pass ) //
+							.masterBranch( repo.masterBranch ) //
+							.build() );
+				} );
+			} );
+		} );
+		return configs;
 	}
 
 }
