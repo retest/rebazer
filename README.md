@@ -12,7 +12,7 @@ Helper service to handle pull requests (PRs) on Bitbucket. Rebase PRs against ta
 
 Illustrated as a flowchart:
 
-![Image](src/doc/rebazer-flowchart.jpg)
+![Image](src/doc/rebazer-flowchart.svg)
 
 
 ## Prerequisites
