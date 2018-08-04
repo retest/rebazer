@@ -42,7 +42,7 @@ public class RebazerService {
 	}
 
 	private void handleRepo( final RepositoryConfig repoConfig ) {
-		log.debug( "Processing {}.", repoConfig );
+		log.info( "Processing {}.", repoConfig );
 		final RepositoryConnector repoConnector = repoConfig.getConnector( builder );
 		for ( final PullRequest pullRequest : repoConnector.getAllPullRequests() ) {
 			handlePullRequest( repoConnector, repoConfig, pullRequest );
