@@ -70,6 +70,8 @@ public class GithubConnector implements RepositoryConnector {
 		request.put( "merge_method", "merge" );
 
 		template.put( requestPath( pullRequest ) + "/merge", request, Object.class );
+
+		template.delete( "/git/refs/heads/" + pullRequest.getSource() );
 	}
 
 	@Override
