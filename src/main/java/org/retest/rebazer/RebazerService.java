@@ -33,7 +33,11 @@ public class RebazerService {
 	@Scheduled( fixedDelayString = "${" + POLL_INTERVAL_KEY + ":" + POLL_INTERVAL_DEFAULT + "}000" )
 	public void pollToHandleAllPullRequests() {
 		rebazerConfig.getRepos().forEach( repoConfig -> {
-			handleRepo( repoConfig );
+			try {
+				handleRepo( repoConfig );
+			} catch ( final Exception e ) {
+				log.error( "Error while handle {}!", repoConfig, e );
+			}
 		} );
 	}
 

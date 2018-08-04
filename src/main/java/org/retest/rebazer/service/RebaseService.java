@@ -36,7 +36,11 @@ public class RebaseService {
 		workspace = new File( rebazerConfig.getWorkspace() ).getAbsoluteFile();
 
 		rebazerConfig.getRepos().forEach( repoConfig -> {
-			setupRepo( repoConfig );
+			try {
+				setupRepo( repoConfig );
+			} catch ( final Exception e ) {
+				log.error( "Error while handle {}!", repoConfig, e );
+			}
 		} );
 	}
 
@@ -115,6 +119,10 @@ public class RebaseService {
 		log.info( "Rebasing {}.", pullRequest );
 
 		final Git localRepo = localGitRepos.get( repoConfig );
+		if ( localRepo == null ) {
+			log.info( "Local repository isn't prepared for {}.", repoConfig );
+			return false;
+		}
 		final CredentialsProvider credential = credentials.get( repoConfig );
 
 		try {
