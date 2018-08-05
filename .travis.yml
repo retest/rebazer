@@ -3,3 +3,5 @@ sudo: false
 
 notifications:
   email: false
+
+install: true
