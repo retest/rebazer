@@ -49,6 +49,9 @@ public class RebaseService {
 		final File repoFolder = repoFolder( repoConfig );
 		final Git localRepo = setupLocalGitRepo( credential, repoFolder, repoConfig.getUrl() );
 
+		localRepo.getRepository().getConfig().setString( "user", null, "name", "rebazer" );
+		localRepo.getRepository().getConfig().setString( "user", null, "email", "rebazer@retest.de" );
+
 		credentials.put( repoConfig, credential );
 		localGitRepos.put( repoConfig, localRepo );
 		cleaner.cleanUp( localRepo, repoConfig.getMasterBranch() );
