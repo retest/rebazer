@@ -28,7 +28,7 @@ pipeline {
 
 		stage('Artifacts') {
 			steps {
-				sh 'mvn package -DskipTests'
+				sh 'mvn package -DskipTests -P deb'
 			}
 		}
 	}
