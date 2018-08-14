@@ -1,5 +1,5 @@
 language: java
-sudo: false
+sudo: required
 
 addons:
   sonarcloud:
@@ -14,6 +14,9 @@ cache:
   directories:
     - "${HOME}/.sonar/cache/"
     - "${HOME}/.m2/"
+
+services:
+  - docker
 
 install: true
 
