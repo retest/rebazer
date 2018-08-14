@@ -19,3 +19,17 @@ install: true
 
 script:
   - mvn clean org.jacoco:jacoco-maven-plugin:prepare-agent verify sonar:sonar
+
+before_deploy:
+  - mvn package -DskipTests -P deb
+
+deploy:
+  provider: releases
+  api_key: "${GH_TOKEN}"
+  file_glob: true
+  file:
+    - "./target/rebazer-*.jar"
+    - "./target/rebazer-*.deb"
+  skip_cleanup: true
+  on:
+    tags: true
