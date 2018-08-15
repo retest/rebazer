@@ -21,18 +21,23 @@ services:
 install: true
 
 script:
-  - mvn clean org.jacoco:jacoco-maven-plugin:prepare-agent verify sonar:sonar
-
-before_deploy:
-  - mvn package -DskipTests -P deb,docker
+  - mvn clean org.jacoco:jacoco-maven-plugin:prepare-agent verify sonar:sonar -P deb,docker
 
 deploy:
-  provider: releases
-  api_key: "${GH_TOKEN}"
-  file_glob: true
-  file:
-    - "./target/rebazer-*.jar"
-    - "./target/rebazer-*.deb"
-  skip_cleanup: true
-  on:
-    tags: true
+  - provider: releases
+    api_key: "${GH_TOKEN}"
+    file_glob: true
+    file:
+      - "./target/rebazer-*.jar"
+      - "./target/rebazer-*.deb"
+    skip_cleanup: true
+    on:
+      tags: true
+
+  - provider: script
+    script:
+      - docker login -u "$DOCKER_USERNAME" -p "$DOCKER_PASSWORD"
+      - mvn dockerfile:push -Pdocker
+    skip_cleanup: true
+    on:
+      tags: true
