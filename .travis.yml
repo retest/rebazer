@@ -1,11 +1,21 @@
 language: java
 sudo: false
 
+addons:
+  sonarcloud:
+    organization: retest
+    token:
+      secure: "${SONAR_CLOUD_TOKEN}"
+
 notifications:
   email: false
 
 cache:
   directories:
+    - "${HOME}/.sonar/cache/"
     - "${HOME}/.m2/"
 
 install: true
+
+script:
+  - mvn clean org.jacoco:jacoco-maven-plugin:prepare-agent verify sonar:sonar
