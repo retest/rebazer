@@ -15,8 +15,8 @@ import com.jayway.jsonpath.JsonPath;
 
 public class BitbucketConnector implements RepositoryConnector {
 
-	private static final String baseUrlV1 = "https://api.bitbucket.org/1.0";
-	private static final String baseUrlV2 = "https://api.bitbucket.org/2.0";
+	private static final String BASE_URL_V_1 = "https://api.bitbucket.org/1.0";
+	private static final String BASE_URL_V_2 = "https://api.bitbucket.org/2.0";
 
 	private final RestTemplate legacyTemplate;
 	private final RestTemplate template;
@@ -25,9 +25,9 @@ public class BitbucketConnector implements RepositoryConnector {
 		final String basePath = "/repositories/" + repoConfig.getTeam() + "/" + repoConfig.getRepo();
 
 		legacyTemplate = templateBuilder.basicAuthorization( repoConfig.getUser(), repoConfig.getPass() )
-				.rootUri( baseUrlV1 + basePath ).build();
+				.rootUri( BASE_URL_V_1 + basePath ).build();
 		template = templateBuilder.basicAuthorization( repoConfig.getUser(), repoConfig.getPass() )
-				.rootUri( baseUrlV2 + basePath ).build();
+				.rootUri( BASE_URL_V_2 + basePath ).build();
 	}
 
 	@Override

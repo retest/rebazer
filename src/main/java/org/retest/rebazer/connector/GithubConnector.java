@@ -15,7 +15,7 @@ import com.jayway.jsonpath.JsonPath;
 
 public class GithubConnector implements RepositoryConnector {
 
-	private static final String baseUrl = "https://api.github.com";
+	private static final String BASE_URL = "https://api.github.com";
 
 	private final RestTemplate template;
 
@@ -23,7 +23,7 @@ public class GithubConnector implements RepositoryConnector {
 		final String basePath = "/repos/" + repoConfig.getTeam() + "/" + repoConfig.getRepo();
 
 		template = builder.basicAuthorization( repoConfig.getUser(), repoConfig.getPass() )
-				.rootUri( baseUrl + basePath ).build();
+				.rootUri( BASE_URL + basePath ).build();
 	}
 
 	@Override
