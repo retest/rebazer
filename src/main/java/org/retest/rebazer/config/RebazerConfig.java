@@ -75,18 +75,18 @@ public class RebazerConfig {
 	 */
 	public List<RepositoryConfig> getRepos() {
 		final List<RepositoryConfig> configs = new ArrayList<>();
-		hosts.forEach( host -> {
-			host.teams.forEach( team -> {
-				team.repos.forEach( repo -> {
+		for ( final Host host : hosts ) {
+			for ( final Team team : host.teams ) {
+				for ( final Repo repo : team.repos ) {
 					configs.add( RepositoryConfig.builder() //
 							.type( host.type ).host( host.getUrl() ) //
 							.team( team.name ).repo( repo.name ) //
 							.user( team.getUser() ).pass( team.pass ) //
 							.masterBranch( repo.masterBranch ) //
 							.build() );
-				} );
-			} );
-		} );
+				}
+			}
+		}
 		return configs;
 	}
 
