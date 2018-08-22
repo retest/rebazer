@@ -15,8 +15,8 @@ import com.jayway.jsonpath.JsonPath;
 
 public class BitbucketConnector implements RepositoryConnector {
 
-	private final static String baseUrlV1 = "https://api.bitbucket.org/1.0";
-	private final static String baseUrlV2 = "https://api.bitbucket.org/2.0";
+	private static final String BASE_URL_V_1 = "https://api.bitbucket.org/1.0";
+	private static final String BASE_URL_V_2 = "https://api.bitbucket.org/2.0";
 
 	private final RestTemplate legacyTemplate;
 	private final RestTemplate template;
@@ -25,21 +25,20 @@ public class BitbucketConnector implements RepositoryConnector {
 		final String basePath = "/repositories/" + repoConfig.getTeam() + "/" + repoConfig.getRepo();
 
 		legacyTemplate = templateBuilder.basicAuthorization( repoConfig.getUser(), repoConfig.getPass() )
-				.rootUri( baseUrlV1 + basePath ).build();
+				.rootUri( BASE_URL_V_1 + basePath ).build();
 		template = templateBuilder.basicAuthorization( repoConfig.getUser(), repoConfig.getPass() )
-				.rootUri( baseUrlV2 + basePath ).build();
+				.rootUri( BASE_URL_V_2 + basePath ).build();
 	}
 
 	@Override
 	public PullRequest getLatestUpdate( final PullRequest pullRequest ) {
 		final DocumentContext jsonPath = jsonPathForPath( requestPath( pullRequest ) );
-		final PullRequest updatedPullRequest = PullRequest.builder() //
+		return PullRequest.builder() //
 				.id( pullRequest.getId() ) //
 				.source( pullRequest.getSource() ) //
 				.destination( pullRequest.getDestination() ) //
 				.lastUpdate( jsonPath.read( "$.updated_on" ) ) //
 				.build();
-		return updatedPullRequest;
 	}
 
 	@Override
@@ -88,7 +87,7 @@ public class BitbucketConnector implements RepositoryConnector {
 	@Override
 	public boolean greenBuildExists( final PullRequest pullRequest ) {
 		final DocumentContext jsonPath = jsonPathForPath( requestPath( pullRequest ) + "/statuses" );
-		return jsonPath.<List<String>> read( "$.values[*].state" ).stream().anyMatch( s -> "SUCCESSFUL".equals( s ) );
+		return jsonPath.<List<String>> read( "$.values[*].state" ).stream().anyMatch( "SUCCESSFUL"::equals );
 	}
 
 	@Override
@@ -100,11 +99,12 @@ public class BitbucketConnector implements RepositoryConnector {
 	public static List<PullRequest> parsePullRequestsJson( final DocumentContext jsonPath ) {
 		final int numPullRequests = jsonPath.read( "$.size" );
 		final List<PullRequest> results = new ArrayList<>( numPullRequests );
+		final String pathPrefix = "$.values[";
 		for ( int i = 0; i < numPullRequests; i++ ) {
-			final int id = jsonPath.read( "$.values[" + i + "].id" );
-			final String source = jsonPath.read( "$.values[" + i + "].source.branch.name" );
-			final String destination = jsonPath.read( "$.values[" + i + "].destination.branch.name" );
-			final String lastUpdate = jsonPath.read( "$.values[" + i + "].updated_on" );
+			final int id = jsonPath.read( pathPrefix + i + "].id" );
+			final String source = jsonPath.read( pathPrefix + i + "].source.branch.name" );
+			final String destination = jsonPath.read( pathPrefix + i + "].destination.branch.name" );
+			final String lastUpdate = jsonPath.read( pathPrefix + i + "].updated_on" );
 			results.add( PullRequest.builder() //
 					.id( id ) //
 					.source( source ) //

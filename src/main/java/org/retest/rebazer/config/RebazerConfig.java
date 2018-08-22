@@ -22,8 +22,8 @@ public class RebazerConfig {
 	/**
 	 * Values used for {@link org.retest.rebazer.RebazerService#pollToHandleAllPullRequests()}
 	 */
-	public final static String POLL_INTERVAL_KEY = "rebazer.pollInterval";
-	public final static int POLL_INTERVAL_DEFAULT = 60;
+	public static final String POLL_INTERVAL_KEY = "rebazer.pollInterval";
+	public static final int POLL_INTERVAL_DEFAULT = 60;
 	private long pollInterval = POLL_INTERVAL_DEFAULT;
 
 	private String workspace = "rebazer-workspace";
@@ -75,18 +75,18 @@ public class RebazerConfig {
 	 */
 	public List<RepositoryConfig> getRepos() {
 		final List<RepositoryConfig> configs = new ArrayList<>();
-		hosts.forEach( host -> {
-			host.teams.forEach( team -> {
-				team.repos.forEach( repo -> {
+		for ( final Host host : hosts ) {
+			for ( final Team team : host.teams ) {
+				for ( final Repo repo : team.repos ) {
 					configs.add( RepositoryConfig.builder() //
 							.type( host.type ).host( host.getUrl() ) //
 							.team( team.name ).repo( repo.name ) //
 							.user( team.getUser() ).pass( team.pass ) //
 							.masterBranch( repo.masterBranch ) //
 							.build() );
-				} );
-			} );
-		} );
+				}
+			}
+		}
 		return configs;
 	}
 

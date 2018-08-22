@@ -50,7 +50,7 @@ public class GitRepoCleaner {
 	private static void removeAllLocalBranches( final Git localRepo ) {
 		final List<Ref> allBranches = localRepo.branchList().call();
 		final String[] localBranches = allBranches.stream() //
-				.map( branch -> branch.getName() ) //
+				.map( Ref::getName ) //
 				.filter( name -> name.startsWith( "refs/heads/" ) ) //
 				.toArray( String[]::new );
 

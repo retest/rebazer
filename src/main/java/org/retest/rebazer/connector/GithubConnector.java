@@ -15,7 +15,7 @@ import com.jayway.jsonpath.JsonPath;
 
 public class GithubConnector implements RepositoryConnector {
 
-	private final static String baseUrl = "https://api.github.com";
+	private static final String BASE_URL = "https://api.github.com";
 
 	private final RestTemplate template;
 
@@ -23,25 +23,24 @@ public class GithubConnector implements RepositoryConnector {
 		final String basePath = "/repos/" + repoConfig.getTeam() + "/" + repoConfig.getRepo();
 
 		template = builder.basicAuthorization( repoConfig.getUser(), repoConfig.getPass() )
-				.rootUri( baseUrl + basePath ).build();
+				.rootUri( BASE_URL + basePath ).build();
 	}
 
 	@Override
 	public PullRequest getLatestUpdate( final PullRequest pullRequest ) {
 		final DocumentContext jsonPath = jsonPathForPath( requestPath( pullRequest ) );
-		final PullRequest updatedPullRequest = PullRequest.builder() //
+		return PullRequest.builder() //
 				.id( pullRequest.getId() ) //
 				.source( pullRequest.getSource() ) //
 				.destination( pullRequest.getDestination() ) //
 				.lastUpdate( jsonPath.read( "$.updated_at" ) ) //
 				.build();
-		return updatedPullRequest;
 	}
 
 	@Override
 	public boolean isApproved( final PullRequest pullRequest ) {
 		final DocumentContext jsonPath = jsonPathForPath( requestPath( pullRequest ) + "/reviews" );
-		return jsonPath.<List<String>> read( "$..state" ).stream().anyMatch( s -> "APPROVED".equals( s ) );
+		return jsonPath.<List<String>> read( "$..state" ).stream().anyMatch( "APPROVED"::equals );
 	}
 
 	@Override
@@ -59,8 +58,7 @@ public class GithubConnector implements RepositoryConnector {
 		final List<String> commitIds = jsonPath.read( "$..sha" );
 		final List<String> parentIds = jsonPath.read( "$..parents..sha" );
 
-		return parentIds.stream().filter( parent -> commitIds.contains( parent ) ).findFirst()
-				.orElseThrow( IllegalStateException::new );
+		return parentIds.stream().filter( commitIds::contains ).findFirst().orElseThrow( IllegalStateException::new );
 	}
 
 	@Override
@@ -78,7 +76,7 @@ public class GithubConnector implements RepositoryConnector {
 	public boolean greenBuildExists( final PullRequest pullRequest ) {
 		final String urlPath = "/commits/" + pullRequest.getSource() + "/status";
 		final DocumentContext jsonPath = jsonPathForPath( urlPath );
-		return jsonPath.<List<String>> read( "$.statuses[*].state" ).stream().anyMatch( s -> "success".equals( s ) );
+		return jsonPath.<List<String>> read( "$.statuses[*].state" ).stream().anyMatch( "success"::equals );
 	}
 
 	@Override
