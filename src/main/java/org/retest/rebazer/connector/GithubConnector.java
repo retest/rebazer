@@ -40,7 +40,7 @@ public class GithubConnector implements RepositoryConnector {
 	@Override
 	public boolean isApproved( final PullRequest pullRequest ) {
 		final DocumentContext jsonPath = jsonPathForPath( requestPath( pullRequest ) + "/reviews" );
-		return jsonPath.<List<String>> read( "$..state" ).stream().anyMatch( s -> "APPROVED".equals( s ) );
+		return jsonPath.<List<String>> read( "$..state" ).stream().anyMatch( "APPROVED"::equals );
 	}
 
 	@Override
@@ -58,8 +58,7 @@ public class GithubConnector implements RepositoryConnector {
 		final List<String> commitIds = jsonPath.read( "$..sha" );
 		final List<String> parentIds = jsonPath.read( "$..parents..sha" );
 
-		return parentIds.stream().filter( parent -> commitIds.contains( parent ) ).findFirst()
-				.orElseThrow( IllegalStateException::new );
+		return parentIds.stream().filter( commitIds::contains ).findFirst().orElseThrow( IllegalStateException::new );
 	}
 
 	@Override
@@ -77,7 +76,7 @@ public class GithubConnector implements RepositoryConnector {
 	public boolean greenBuildExists( final PullRequest pullRequest ) {
 		final String urlPath = "/commits/" + pullRequest.getSource() + "/status";
 		final DocumentContext jsonPath = jsonPathForPath( urlPath );
-		return jsonPath.<List<String>> read( "$.statuses[*].state" ).stream().anyMatch( s -> "success".equals( s ) );
+		return jsonPath.<List<String>> read( "$.statuses[*].state" ).stream().anyMatch( "success"::equals );
 	}
 
 	@Override

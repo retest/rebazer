@@ -87,7 +87,7 @@ public class BitbucketConnector implements RepositoryConnector {
 	@Override
 	public boolean greenBuildExists( final PullRequest pullRequest ) {
 		final DocumentContext jsonPath = jsonPathForPath( requestPath( pullRequest ) + "/statuses" );
-		return jsonPath.<List<String>> read( "$.values[*].state" ).stream().anyMatch( s -> "SUCCESSFUL".equals( s ) );
+		return jsonPath.<List<String>> read( "$.values[*].state" ).stream().anyMatch( "SUCCESSFUL"::equals );
 	}
 
 	@Override
