@@ -22,8 +22,8 @@ public class RebazerConfig {
 	/**
 	 * Values used for {@link org.retest.rebazer.RebazerService#pollToHandleAllPullRequests()}
 	 */
-	public final static String POLL_INTERVAL_KEY = "rebazer.pollInterval";
-	public final static int POLL_INTERVAL_DEFAULT = 60;
+	public static final String POLL_INTERVAL_KEY = "rebazer.pollInterval";
+	public static final int POLL_INTERVAL_DEFAULT = 60;
 	private long pollInterval = POLL_INTERVAL_DEFAULT;
 
 	private String workspace = "rebazer-workspace";

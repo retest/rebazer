@@ -15,8 +15,8 @@ import com.jayway.jsonpath.JsonPath;
 
 public class BitbucketConnector implements RepositoryConnector {
 
-	private final static String baseUrlV1 = "https://api.bitbucket.org/1.0";
-	private final static String baseUrlV2 = "https://api.bitbucket.org/2.0";
+	private static final String baseUrlV1 = "https://api.bitbucket.org/1.0";
+	private static final String baseUrlV2 = "https://api.bitbucket.org/2.0";
 
 	private final RestTemplate legacyTemplate;
 	private final RestTemplate template;

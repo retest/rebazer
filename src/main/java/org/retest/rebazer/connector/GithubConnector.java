@@ -15,7 +15,7 @@ import com.jayway.jsonpath.JsonPath;
 
 public class GithubConnector implements RepositoryConnector {
 
-	private final static String baseUrl = "https://api.github.com";
+	private static final String baseUrl = "https://api.github.com";
 
 	private final RestTemplate template;
 
