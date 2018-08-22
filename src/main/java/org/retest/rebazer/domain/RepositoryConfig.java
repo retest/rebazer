@@ -32,8 +32,7 @@ public class RepositoryConfig {
 	}
 
 	public String[] getQualifiers() {
-		final String[] qualifiers = { host.getHost(), team, repo };
-		return qualifiers;
+		return new String[] { host.getHost(), team, repo };
 	}
 
 	public String getUrl() {

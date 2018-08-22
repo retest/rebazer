@@ -29,13 +29,12 @@ public class GithubConnector implements RepositoryConnector {
 	@Override
 	public PullRequest getLatestUpdate( final PullRequest pullRequest ) {
 		final DocumentContext jsonPath = jsonPathForPath( requestPath( pullRequest ) );
-		final PullRequest updatedPullRequest = PullRequest.builder() //
+		return PullRequest.builder() //
 				.id( pullRequest.getId() ) //
 				.source( pullRequest.getSource() ) //
 				.destination( pullRequest.getDestination() ) //
 				.lastUpdate( jsonPath.read( "$.updated_at" ) ) //
 				.build();
-		return updatedPullRequest;
 	}
 
 	@Override
