@@ -36,8 +36,8 @@ deploy:
 
   - provider: script
     script:
-      - docker login -u "$DOCKER_USERNAME" -p "$DOCKER_PASSWORD"
-      - mvn dockerfile:push -Pdocker
+      - docker login -u "$DOCKER_USERNAME" -p "$DOCKER_PASSWORD" ;
+        mvn dockerfile:push -Pdocker
     skip_cleanup: true
     on:
       tags: true
