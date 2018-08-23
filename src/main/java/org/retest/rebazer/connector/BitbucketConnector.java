@@ -99,12 +99,12 @@ public class BitbucketConnector implements RepositoryConnector {
 	public static List<PullRequest> parsePullRequestsJson( final DocumentContext jsonPath ) {
 		final int numPullRequests = jsonPath.read( "$.size" );
 		final List<PullRequest> results = new ArrayList<>( numPullRequests );
-		final String pathPrefix = "$.values[";
 		for ( int i = 0; i < numPullRequests; i++ ) {
-			final int id = jsonPath.read( pathPrefix + i + "].id" );
-			final String source = jsonPath.read( pathPrefix + i + "].source.branch.name" );
-			final String destination = jsonPath.read( pathPrefix + i + "].destination.branch.name" );
-			final String lastUpdate = jsonPath.read( pathPrefix + i + "].updated_on" );
+			final String pathPrefix = "$.values[" + i + "].";
+			final int id = jsonPath.read( pathPrefix + "id" );
+			final String source = jsonPath.read( pathPrefix + "source.branch.name" );
+			final String destination = jsonPath.read( pathPrefix + "destination.branch.name" );
+			final String lastUpdate = jsonPath.read( pathPrefix + "updated_on" );
 			results.add( PullRequest.builder() //
 					.id( id ) //
 					.source( source ) //
