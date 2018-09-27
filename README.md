@@ -84,6 +84,16 @@ If e.g. all parameters are specified in a file called `application.yml`, the fol
 `java -jar rebazer-VERSION.jar --spring.config.location=file:./application.yml`
 
 
+### Docker
+
+There exist a docker image on [docker hub](https://hub.docker.com/r/martinvietz/rebazer/).
+An example configuration for the docker container is placed in the [docker-compose.yml](./docker-compose.yml).
+
+To configure the rebazer mount the configuration file at `/application.yml`.
+To optimize production setups it is recommended to mount `/rebazer-workspace`
+as a external storage or ram disk.
+
+
 ### Debian package
 
 **Attention**: We don't ship a fully functional configuration for this package. So after installation, one must ensure that a proper configuration is placed in `/etc/rebazer`. Also make sure that the configuration file is accessible by the user `rebazer`.
