@@ -4,7 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.net.URL;
 
-import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.retest.rebazer.RepositoryHostingTypes;
 import org.retest.rebazer.connector.GithubConnector;
@@ -13,9 +13,9 @@ import org.springframework.boot.web.client.RestTemplateBuilder;
 
 class RepositoryConfigTest {
 
-	private RepositoryConfig repositoryConfig;
+	RepositoryConfig repositoryConfig;
 
-	@BeforeAll
+	@BeforeEach
 	void setUp() throws Exception {
 		repositoryConfig = new RepositoryConfig( RepositoryHostingTypes.GITHUB,
 				new URL( RepositoryHostingTypes.GITHUB.getDefaultUrl().toString() ), "team", "repository", "user",

@@ -12,7 +12,7 @@ import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
 
-import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.retest.rebazer.config.RebazerConfig;
 import org.retest.rebazer.domain.PullRequest;
@@ -31,7 +31,7 @@ class GithubConnectorTest {
 
 	GithubConnector cut;
 
-	@BeforeAll
+	@BeforeEach
 	void setUp() {
 		template = mock( RestTemplate.class );
 		config = mock( RebazerConfig.class );

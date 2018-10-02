@@ -2,14 +2,14 @@ package org.retest.rebazer.domain;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 class PullRequestTest {
 
-	private PullRequest pullRequest;
+	PullRequest pullRequest;
 
-	@BeforeAll
+	@BeforeEach
 	void setUp() {
 		pullRequest = new PullRequest( 1, "source", "destination", "lastUpdate" );
 	}

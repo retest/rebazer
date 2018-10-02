@@ -7,7 +7,7 @@ import static org.mockito.Mockito.when;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.retest.rebazer.domain.PullRequest;
 import org.retest.rebazer.domain.RepositoryConfig;
@@ -20,7 +20,7 @@ class PullRequestLastUpdateStoreTest {
 
 	PullRequestLastUpdateStore cut;
 
-	@BeforeAll
+	@BeforeEach
 	void setUp() {
 		cut = new PullRequestLastUpdateStore();
 
