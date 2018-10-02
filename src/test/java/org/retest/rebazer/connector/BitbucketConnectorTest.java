@@ -7,14 +7,13 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 import org.retest.rebazer.config.RebazerConfig;
 import org.retest.rebazer.domain.PullRequest;
 import org.retest.rebazer.domain.RepositoryConfig;
@@ -25,7 +24,7 @@ import org.springframework.web.client.RestTemplate;
 import com.jayway.jsonpath.DocumentContext;
 import com.jayway.jsonpath.JsonPath;
 
-public class BitbucketConnectorTest {
+class BitbucketConnectorTest {
 
 	PullRequestLastUpdateStore pullRequestUpdateStates;
 	RestTemplate template;
@@ -34,8 +33,8 @@ public class BitbucketConnectorTest {
 
 	BitbucketConnector cut;
 
-	@Before
-	public void setUp() {
+	@BeforeAll
+	void setUp() {
 		template = mock( RestTemplate.class );
 		config = mock( RebazerConfig.class );
 		repoConfig = mock( RepositoryConfig.class );
@@ -49,7 +48,7 @@ public class BitbucketConnectorTest {
 	}
 
 	@Test
-	public void rebaseNeeded_should_return_false_if_headOfBranch_is_equal_to_lastCommonCommitId() {
+	void rebaseNeeded_should_return_false_if_headOfBranch_is_equal_to_lastCommonCommitId() {
 		final PullRequest pullRequest = mock( PullRequest.class );
 		cut = mock( BitbucketConnector.class );
 		final String head = "12325345923759135";
@@ -61,7 +60,7 @@ public class BitbucketConnectorTest {
 	}
 
 	@Test
-	public void rebaseNeeded_should_return_true_if_headOfBranch_isnt_equal_to_lastCommonCommitId() {
+	void rebaseNeeded_should_return_true_if_headOfBranch_isnt_equal_to_lastCommonCommitId() {
 		final PullRequest pullRequest = mock( PullRequest.class );
 		cut = mock( BitbucketConnector.class );
 		final String head = "12325345923759135";
@@ -74,7 +73,7 @@ public class BitbucketConnectorTest {
 	}
 
 	@Test
-	public void isApproved_should_return_false_if_approved_is_false() {
+	void isApproved_should_return_false_if_approved_is_false() {
 		final PullRequest pullRequest = mock( PullRequest.class );
 		final String json = "{participants: [{\"approved\": false}]}\"";
 		when( template.getForObject( anyString(), eq( String.class ) ) ).thenReturn( json );
@@ -83,7 +82,7 @@ public class BitbucketConnectorTest {
 	}
 
 	@Test
-	public void isApproved_should_return_ture_if_approved_is_true() {
+	void isApproved_should_return_ture_if_approved_is_true() {
 		final PullRequest pullRequest = mock( PullRequest.class );
 		final String json = "{participants: [{\"approved\": true}]}\"";
 		when( template.getForObject( anyString(), eq( String.class ) ) ).thenReturn( json );
@@ -92,7 +91,7 @@ public class BitbucketConnectorTest {
 	}
 
 	@Test
-	public void greenBuildExists_should_return_false_if_state_is_failed() {
+	void greenBuildExists_should_return_false_if_state_is_failed() {
 		final PullRequest pullRequest = mock( PullRequest.class );
 		final String json = "{values: [{\"state\": FAILED}]}";
 		when( template.getForObject( anyString(), eq( String.class ) ) ).thenReturn( json );
@@ -101,7 +100,7 @@ public class BitbucketConnectorTest {
 	}
 
 	@Test
-	public void greenBuildExists_should_return_true_if_state_is_successful() {
+	void greenBuildExists_should_return_true_if_state_is_successful() {
 		final PullRequest pullRequest = mock( PullRequest.class );
 		final String json = "{values: [{\"state\": SUCCESSFUL}]}";
 		when( template.getForObject( anyString(), eq( String.class ) ) ).thenReturn( json );
@@ -110,7 +109,7 @@ public class BitbucketConnectorTest {
 	}
 
 	@Test
-	public void getAllPullRequests_should_return_all_pull_requests_as_list() throws IOException {
+	void getAllPullRequests_should_return_all_pull_requests_as_list() throws Exception {
 		final String json = new String( Files.readAllBytes(
 				Paths.get( "src/test/resources/org/retest/rebazer/service/bitbucketservicetest/response.json" ) ) );
 		final DocumentContext documentContext = JsonPath.parse( json );
@@ -130,12 +129,11 @@ public class BitbucketConnectorTest {
 	}
 
 	@Test
-	public void getLatestUpdate_should_return_updated_PullRequest() {
+	void getLatestUpdate_should_return_updated_PullRequest() {
 		final PullRequest pullRequest = mock( PullRequest.class );
 		final String json = "{\"updated_on\": \"someTimestamp\"}";
 		when( template.getForObject( anyString(), eq( String.class ) ) ).thenReturn( json );
 
 		assertThat( cut.getLatestUpdate( pullRequest ).getLastUpdate() ).isEqualTo( "someTimestamp" );
 	}
-
 }
