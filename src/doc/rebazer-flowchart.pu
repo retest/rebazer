@@ -7,7 +7,8 @@ if (Has PR changed \nsince last run?) then (yes)
 
     if (Is source branch on\ntop of target branch?) then (yes)
       if (Is PR approved?) then (yes)
-        #lightblue:Merge PR;
+        #lightblue:Merge PR into target;
+        #lightblue:Delete merged branch;
         stop
       else (no)
         :Wait for
