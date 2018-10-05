@@ -74,6 +74,8 @@ public class RebazerConfig {
 	 * This method converts the objects optimized for spring config to objects optimized for internal processing
 	 */
 	public List<RepositoryConfig> getRepos() {
+		checkThatConfigurationIsReaded();
+
 		final List<RepositoryConfig> configs = new ArrayList<>();
 		for ( final Host host : hosts ) {
 			for ( final Team team : host.teams ) {
@@ -88,6 +90,13 @@ public class RebazerConfig {
 			}
 		}
 		return configs;
+	}
+
+	private void checkThatConfigurationIsReaded() {
+		if ( hosts.isEmpty() ) {
+			throw new RuntimeException( "No repositories defined, please verify that application.yml is placed"
+					+ " at the correct location and is readable!" );
+		}
 	}
 
 }
