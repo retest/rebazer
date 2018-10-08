@@ -18,7 +18,7 @@ The processing for each repository is described below:
 * Is source branch on top of target branch?
   * Rebase source branch
   * Conflict while rebasing?
-    * If no abort rebase and comment PR
+    * On conflict abort rebase and comment PR
   * Wait for green build
 * Is PR approved?
   * Wait for approval
@@ -35,7 +35,7 @@ Illustrated as a flowchart:
 The `rebazer` relies on several parameters to configure the handled repositories.
 The configuration can be specified in any way
 [supported by spring boot](https://docs.spring.io/spring-boot/docs/current/reference/html/boot-features-external-config.html).
-Recommended is to use a `application.yml` file. The roll out of the `application.yml` depends on type of [deployment](#Deployment).
+Recommended is to use a `application.yml` file. The roll out of the `application.yml` depends on type of [deployment](#deployment).
 
 Minimal configuration example:
 
@@ -54,23 +54,23 @@ An example in-depth can be found in [application-example.yml](./application-exam
 
 ### Mandatory parameter
 
-| Parameter                                 | Explanation                                              |
-|-------------------------------------------|----------------------------------------------------------|
-| `rebazer.hosts[ ].type`                   | Repository type, possible values `GITHUB` or `BITBUCKET` |
-| `rebazer.hosts[ ].teams[ ].name`          | Team name for the repository access                      |
-| `rebazer.hosts[ ].teams[ ].pass`          | Password for the repository access                       |
-| `rebazer.hosts[ ].teams[ ].repos[ ].name` | Name/Key of a specific repository                        |
+| Parameter                                 | Explanation                                                    |
+|-------------------------------------------|----------------------------------------------------------------|
+| `rebazer.hosts[ ].type`                   | Hosting platform type, possible values `GITHUB` or `BITBUCKET` |
+| `rebazer.hosts[ ].teams[ ].name`          | Team/company/project name of the repos, first part of the slug |
+| `rebazer.hosts[ ].teams[ ].pass`          | Password to access the repositories                            |
+| `rebazer.hosts[ ].teams[ ].repos[ ].name` | Name/Key of a specific repository                              |
 
 ### Optional parameter
 
-| Parameter                                         | Explanation                                      | Default Value                 |
-|---------------------------------------------------|--------------------------------------------------|-------------------------------|
-| `rebazer.workspace`                               | Workspace Directory for checkouts                | `./rebazer-workspace`         |
-| `rebazer.garbageCollectionCountdown`              | Number of rebases before a git GC is triggered   | `20`                          |
-| `rebazer.pollInterval`                            | Delay between each polling interval in seconds   | `60`                          |
-| `rebazer.hosts[ ].url`                            | URL to the hosting service                       | Depents on `..hosts[ ].type`, e.g. github.org |
-| `rebazer.hosts[ ].teams[ ].user`                  | User to log in for the specific team             | Same as `..teams[ ].name`     |
-| `rebazer.hosts[ ].teams[ ].repos[ ].masterBranch` | Branch to reset git repo on cleanup after rebase | `master`                      |
+| Parameter                                         | Explanation                                       | Default Value                 |
+|---------------------------------------------------|---------------------------------------------------|-------------------------------|
+| `rebazer.workspace`                               | Workspace Directory for checkouts                 | `./rebazer-workspace`         |
+| `rebazer.garbageCollectionCountdown`              | Number of rebases before a git GC is triggered    | `20`                          |
+| `rebazer.pollInterval`                            | Delay in seconds between checks for changes on configured repos | `60`            |
+| `rebazer.hosts[ ].url`                            | Base URL to the hosting platform api              | Depents on `..hosts[ ].type`, e.g. https://api.github.com |
+| `rebazer.hosts[ ].teams[ ].user`                  | User for the specific team to access repositories | Same as `..teams[ ].name`     |
+| `rebazer.hosts[ ].teams[ ].repos[ ].masterBranch` | Branch to reset git repo on cleanup after rebase  | `master`                      |
 
 
 ## Deployment
@@ -114,24 +114,31 @@ The debian package overwrites the `rebazer.workspace` parameter via an [environm
 
 Solution: Please make sure the folder `/etc/rebazer` contains a valid configuration and the user `rebazer` has access to it.
 
+    chmod 755 /etc/rebazer
     chmod 600 /etc/rebazer/application.yml
     chown rebazer:rebazer /etc/rebazer/application.yml
 
 
-## Building
+## Build
 
-## Building prerequisites
+## Build prerequisites
 
 Before building the `rebazer` application, please make sure that the following tools are installed:
 
 * Java 8
-* Maven (3.0+)
+* Maven (3.3+)
 * Git
-
 
 A typical build involves calling the `package` target via maven from the root of the cloned repository:
 
-
 `mvn clean package`
 
-Two major artifacts are then build inside the `target` directory: `rebazer-$VERSION.jar` and `rebazer_$VERSION_all.deb`.
+The major artifacts are then build inside the `target` directory: `rebazer-$VERSION.jar`.
+
+There are maven profiles to build docker or deb packages.
+
+`mvn clean package -P deb`
+
+`mvn clean package -P docker`
+
+`mvn clean package -P deb,docker`

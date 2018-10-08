@@ -11,9 +11,14 @@ import org.springframework.context.annotation.Configuration;
 
 import lombok.AccessLevel;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
 
+/**
+ * This class and it internal objects are primary to read the spring configuration. For repository configurations use
+ * aggregated objects form {@link #getRepos()}.
+ */
 @Data
 @Configuration
 @ConfigurationProperties( "rebazer" )
@@ -33,7 +38,8 @@ public class RebazerConfig {
 	private List<Host> hosts;
 
 	@Setter
-	private static class Host {
+	@EqualsAndHashCode
+	static class Host {
 		RepositoryHostingTypes type;
 		private URL url;
 		List<Team> teams;
@@ -49,7 +55,8 @@ public class RebazerConfig {
 	}
 
 	@Setter
-	private static class Team {
+	@EqualsAndHashCode
+	static class Team {
 		String name;
 		private String user;
 		String pass;
@@ -65,7 +72,8 @@ public class RebazerConfig {
 	}
 
 	@Setter
-	private static class Repo {
+	@EqualsAndHashCode
+	static class Repo {
 		String name;
 		String masterBranch = "master";
 	}
@@ -74,6 +82,8 @@ public class RebazerConfig {
 	 * This method converts the objects optimized for spring config to objects optimized for internal processing
 	 */
 	public List<RepositoryConfig> getRepos() {
+		checkThatConfigurationIsReaded();
+
 		final List<RepositoryConfig> configs = new ArrayList<>();
 		for ( final Host host : hosts ) {
 			for ( final Team team : host.teams ) {
@@ -88,6 +98,13 @@ public class RebazerConfig {
 			}
 		}
 		return configs;
+	}
+
+	private void checkThatConfigurationIsReaded() {
+		if ( hosts == null || hosts.isEmpty() ) {
+			throw new IllegalStateException( "No repositories defined, please verify that application.yml is placed"
+					+ " at the correct location and is readable!" );
+		}
 	}
 
 }
