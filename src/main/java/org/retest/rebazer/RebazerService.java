@@ -41,7 +41,7 @@ public class RebazerService {
 		} );
 	}
 
-	private void handleRepo( final RepositoryConfig repoConfig ) {
+	void handleRepo( final RepositoryConfig repoConfig ) {
 		log.info( "Processing {}.", repoConfig );
 		final RepositoryConnector repoConnector = repoConfig.getConnector( templateBuilder );
 		for ( final PullRequest pullRequest : repoConnector.getAllPullRequests() ) {
@@ -50,7 +50,7 @@ public class RebazerService {
 		log.debug( "Processing done for {}.", repoConfig );
 	}
 
-	public void handlePullRequest( final RepositoryConnector repoConnector, final RepositoryConfig repoConfig,
+	void handlePullRequest( final RepositoryConnector repoConnector, final RepositoryConfig repoConfig,
 			final PullRequest pullRequest ) {
 		log.debug( "Processing {}.", pullRequest );
 
