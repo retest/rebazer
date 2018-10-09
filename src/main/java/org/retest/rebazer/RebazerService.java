@@ -28,7 +28,7 @@ public class RebazerService {
 	private final RebazerConfig rebazerConfig;
 	private final PullRequestLastUpdateStore pullRequestLastUpdateStore;
 
-	private final RestTemplateBuilder builder;
+	private final RestTemplateBuilder templateBuilder;
 
 	@Scheduled( fixedDelayString = "${" + POLL_INTERVAL_KEY + ":" + POLL_INTERVAL_DEFAULT + "}000" )
 	public void pollToHandleAllPullRequests() {
@@ -41,16 +41,16 @@ public class RebazerService {
 		} );
 	}
 
-	private void handleRepo( final RepositoryConfig repoConfig ) {
+	void handleRepo( final RepositoryConfig repoConfig ) {
 		log.info( "Processing {}.", repoConfig );
-		final RepositoryConnector repoConnector = repoConfig.getConnector( builder );
+		final RepositoryConnector repoConnector = repoConfig.getConnector( templateBuilder );
 		for ( final PullRequest pullRequest : repoConnector.getAllPullRequests() ) {
 			handlePullRequest( repoConnector, repoConfig, pullRequest );
 		}
 		log.debug( "Processing done for {}.", repoConfig );
 	}
 
-	public void handlePullRequest( final RepositoryConnector repoConnector, final RepositoryConfig repoConfig,
+	void handlePullRequest( final RepositoryConnector repoConnector, final RepositoryConfig repoConfig,
 			final PullRequest pullRequest ) {
 		log.debug( "Processing {}.", pullRequest );
 
