@@ -18,6 +18,10 @@ import org.retest.rebazer.config.RebazerConfig;
 import org.retest.rebazer.domain.PullRequest;
 import org.retest.rebazer.domain.RepositoryConfig;
 import org.springframework.boot.web.client.RestTemplateBuilder;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.RestTemplate;
 
 import com.jayway.jsonpath.DocumentContext;
@@ -90,8 +94,10 @@ class GithubConnectorTest {
 	@Test
 	void greenBuildExists_should_return_false_if_state_is_failed() {
 		final PullRequest pullRequest = mock( PullRequest.class );
-		final String json = "{statuses: [{\"state\": \"failure_or_error\"}]}";
-		when( template.getForObject( anyString(), eq( String.class ) ) ).thenReturn( json );
+		final String json = "{\"check_runs\":[{\"conclusion\":\"failure\"},{\"conclusion\":\"success\"}]}";
+		final ResponseEntity<String> resp = new ResponseEntity<>( json, HttpStatus.OK );
+		when( template.exchange( anyString(), any( HttpMethod.class ), any( HttpEntity.class ), eq( String.class ) ) )
+				.thenReturn( resp );
 
 		assertThat( cut.greenBuildExists( pullRequest ) ).isFalse();
 	}
@@ -99,8 +105,10 @@ class GithubConnectorTest {
 	@Test
 	void greenBuildExists_should_return_true_if_state_is_successful() {
 		final PullRequest pullRequest = mock( PullRequest.class );
-		final String json = "{statuses: [{\"state\": \"success\"}]}";
-		when( template.getForObject( anyString(), eq( String.class ) ) ).thenReturn( json );
+		final String json = "{\"check_runs\":[{\"conclusion\":\"success\"},{\"conclusion\":\"success\"}]}";
+		final ResponseEntity<String> resp = new ResponseEntity<>( json, HttpStatus.OK );
+		when( template.exchange( anyString(), any( HttpMethod.class ), any( HttpEntity.class ), eq( String.class ) ) )
+				.thenReturn( resp );
 
 		assertThat( cut.greenBuildExists( pullRequest ) ).isTrue();
 	}
