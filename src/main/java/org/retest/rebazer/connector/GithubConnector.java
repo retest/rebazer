@@ -8,6 +8,10 @@ import java.util.Map;
 import org.retest.rebazer.domain.PullRequest;
 import org.retest.rebazer.domain.RepositoryConfig;
 import org.springframework.boot.web.client.RestTemplateBuilder;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.RestTemplate;
 
 import com.jayway.jsonpath.DocumentContext;
@@ -74,9 +78,7 @@ public class GithubConnector implements RepositoryConnector {
 
 	@Override
 	public boolean greenBuildExists( final PullRequest pullRequest ) {
-		final String urlPath = "/commits/" + pullRequest.getSource() + "/status";
-		final DocumentContext jsonPath = jsonPathForPath( urlPath );
-		return jsonPath.<List<String>> read( "$.statuses[*].state" ).stream().anyMatch( "success"::equals );
+		return getGitHubChecks( pullRequest ).stream().allMatch( "success"::equals );
 	}
 
 	@Override
@@ -105,6 +107,19 @@ public class GithubConnector implements RepositoryConnector {
 
 	private static String requestPath( final PullRequest pullRequest ) {
 		return "/pulls/" + pullRequest.getId();
+	}
+
+	private List<String> getGitHubChecks( final PullRequest pullRequest ) {
+		final String urlPath = "/commits/" + pullRequest.getSource() + "/check-runs";
+
+		final HttpHeaders headers = new HttpHeaders();
+		headers.add( "Accept", "application/vnd.github.antiope-preview+json" );
+
+		final HttpEntity<String> entity = new HttpEntity<>( "parameters", headers );
+
+		final ResponseEntity<String> json = template.exchange( urlPath, HttpMethod.GET, entity, String.class );
+
+		return JsonPath.parse( json.getBody() ).<List<String>> read( "$.check_runs[*].conclusion" );
 	}
 
 	private DocumentContext jsonPathForPath( final String urlPath ) {
