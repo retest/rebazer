@@ -1,18 +1,25 @@
 package org.retest.rebazer.connector;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.retest.rebazer.domain.BitbucketPullRequestResponse;
 import org.retest.rebazer.domain.PullRequest;
 import org.retest.rebazer.domain.RepositoryConfig;
 import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.web.client.RestTemplate;
 
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jayway.jsonpath.DocumentContext;
 import com.jayway.jsonpath.JsonPath;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 public class BitbucketConnector implements RepositoryConnector {
 
 	private static final String BASE_URL_V_1 = "https://api.bitbucket.org/1.0";
@@ -20,6 +27,7 @@ public class BitbucketConnector implements RepositoryConnector {
 
 	private final RestTemplate legacyTemplate;
 	private final RestTemplate template;
+	private final ObjectMapper objectMapper;
 
 	public BitbucketConnector( final RepositoryConfig repoConfig, final RestTemplateBuilder templateBuilder ) {
 		final String basePath = "/repositories/" + repoConfig.getTeam() + "/" + repoConfig.getRepo();
@@ -28,6 +36,8 @@ public class BitbucketConnector implements RepositoryConnector {
 				.rootUri( BASE_URL_V_1 + basePath ).build();
 		template = templateBuilder.basicAuthorization( repoConfig.getUser(), repoConfig.getPass() )
 				.rootUri( BASE_URL_V_2 + basePath ).build();
+
+		objectMapper = new ObjectMapper().configure( DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false );
 	}
 
 	@Override
@@ -130,6 +140,25 @@ public class BitbucketConnector implements RepositoryConnector {
 		request.put( "content", message );
 
 		legacyTemplate.postForObject( requestPath( pullRequest ) + "/comments", request, String.class );
+	}
+
+	private DocumentContext getLastPage( final PullRequest pullRequest ) {
+		DocumentContext document = jsonPathForPath( requestPath( pullRequest ) + "/commits" );
+
+		try {
+			BitbucketPullRequestResponse response =
+					objectMapper.readValue( document.jsonString(), BitbucketPullRequestResponse.class );
+
+			while ( response.getNext() != null ) {
+				final String url = response.getNext();
+				document = jsonPathForPath( url );
+				response = objectMapper.readValue( document.jsonString(), BitbucketPullRequestResponse.class );
+			}
+		} catch ( final IOException e ) {
+			log.error( "Error parsing JSON.", e );
+		}
+
+		return document;
 	}
 
 }
