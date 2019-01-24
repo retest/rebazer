@@ -59,29 +59,17 @@ public class BitbucketConnector implements RepositoryConnector {
 
 	@Override
 	public boolean rebaseNeeded( final PullRequest pullRequest ) {
-		return !getLastCommonCommitId( pullRequest ).equals( getHeadOfBranch( pullRequest ) );
+		return !getLastParentCommitId( pullRequest ).equals( getHeadOfBranch( pullRequest ) );
 	}
 
 	String getHeadOfBranch( final PullRequest pullRequest ) {
 		return jsonPathForPath( "/refs/branches/" + pullRequest.getDestination() ).read( "$.target.hash" );
 	}
 
-	String getLastCommonCommitId( final PullRequest pullRequest ) {
-		DocumentContext jsonPath = jsonPathForPath( requestPath( pullRequest ) + "/commits" );
-
-		final int pageLength = jsonPath.read( "$.pagelen" );
-		final int size = jsonPath.read( "$.size" );
-		final int lastPage = (pageLength + size - 1) / pageLength;
-
-		if ( lastPage > 1 ) {
-			jsonPath = jsonPathForPath( requestPath( pullRequest ) + "/commits?page=" + lastPage );
-		}
-
-		final List<String> commitIds = jsonPath.read( "$.values[*].hash" );
-		final List<String> parentIds = jsonPath.read( "$.values[*].parents[0].hash" );
-
-		return parentIds.stream().filter( parent -> !commitIds.contains( parent ) ).findFirst()
-				.orElseThrow( IllegalStateException::new );
+	String getLastParentCommitId( final PullRequest pullRequest ) {
+		final DocumentContext document = getLastPage( pullRequest );
+		final List<String> parentIds = document.read( "$.values[*].parents[0].hash" );
+		return parentIds.get( parentIds.size() - 1 );
 	}
 
 	@Override
