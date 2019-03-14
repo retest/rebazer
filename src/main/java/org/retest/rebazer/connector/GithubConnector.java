@@ -26,7 +26,7 @@ public class GithubConnector implements RepositoryConnector {
 	public GithubConnector( final RepositoryConfig repoConfig, final RestTemplateBuilder builder ) {
 		final String basePath = "/repos/" + repoConfig.getTeam() + "/" + repoConfig.getRepo();
 
-		template = builder.basicAuthorization( repoConfig.getUser(), repoConfig.getPass() )
+		template = builder.basicAuthentication( repoConfig.getUser(), repoConfig.getPass() )
 				.rootUri( BASE_URL + basePath ).build();
 	}
 
