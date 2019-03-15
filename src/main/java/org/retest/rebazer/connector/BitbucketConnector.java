@@ -32,9 +32,9 @@ public class BitbucketConnector implements RepositoryConnector {
 	public BitbucketConnector( final RepositoryConfig repoConfig, final RestTemplateBuilder templateBuilder ) {
 		final String basePath = "/repositories/" + repoConfig.getTeam() + "/" + repoConfig.getRepo();
 
-		legacyTemplate = templateBuilder.basicAuthorization( repoConfig.getUser(), repoConfig.getPass() )
+		legacyTemplate = templateBuilder.basicAuthentication( repoConfig.getUser(), repoConfig.getPass() )
 				.rootUri( BASE_URL_V_1 + basePath ).build();
-		template = templateBuilder.basicAuthorization( repoConfig.getUser(), repoConfig.getPass() )
+		template = templateBuilder.basicAuthentication( repoConfig.getUser(), repoConfig.getPass() )
 				.rootUri( BASE_URL_V_2 + basePath ).build();
 
 		objectMapper = new ObjectMapper().configure( DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false );

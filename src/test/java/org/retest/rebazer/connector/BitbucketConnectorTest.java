@@ -39,7 +39,7 @@ class BitbucketConnectorTest {
 		config = mock( RebazerConfig.class );
 		repoConfig = mock( RepositoryConfig.class );
 		final RestTemplateBuilder builder = mock( RestTemplateBuilder.class );
-		when( builder.basicAuthorization( any(), any() ) ).thenReturn( builder );
+		when( builder.basicAuthentication( any(), any() ) ).thenReturn( builder );
 		when( builder.rootUri( anyString() ) ).thenReturn( builder );
 		when( builder.build() ).thenReturn( template );
 		pullRequestUpdateStates = mock( PullRequestLastUpdateStore.class );
