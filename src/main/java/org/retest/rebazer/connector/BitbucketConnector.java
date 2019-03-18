@@ -22,18 +22,14 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class BitbucketConnector implements RepositoryConnector {
 
-	private static final String BASE_URL_V_1 = "https://api.bitbucket.org/1.0";
 	private static final String BASE_URL_V_2 = "https://api.bitbucket.org/2.0";
 
-	private final RestTemplate legacyTemplate;
 	private final RestTemplate template;
 	private final ObjectMapper objectMapper;
 
 	public BitbucketConnector( final RepositoryConfig repoConfig, final RestTemplateBuilder templateBuilder ) {
 		final String basePath = "/repositories/" + repoConfig.getTeam() + "/" + repoConfig.getRepo();
 
-		legacyTemplate = templateBuilder.basicAuthentication( repoConfig.getUser(), repoConfig.getPass() )
-				.rootUri( BASE_URL_V_1 + basePath ).build();
 		template = templateBuilder.basicAuthentication( repoConfig.getUser(), repoConfig.getPass() )
 				.rootUri( BASE_URL_V_2 + basePath ).build();
 
@@ -127,7 +123,7 @@ public class BitbucketConnector implements RepositoryConnector {
 		final Map<String, String> request = new HashMap<>();
 		request.put( "content", message );
 
-		legacyTemplate.postForObject( requestPath( pullRequest ) + "/comments", request, String.class );
+		template.postForObject( requestPath( pullRequest ) + "/comments", request, String.class );
 	}
 
 	private DocumentContext getLastPage( final PullRequest pullRequest ) {
