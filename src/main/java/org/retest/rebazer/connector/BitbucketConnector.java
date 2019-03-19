@@ -6,7 +6,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.retest.rebazer.domain.BitbucketComment;
 import org.retest.rebazer.domain.BitbucketContent;
 import org.retest.rebazer.domain.BitbucketPullRequestResponse;
 import org.retest.rebazer.domain.PullRequest;
@@ -122,18 +121,11 @@ public class BitbucketConnector implements RepositoryConnector {
 
 	@Override
 	public void addComment( final PullRequest pullRequest, final String message ) {
+		final Map<String, BitbucketContent> request = new HashMap<>();
+		final BitbucketContent comment = BitbucketContent.builder().raw( message ).build();
+		request.put( "content", comment );
 
-		final Map<String, Object> request = new HashMap<>();
-		final BitbucketComment comment = BitbucketComment.builder() //
-				.content( BitbucketContent.builder().raw( message ).build() ) //
-				.build();
-
-		final Map<String, String> content = new HashMap<>();
-
-		content.put( "raw", message );
-		request.put( "content", content );
-
-		template.postForObject( requestPath( pullRequest ) + "/comments", comment, String.class );
+		template.postForObject( requestPath( pullRequest ) + "/comments", request, String.class );
 	}
 
 	private DocumentContext getLastPage( final PullRequest pullRequest ) {
