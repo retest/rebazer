@@ -6,6 +6,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.retest.rebazer.domain.BitbucketComment;
+import org.retest.rebazer.domain.BitbucketContent;
 import org.retest.rebazer.domain.BitbucketPullRequestResponse;
 import org.retest.rebazer.domain.PullRequest;
 import org.retest.rebazer.domain.RepositoryConfig;
@@ -22,18 +24,14 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class BitbucketConnector implements RepositoryConnector {
 
-	private static final String BASE_URL_V_1 = "https://api.bitbucket.org/1.0";
 	private static final String BASE_URL_V_2 = "https://api.bitbucket.org/2.0";
 
-	private final RestTemplate legacyTemplate;
 	private final RestTemplate template;
 	private final ObjectMapper objectMapper;
 
 	public BitbucketConnector( final RepositoryConfig repoConfig, final RestTemplateBuilder templateBuilder ) {
 		final String basePath = "/repositories/" + repoConfig.getTeam() + "/" + repoConfig.getRepo();
 
-		legacyTemplate = templateBuilder.basicAuthentication( repoConfig.getUser(), repoConfig.getPass() )
-				.rootUri( BASE_URL_V_1 + basePath ).build();
 		template = templateBuilder.basicAuthentication( repoConfig.getUser(), repoConfig.getPass() )
 				.rootUri( BASE_URL_V_2 + basePath ).build();
 
@@ -124,10 +122,18 @@ public class BitbucketConnector implements RepositoryConnector {
 
 	@Override
 	public void addComment( final PullRequest pullRequest, final String message ) {
-		final Map<String, String> request = new HashMap<>();
-		request.put( "content", message );
 
-		legacyTemplate.postForObject( requestPath( pullRequest ) + "/comments", request, String.class );
+		final Map<String, Object> request = new HashMap<>();
+		final BitbucketComment comment = BitbucketComment.builder() //
+				.content( BitbucketContent.builder().raw( message ).build() ) //
+				.build();
+
+		final Map<String, String> content = new HashMap<>();
+
+		content.put( "raw", message );
+		request.put( "content", content );
+
+		template.postForObject( requestPath( pullRequest ) + "/comments", comment, String.class );
 	}
 
 	private DocumentContext getLastPage( final PullRequest pullRequest ) {
