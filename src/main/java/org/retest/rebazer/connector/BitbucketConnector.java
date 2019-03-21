@@ -6,7 +6,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.retest.rebazer.domain.BitbucketContent;
 import org.retest.rebazer.domain.BitbucketPullRequestResponse;
 import org.retest.rebazer.domain.PullRequest;
 import org.retest.rebazer.domain.RepositoryConfig;
@@ -15,6 +14,7 @@ import org.springframework.web.client.RestTemplate;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.jayway.jsonpath.DocumentContext;
 import com.jayway.jsonpath.JsonPath;
 
@@ -121,11 +121,12 @@ public class BitbucketConnector implements RepositoryConnector {
 
 	@Override
 	public void addComment( final PullRequest pullRequest, final String message ) {
-		final Map<String, BitbucketContent> request = new HashMap<>();
-		final BitbucketContent comment = BitbucketContent.builder().raw( message ).build();
-		request.put( "content", comment );
+		final ObjectNode contentNode = objectMapper.createObjectNode();
+		final ObjectNode contentNode1 = objectMapper.createObjectNode();
+		contentNode1.put( "raw", message );
+		contentNode.set( "content", contentNode1 );
 
-		template.postForObject( requestPath( pullRequest ) + "/comments", request, String.class );
+		template.postForObject( requestPath( pullRequest ) + "/comments", contentNode, String.class );
 	}
 
 	private DocumentContext getLastPage( final PullRequest pullRequest ) {
