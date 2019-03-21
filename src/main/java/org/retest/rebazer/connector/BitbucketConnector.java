@@ -121,10 +121,10 @@ public class BitbucketConnector implements RepositoryConnector {
 
 	@Override
 	public void addComment( final PullRequest pullRequest, final String message ) {
+		final ObjectNode messageNode = objectMapper.createObjectNode();
+		messageNode.put( "raw", message );
 		final ObjectNode contentNode = objectMapper.createObjectNode();
-		final ObjectNode contentNode1 = objectMapper.createObjectNode();
-		contentNode1.put( "raw", message );
-		contentNode.set( "content", contentNode1 );
+		contentNode.set( "content", messageNode );
 
 		template.postForObject( requestPath( pullRequest ) + "/comments", contentNode, String.class );
 	}
