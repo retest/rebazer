@@ -14,6 +14,7 @@ import org.springframework.web.client.RestTemplate;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.jayway.jsonpath.DocumentContext;
 import com.jayway.jsonpath.JsonPath;
 
@@ -22,18 +23,14 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class BitbucketConnector implements RepositoryConnector {
 
-	private static final String BASE_URL_V_1 = "https://api.bitbucket.org/1.0";
 	private static final String BASE_URL_V_2 = "https://api.bitbucket.org/2.0";
 
-	private final RestTemplate legacyTemplate;
 	private final RestTemplate template;
 	private final ObjectMapper objectMapper;
 
 	public BitbucketConnector( final RepositoryConfig repoConfig, final RestTemplateBuilder templateBuilder ) {
 		final String basePath = "/repositories/" + repoConfig.getTeam() + "/" + repoConfig.getRepo();
 
-		legacyTemplate = templateBuilder.basicAuthentication( repoConfig.getUser(), repoConfig.getPass() )
-				.rootUri( BASE_URL_V_1 + basePath ).build();
 		template = templateBuilder.basicAuthentication( repoConfig.getUser(), repoConfig.getPass() )
 				.rootUri( BASE_URL_V_2 + basePath ).build();
 
@@ -124,10 +121,12 @@ public class BitbucketConnector implements RepositoryConnector {
 
 	@Override
 	public void addComment( final PullRequest pullRequest, final String message ) {
-		final Map<String, String> request = new HashMap<>();
-		request.put( "content", message );
+		final ObjectNode messageNode = objectMapper.createObjectNode();
+		messageNode.put( "raw", message );
+		final ObjectNode contentNode = objectMapper.createObjectNode();
+		contentNode.set( "content", messageNode );
 
-		legacyTemplate.postForObject( requestPath( pullRequest ) + "/comments", request, String.class );
+		template.postForObject( requestPath( pullRequest ) + "/comments", contentNode, String.class );
 	}
 
 	private DocumentContext getLastPage( final PullRequest pullRequest ) {
