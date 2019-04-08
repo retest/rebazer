@@ -135,10 +135,168 @@ class GithubConnectorTest {
 	@Test
 	void getLatestUpdate_should_return_updated_PullRequest() {
 		final PullRequest pullRequest = mock( PullRequest.class );
-		final String json = "{\"updated_at\": \"someTimestamp\"}";
-		when( template.getForObject( anyString(), eq( String.class ) ) ).thenReturn( json );
+		final String repositoryTime = "{\"updated_at\": \"2019-01-04T15:00:50Z\"}";
+		when( template.getForObject( anyString(), eq( String.class ) ) ).thenReturn( repositoryTime );
+		final String checksFinished =
+				"{\"check_runs\":[{\"completed_at\":\"2019-01-04T15:30:50Z\"},{\"completed_at\":\"2019-01-04T15:30:59Z\"},{\"completed_at\":\"2019-01-04T15:29:59Z\"}]}";
 
-		assertThat( cut.getLatestUpdate( pullRequest ).getLastUpdate() ).isEqualTo( "someTimestamp" );
+		final ResponseEntity<String> resp = new ResponseEntity<>( checksFinished, HttpStatus.OK );
+		when( template.exchange( anyString(), any( HttpMethod.class ), any( HttpEntity.class ), eq( String.class ) ) )
+				.thenReturn( resp );
+		assertThat( cut.newestChecksTime( pullRequest ) ).isEqualTo( "2019-01-04T15:30:59Z" );
+		assertThat( cut.getLatestUpdate( pullRequest ).getLastUpdate() ).isEqualTo( "2019-01-04T15:30:59Z" );
+
 	}
 
+	@Test
+	void newestChecksTime_should_return_newest_time_of_the_checks() {
+		final PullRequest pullRequest = mock( PullRequest.class );
+		final String checksFinished1 =
+				"{\"check_runs\":[{\"completed_at\":\"2019-04-04T08:31:30Z\"},{\"completed_at\":\"2019-04-04T08:31:40Z\"},{\"completed_at\":\"2019-04-04T08:31:20Z\"}]}";
+
+		final ResponseEntity<String> resp = new ResponseEntity<>( checksFinished1, HttpStatus.OK );
+		when( template.exchange( anyString(), any( HttpMethod.class ), any( HttpEntity.class ), eq( String.class ) ) )
+				.thenReturn( resp );
+
+		assertThat( cut.newestChecksTime( pullRequest ) ).isNotEqualTo( "2019-04-04T08:31:30Z" );
+		assertThat( cut.newestChecksTime( pullRequest ) ).isEqualTo( "2019-04-04T08:31:40Z" );
+		assertThat( cut.newestChecksTime( pullRequest ) ).isNotEqualTo( "2019-04-04T08:31:20" );
+
+		final String checksFinished2 =
+				"{\"check_runs\":[{\"completed_at\":\"2019-01-04T15:30:50Z\"},{\"completed_at\":\"2019-04-01T07:30:50Z\"},{\"completed_at\":\"2019-04-10T00:30:50Z\"}]}";
+		final ResponseEntity<String> resp2 = new ResponseEntity<>( checksFinished2, HttpStatus.OK );
+		when( template.exchange( anyString(), any( HttpMethod.class ), any( HttpEntity.class ), eq( String.class ) ) )
+				.thenReturn( resp2 );
+
+		assertThat( cut.newestChecksTime( pullRequest ) ).isNotEqualTo( "2019-01-04T15:30:50Z" );
+		assertThat( cut.newestChecksTime( pullRequest ) ).isNotEqualTo( "2019-04-01T07:30:50Z" );
+		assertThat( cut.newestChecksTime( pullRequest ) ).isEqualTo( "2019-04-10T00:30:50Z" );
+
+		final String checksFinished3 =
+				"{\"check_runs\":[{\"completed_at\":\"2019-05-05T18:00:00Z\"},{\"completed_at\":\"2019-05-05T17:30:50Z\"},{\"completed_at\":\"2019-05-05T17:30:52Z\"}]}";
+		final ResponseEntity<String> resp3 = new ResponseEntity<>( checksFinished3, HttpStatus.OK );
+		when( template.exchange( anyString(), any( HttpMethod.class ), any( HttpEntity.class ), eq( String.class ) ) )
+				.thenReturn( resp3 );
+
+		assertThat( cut.newestChecksTime( pullRequest ) ).isEqualTo( "2019-05-05T18:00:00Z" );
+		assertThat( cut.newestChecksTime( pullRequest ) ).isNotEqualTo( "2019-05-05T17:30:50Z" );
+		assertThat( cut.newestChecksTime( pullRequest ) ).isNotEqualTo( "2019-05-05T17:30:52Z" );
+
+	}
+
+	@Test
+	void newestChecksTime_should_return_nonNull_values() {
+		final PullRequest pullRequest = mock( PullRequest.class );
+		final String only2CheckTimesAvailable =
+				"{\"check_runs\":[{\"completed_at\":null},{\"completed_at\":\"2019-04-04T08:31:40Z\"},{\"completed_at\":\"2019-04-04T08:31:20Z\"}]}";
+
+		final ResponseEntity<String> resp = new ResponseEntity<>( only2CheckTimesAvailable, HttpStatus.OK );
+		when( template.exchange( anyString(), any( HttpMethod.class ), any( HttpEntity.class ), eq( String.class ) ) )
+				.thenReturn( resp );
+
+		assertThat( cut.newestChecksTime( pullRequest ) ).isNotEmpty();
+		assertThat( cut.newestChecksTime( pullRequest ) ).isNotNull();
+		assertThat( cut.newestChecksTime( pullRequest ) ).isNotEqualTo( "2019-04-04T08:31:20" );
+		assertThat( cut.newestChecksTime( pullRequest ) ).isEqualTo( "2019-04-04T08:31:40Z" );
+
+		final String only1CheckTimeAvailable =
+				"{\"check_runs\":[{\"completed_at\":null},{\"completed_at\":null},{\"completed_at\":2019-01-04T15:30:50Z}]}";
+		final ResponseEntity<String> resp2 = new ResponseEntity<>( only1CheckTimeAvailable, HttpStatus.OK );
+		when( template.exchange( anyString(), any( HttpMethod.class ), any( HttpEntity.class ), eq( String.class ) ) )
+				.thenReturn( resp2 );
+
+		assertThat( cut.newestChecksTime( pullRequest ) ).isNotEmpty();
+		assertThat( cut.newestChecksTime( pullRequest ) ).isNotNull();
+		assertThat( cut.newestChecksTime( pullRequest ) ).isEqualTo( "2019-01-04T15:30:50Z" );
+
+		final String noCheckTimeAvailable =
+				"{\"check_runs\":[{\"completed_at\":null},{\"completed_at\":null},{\"completed_at\":null}]}";
+
+		final ResponseEntity<String> resp3 = new ResponseEntity<>( noCheckTimeAvailable, HttpStatus.OK );
+		when( template.exchange( anyString(), any( HttpMethod.class ), any( HttpEntity.class ), eq( String.class ) ) )
+				.thenReturn( resp3 );
+
+		when( pullRequest.getLastUpdate() ).thenReturn( "2019-01-04T15:00:50Z" );
+		assertThat( cut.newestChecksTime( pullRequest ) ).isNotEmpty();
+		assertThat( cut.newestChecksTime( pullRequest ) ).isNotNull();
+		assertThat( cut.newestChecksTime( pullRequest ) ).isEqualTo( "2019-01-04T15:00:50Z" );
+
+	}
+
+	@Test
+	void newestCbecksTime_should_return_nonEmpty_values() {
+		final PullRequest pullRequest = mock( PullRequest.class );
+		final String only2CheckTimesAvailable =
+				"{\"check_runs\":[{\"completed_at\":\"\"},{\"completed_at\":\"\"},{\"completed_at\":\"2019-04-04T08:31:20Z\"}]}";
+
+		final ResponseEntity<String> resp = new ResponseEntity<>( only2CheckTimesAvailable, HttpStatus.OK );
+		when( template.exchange( anyString(), any( HttpMethod.class ), any( HttpEntity.class ), eq( String.class ) ) )
+				.thenReturn( resp );
+
+		assertThat( cut.newestChecksTime( pullRequest ) ).isNotEmpty();
+		assertThat( cut.newestChecksTime( pullRequest ) ).isNotNull();
+		assertThat( cut.newestChecksTime( pullRequest ) ).isNotEqualTo( "2019-04-04T08:31:20" );
+		assertThat( cut.newestChecksTime( pullRequest ) ).isEqualTo( "2019-04-04T08:31:20Z" );
+
+		final String only1CheckTimeAvailable =
+				"{\"check_runs\":[{\"completed_at\":\"\"},{\"completed_at\":\"\"},{\"completed_at\":2019-01-04T15:30:50Z}]}";
+		final ResponseEntity<String> resp2 = new ResponseEntity<>( only1CheckTimeAvailable, HttpStatus.OK );
+		when( template.exchange( anyString(), any( HttpMethod.class ), any( HttpEntity.class ), eq( String.class ) ) )
+				.thenReturn( resp2 );
+
+		assertThat( cut.newestChecksTime( pullRequest ) ).isNotEmpty();
+		assertThat( cut.newestChecksTime( pullRequest ) ).isNotNull();
+		assertThat( cut.newestChecksTime( pullRequest ) ).isEqualTo( "2019-01-04T15:30:50Z" );
+
+		final String noCheckTimeAvailable =
+				"{\"check_runs\":[{\"completed_at\":\"\"},{\"completed_at\":\"\"},{\"completed_at\":\"\"}]}";
+
+		final ResponseEntity<String> resp3 = new ResponseEntity<>( noCheckTimeAvailable, HttpStatus.OK );
+		when( template.exchange( anyString(), any( HttpMethod.class ), any( HttpEntity.class ), eq( String.class ) ) )
+				.thenReturn( resp3 );
+
+		when( pullRequest.getLastUpdate() ).thenReturn( "2019-01-04T15:00:50Z" );
+		assertThat( cut.newestChecksTime( pullRequest ) ).isNotEmpty();
+		assertThat( cut.newestChecksTime( pullRequest ) ).isNotNull();
+		assertThat( cut.newestChecksTime( pullRequest ) ).isEqualTo( "2019-01-04T15:00:50Z" );
+
+	}
+
+	@Test
+	void getLatestUpdate_should_return_always_the_newest_time() {
+		final PullRequest pullRequest = mock( PullRequest.class );
+		final String repositoryTime1 = "{\"updated_at\": \"2019-02-04T15:00:53Z\"}";
+		when( template.getForObject( anyString(), eq( String.class ) ) ).thenReturn( repositoryTime1 );
+		final String checksAreFinished1 =
+				"{\"check_runs\":[{\"completed_at\":\"2019-02-04T15:00:50Z\"},{\"completed_at\":\"2019-02-04T15:00:55Z\"},{\"completed_at\":\"2019-02-04T15:00:35Z\"}]}";
+
+		final ResponseEntity<String> resp = new ResponseEntity<>( checksAreFinished1, HttpStatus.OK );
+		when( template.exchange( anyString(), any( HttpMethod.class ), any( HttpEntity.class ), eq( String.class ) ) )
+				.thenReturn( resp );
+		assertThat( cut.newestChecksTime( pullRequest ) ).isEqualTo( "2019-02-04T15:00:55Z" );
+		assertThat( cut.getLatestUpdate( pullRequest ).getLastUpdate() ).isEqualTo( "2019-02-04T15:00:55Z" );
+
+		final String repositoryTime2 = "{\"updated_at\": \"2019-02-04T15:00:59Z\"}";
+		when( template.getForObject( anyString(), eq( String.class ) ) ).thenReturn( repositoryTime2 );
+		final String checksAreFinished2 =
+				"{\"check_runs\":[{\"completed_at\":\"2019-02-04T15:00:50Z\"},{\"completed_at\":\"2019-02-04T15:00:55Z\"},{\"completed_at\":\"2019-02-04T15:00:35Z\"}]}";
+
+		final ResponseEntity<String> resp2 = new ResponseEntity<>( checksAreFinished2, HttpStatus.OK );
+		when( template.exchange( anyString(), any( HttpMethod.class ), any( HttpEntity.class ), eq( String.class ) ) )
+				.thenReturn( resp2 );
+		assertThat( cut.newestChecksTime( pullRequest ) ).isEqualTo( "2019-02-04T15:00:55Z" );
+		assertThat( cut.getLatestUpdate( pullRequest ).getLastUpdate() ).isEqualTo( "2019-02-04T15:00:59Z" );
+
+		final String repositoryTime3 = "{\"updated_at\": \"2019-02-04T17:34:59Z\"}";
+		when( template.getForObject( anyString(), eq( String.class ) ) ).thenReturn( repositoryTime3 );
+		final String checksAreFinished3 =
+				"{\"check_runs\":[{\"completed_at\":\"2019-02-04T07:35:50Z\"},{\"completed_at\":\"2019-02-04T15:23:12Z\"},{\"completed_at\":\"2019-02-04T19:23:30Z\"}]}";
+
+		final ResponseEntity<String> resp3 = new ResponseEntity<>( checksAreFinished3, HttpStatus.OK );
+		when( template.exchange( anyString(), any( HttpMethod.class ), any( HttpEntity.class ), eq( String.class ) ) )
+				.thenReturn( resp3 );
+		assertThat( cut.newestChecksTime( pullRequest ) ).isEqualTo( "2019-02-04T19:23:30Z" );
+		assertThat( cut.getLatestUpdate( pullRequest ).getLastUpdate() ).isEqualTo( "2019-02-04T19:23:30Z" );
+
+	}
 }
