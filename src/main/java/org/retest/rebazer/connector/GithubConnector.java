@@ -2,6 +2,7 @@ package org.retest.rebazer.connector;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -32,17 +33,23 @@ public class GithubConnector implements RepositoryConnector {
 
 		template = builder.basicAuthentication( repoConfig.getUser(), repoConfig.getPass() )
 				.rootUri( BASE_URL + basePath ).build();
+
 	}
 
 	@Override
 	public PullRequest getLatestUpdate( final PullRequest pullRequest ) {
 		final DocumentContext jsonPath = jsonPathForPath( requestPath( pullRequest ) );
-		return PullRequest.builder() //
+		final String repositoryTime = jsonPath.read( "$.updated_at" );
+		final String checksTime = newestChecksTime( pullRequest );
+		final int solution = repositoryTime.compareTo( checksTime );
+		final PullRequest result = PullRequest.builder() //
 				.id( pullRequest.getId() ) //
 				.source( pullRequest.getSource() ) //
 				.destination( pullRequest.getDestination() ) //
-				.lastUpdate( jsonPath.read( "$.updated_at" ) ) //
+				.lastUpdate( solution > 0 ? repositoryTime : checksTime ) //
 				.build();
+
+		return result;
 	}
 
 	@Override
@@ -85,6 +92,14 @@ public class GithubConnector implements RepositoryConnector {
 		return getGitHubChecks( pullRequest ).stream().allMatch( "success"::equals );
 	}
 
+	public String newestChecksTime( final PullRequest pullRequest ) {
+		return getGitHubChecksTimeStamps( pullRequest ).stream()//
+				.filter( time -> time != null && !time.isEmpty() )//
+				.sorted( Comparator.reverseOrder() )//
+				.findFirst()//
+				.orElse( pullRequest.getLastUpdate() );
+	}
+
 	@Override
 	public List<PullRequest> getAllPullRequests() {
 		final DocumentContext jsonPath = jsonPathForPath( "/pulls" );
@@ -125,6 +140,19 @@ public class GithubConnector implements RepositoryConnector {
 		final ResponseEntity<String> json = template.exchange( checksUrl, HttpMethod.GET, entity, String.class );
 
 		return JsonPath.parse( json.getBody() ).<List<String>> read( "$.check_runs[*].conclusion" );
+	}
+
+	private List<String> getGitHubChecksTimeStamps( final PullRequest pullRequest ) {
+		final String urlPath = "/commits/" + pullRequest.getSource() + "/check-runs";
+
+		final HttpHeaders headers = new HttpHeaders();
+		headers.add( "Accept", "application/vnd.github.antiope-preview+json" );
+
+		final HttpEntity<String> entity = new HttpEntity<>( "parameters", headers );
+
+		final ResponseEntity<String> json = template.exchange( urlPath, HttpMethod.GET, entity, String.class );
+
+		return JsonPath.parse( json.getBody() ).<List<String>> read( "$.check_runs[*].completed_at" );
 	}
 
 	private DocumentContext jsonPathForPath( final String urlPath ) {
