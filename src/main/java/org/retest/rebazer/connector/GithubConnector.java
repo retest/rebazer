@@ -94,8 +94,7 @@ public class GithubConnector implements RepositoryConnector {
 	public String newestChecksTime( final PullRequest pullRequest ) {
 		return getGitHubChecksTimeStamps( pullRequest ).stream()//
 				.filter( time -> time != null && !time.isEmpty() )//
-				.sorted( Comparator.reverseOrder() )//
-				.findFirst()//
+				.max( Comparator.naturalOrder() )//
 				.orElse( pullRequest.getLastUpdate() );
 	}
 
