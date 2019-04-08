@@ -38,14 +38,13 @@ public class GithubConnector implements RepositoryConnector {
 		final String repositoryTime = jsonPath.read( "$.updated_at" );
 		final String checksTime = newestChecksTime( pullRequest );
 		final int solution = repositoryTime.compareTo( checksTime );
-		final PullRequest result = PullRequest.builder() //
+		return PullRequest.builder() //
 				.id( pullRequest.getId() ) //
 				.source( pullRequest.getSource() ) //
 				.destination( pullRequest.getDestination() ) //
 				.lastUpdate( solution > 0 ? repositoryTime : checksTime ) //
 				.build();
 
-		return result;
 	}
 
 	@Override
