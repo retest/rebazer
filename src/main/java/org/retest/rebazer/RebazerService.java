@@ -60,7 +60,7 @@ public class RebazerService {
 
 		} else if ( !repoConnector.greenBuildExists( pullRequest ) ) {
 			log.info( "Waiting for green build of {}.", pullRequest );
-			pullRequestLastUpdateStore.setHandled( repoConfig, pullRequest );
+			pullRequestLastUpdateStore.setHandled( repoConfig, repoConnector.getLatestUpdate( pullRequest ) );
 
 		} else if ( repoConnector.rebaseNeeded( pullRequest ) ) {
 			if ( !rebaseService.rebase( repoConfig, pullRequest ) ) {
