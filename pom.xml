@@ -28,13 +28,6 @@
 		<git.repo.host>github.com</git.repo.host>
 		<git.repo.path>retest/rebazer</git.repo.path>
 		<java.version>1.8</java.version>
-
-		<!-- overwrite some spring-boot version to make junit5 work -->
-		<maven-surefire-plugin.version>2.22.0</maven-surefire-plugin.version>
-		<mockito.version>2.27.0</mockito.version>
-		<byte-buddy.version>1.9.0</byte-buddy.version>
-		<junit-jupiter.version>5.3.1</junit-jupiter.version>
-		<assertj.version>3.11.1</assertj.version>
 	</properties>
 
 	<dependencies>
@@ -81,7 +74,6 @@
 		<dependency>
 			<groupId>org.mockito</groupId>
 			<artifactId>mockito-junit-jupiter</artifactId>
-			<version>${mockito.version}</version>
 			<scope>test</scope>
 		</dependency>
 
