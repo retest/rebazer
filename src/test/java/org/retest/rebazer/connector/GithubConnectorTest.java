@@ -95,9 +95,11 @@ class GithubConnectorTest {
 	void greenBuildExists_should_return_false_if_state_is_failed() {
 		final PullRequest pullRequest = mock( PullRequest.class );
 		final String json = "{\"check_runs\":[{\"conclusion\":\"failure\"},{\"conclusion\":\"success\"}]}";
+		final String headResponse = "{\"head\":{\"sha\": \"3ce2b596bcdb72f82425c809f56a0b56f089443e\"}}";
 		final ResponseEntity<String> resp = new ResponseEntity<>( json, HttpStatus.OK );
 		when( template.exchange( anyString(), any( HttpMethod.class ), any( HttpEntity.class ), eq( String.class ) ) )
 				.thenReturn( resp );
+		when( template.getForObject( anyString(), eq( String.class ) ) ).thenReturn( headResponse );
 
 		assertThat( cut.greenBuildExists( pullRequest ) ).isFalse();
 	}
@@ -106,9 +108,11 @@ class GithubConnectorTest {
 	void greenBuildExists_should_return_true_if_state_is_successful() {
 		final PullRequest pullRequest = mock( PullRequest.class );
 		final String json = "{\"check_runs\":[{\"conclusion\":\"success\"},{\"conclusion\":\"success\"}]}";
+		final String headResponse = "{\"head\":{\"sha\": \"3ce2b596bcdb72f82425c809f56a0b56f089443e\"}}";
 		final ResponseEntity<String> resp = new ResponseEntity<>( json, HttpStatus.OK );
 		when( template.exchange( anyString(), any( HttpMethod.class ), any( HttpEntity.class ), eq( String.class ) ) )
 				.thenReturn( resp );
+		when( template.getForObject( anyString(), eq( String.class ) ) ).thenReturn( headResponse );
 
 		assertThat( cut.greenBuildExists( pullRequest ) ).isTrue();
 	}

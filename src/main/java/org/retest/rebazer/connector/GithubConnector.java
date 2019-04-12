@@ -1,6 +1,7 @@
 package org.retest.rebazer.connector;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -11,6 +12,7 @@ import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.RestTemplate;
 
@@ -18,6 +20,8 @@ import com.jayway.jsonpath.DocumentContext;
 import com.jayway.jsonpath.JsonPath;
 
 public class GithubConnector implements RepositoryConnector {
+
+	private static final String GITHUB_PREVIEW_JSON_MEDIATYPE = "application/vnd.github.antiope-preview+json";
 
 	private static final String BASE_URL = "https://api.github.com";
 
@@ -110,14 +114,15 @@ public class GithubConnector implements RepositoryConnector {
 	}
 
 	private List<String> getGitHubChecks( final PullRequest pullRequest ) {
-		final String urlPath = "/commits/" + pullRequest.getSource() + "/check-runs";
+		final String pr = template.getForObject( "/pulls/" + pullRequest.getId(), String.class );
+		final String head = JsonPath.parse( pr ).read( "$.head.sha" );
+		final String checksUrl = "/commits/" + head + "/check-runs";
 
 		final HttpHeaders headers = new HttpHeaders();
-		headers.add( "Accept", "application/vnd.github.antiope-preview+json" );
-
+		headers.setAccept( Collections.singletonList( MediaType.parseMediaType( GITHUB_PREVIEW_JSON_MEDIATYPE ) ) );
 		final HttpEntity<String> entity = new HttpEntity<>( "parameters", headers );
 
-		final ResponseEntity<String> json = template.exchange( urlPath, HttpMethod.GET, entity, String.class );
+		final ResponseEntity<String> json = template.exchange( checksUrl, HttpMethod.GET, entity, String.class );
 
 		return JsonPath.parse( json.getBody() ).<List<String>> read( "$.check_runs[*].conclusion" );
 	}
