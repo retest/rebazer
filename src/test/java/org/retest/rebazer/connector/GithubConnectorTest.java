@@ -9,7 +9,9 @@ import static org.mockito.Mockito.when;
 
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.time.OffsetDateTime;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -126,11 +128,14 @@ class GithubConnectorTest {
 		when( repoConfig.getRepo() ).thenReturn( "test_repo_name" );
 		when( template.getForObject( anyString(), eq( String.class ) ) ).thenReturn( json );
 
+		final Date lastUpdate =
+				Date.from( OffsetDateTime.parse( documentContext.read( "$.[0].updated_at" ) ).toInstant() );
 		final int expectedId = (int) documentContext.read( "$.[0].number" );
-		final List<PullRequest> expected =
-				Arrays.asList( PullRequest.builder().id( expectedId ).source( documentContext.read( "$.[0].head.ref" ) )
-						.destination( documentContext.read( "$.[0].base.ref" ) )
-						.lastUpdate( documentContext.read( "$.[0].updated_at" ) ).build() );
+		final List<PullRequest> expected = Arrays.asList( PullRequest.builder()//
+				.id( expectedId )//
+				.source( documentContext.read( "$.[0].head.ref" ) )
+				.destination( documentContext.read( "$.[0].base.ref" ) )//
+				.lastUpdate( lastUpdate ).build() );
 		final List<PullRequest> actual = cut.getAllPullRequests();
 
 		assertThat( actual ).isEqualTo( expected );
@@ -141,14 +146,17 @@ class GithubConnectorTest {
 		final PullRequest pullRequest = mock( PullRequest.class );
 		final String repositoryTime = "{\"updated_at\": \"2019-01-04T15:00:50Z\"}";
 		when( template.getForObject( anyString(), eq( String.class ) ) ).thenReturn( repositoryTime );
+		final Date lastUpdate = Date.from( OffsetDateTime.parse( "2010-01-01T00:00:00Z" ).toInstant() );
+		when( pullRequest.getLastUpdate() ).thenReturn( lastUpdate );
+
 		final String checksFinished =
 				"{\"check_runs\":[{\"completed_at\":\"2019-01-04T15:30:50Z\"},{\"completed_at\":\"2019-01-04T15:30:59Z\"},{\"completed_at\":\"2019-01-04T15:29:59Z\"}]}";
-
 		final ResponseEntity<String> resp = new ResponseEntity<>( checksFinished, HttpStatus.OK );
 		when( template.exchange( anyString(), any( HttpMethod.class ), any( HttpEntity.class ), eq( String.class ) ) )
 				.thenReturn( resp );
+
 		assertThat( cut.newestChecksTime( pullRequest ) ).isEqualTo( "2019-01-04T15:30:59Z" );
-		assertThat( cut.getLatestUpdate( pullRequest ).getLastUpdate() ).isEqualTo( "2019-01-04T15:30:59Z" );
+		assertThat( cut.getLatestUpdate( pullRequest ).getLastUpdate() ).hasSameTimeAs( "2019-01-04T15:30:59Z" );
 
 	}
 
@@ -157,6 +165,8 @@ class GithubConnectorTest {
 		final PullRequest pullRequest = mock( PullRequest.class );
 		final String checksFinished1 =
 				"{\"check_runs\":[{\"completed_at\":\"2019-04-04T08:31:30Z\"},{\"completed_at\":\"2019-04-04T08:31:40Z\"},{\"completed_at\":\"2019-04-04T08:31:20Z\"}]}";
+		final Date lastUpdate = Date.from( OffsetDateTime.parse( "2010-01-01T00:00:00Z" ).toInstant() );
+		when( pullRequest.getLastUpdate() ).thenReturn( lastUpdate );
 
 		final ResponseEntity<String> resp = new ResponseEntity<>( checksFinished1, HttpStatus.OK );
 		when( template.exchange( anyString(), any( HttpMethod.class ), any( HttpEntity.class ), eq( String.class ) ) )
@@ -194,6 +204,9 @@ class GithubConnectorTest {
 		final String only2CheckTimesAvailable =
 				"{\"check_runs\":[{\"completed_at\":null},{\"completed_at\":\"2019-04-04T08:31:40Z\"},{\"completed_at\":\"2019-04-04T08:31:20Z\"}]}";
 
+		final Date lastUpdate = Date.from( OffsetDateTime.parse( "2010-01-01T00:00:00Z" ).toInstant() );
+		when( pullRequest.getLastUpdate() ).thenReturn( lastUpdate );
+
 		final ResponseEntity<String> resp = new ResponseEntity<>( only2CheckTimesAvailable, HttpStatus.OK );
 		when( template.exchange( anyString(), any( HttpMethod.class ), any( HttpEntity.class ), eq( String.class ) ) )
 				.thenReturn( resp );
@@ -220,11 +233,11 @@ class GithubConnectorTest {
 		when( template.exchange( anyString(), any( HttpMethod.class ), any( HttpEntity.class ), eq( String.class ) ) )
 				.thenReturn( resp3 );
 
-		when( pullRequest.getLastUpdate() ).thenReturn( "2019-01-04T15:00:50Z" );
+		final Date lastDate = Date.from( OffsetDateTime.parse( "2019-01-04T15:00:50Z" ).toInstant() );
+		when( pullRequest.getLastUpdate() ).thenReturn( lastDate );
 		assertThat( cut.newestChecksTime( pullRequest ) ).isNotEmpty();
 		assertThat( cut.newestChecksTime( pullRequest ) ).isNotNull();
 		assertThat( cut.newestChecksTime( pullRequest ) ).isEqualTo( "2019-01-04T15:00:50Z" );
-
 	}
 
 	@Test
@@ -232,6 +245,8 @@ class GithubConnectorTest {
 		final PullRequest pullRequest = mock( PullRequest.class );
 		final String only2CheckTimesAvailable =
 				"{\"check_runs\":[{\"completed_at\":\"\"},{\"completed_at\":\"\"},{\"completed_at\":\"2019-04-04T08:31:20Z\"}]}";
+		final Date lastUpdate = Date.from( OffsetDateTime.parse( "2010-01-01T00:00:00Z" ).toInstant() );
+		when( pullRequest.getLastUpdate() ).thenReturn( lastUpdate );
 
 		final ResponseEntity<String> resp = new ResponseEntity<>( only2CheckTimesAvailable, HttpStatus.OK );
 		when( template.exchange( anyString(), any( HttpMethod.class ), any( HttpEntity.class ), eq( String.class ) ) )
@@ -259,11 +274,11 @@ class GithubConnectorTest {
 		when( template.exchange( anyString(), any( HttpMethod.class ), any( HttpEntity.class ), eq( String.class ) ) )
 				.thenReturn( resp3 );
 
-		when( pullRequest.getLastUpdate() ).thenReturn( "2019-01-04T15:00:50Z" );
+		final Date lastDate = Date.from( OffsetDateTime.parse( "2019-01-04T15:00:50Z" ).toInstant() );
+		when( pullRequest.getLastUpdate() ).thenReturn( lastDate );
 		assertThat( cut.newestChecksTime( pullRequest ) ).isNotEmpty();
 		assertThat( cut.newestChecksTime( pullRequest ) ).isNotNull();
 		assertThat( cut.newestChecksTime( pullRequest ) ).isEqualTo( "2019-01-04T15:00:50Z" );
-
 	}
 
 	@Test
@@ -273,12 +288,14 @@ class GithubConnectorTest {
 		when( template.getForObject( anyString(), eq( String.class ) ) ).thenReturn( repositoryTime1 );
 		final String checksAreFinished1 =
 				"{\"check_runs\":[{\"completed_at\":\"2019-02-04T15:00:50Z\"},{\"completed_at\":\"2019-02-04T15:00:55Z\"},{\"completed_at\":\"2019-02-04T15:00:35Z\"}]}";
+		final Date lastUpdate = Date.from( OffsetDateTime.parse( "2010-01-01T00:00:00Z" ).toInstant() );
+		when( pullRequest.getLastUpdate() ).thenReturn( lastUpdate );
 
 		final ResponseEntity<String> resp = new ResponseEntity<>( checksAreFinished1, HttpStatus.OK );
 		when( template.exchange( anyString(), any( HttpMethod.class ), any( HttpEntity.class ), eq( String.class ) ) )
 				.thenReturn( resp );
 		assertThat( cut.newestChecksTime( pullRequest ) ).isEqualTo( "2019-02-04T15:00:55Z" );
-		assertThat( cut.getLatestUpdate( pullRequest ).getLastUpdate() ).isEqualTo( "2019-02-04T15:00:55Z" );
+		assertThat( cut.getLatestUpdate( pullRequest ).getLastUpdate() ).hasSameTimeAs( "2019-02-04T15:00:55Z" );
 
 		final String repositoryTime2 = "{\"updated_at\": \"2019-02-04T15:00:59Z\"}";
 		when( template.getForObject( anyString(), eq( String.class ) ) ).thenReturn( repositoryTime2 );
@@ -289,7 +306,7 @@ class GithubConnectorTest {
 		when( template.exchange( anyString(), any( HttpMethod.class ), any( HttpEntity.class ), eq( String.class ) ) )
 				.thenReturn( resp2 );
 		assertThat( cut.newestChecksTime( pullRequest ) ).isEqualTo( "2019-02-04T15:00:55Z" );
-		assertThat( cut.getLatestUpdate( pullRequest ).getLastUpdate() ).isEqualTo( "2019-02-04T15:00:59Z" );
+		assertThat( cut.getLatestUpdate( pullRequest ).getLastUpdate() ).hasSameTimeAs( "2019-02-04T15:00:59Z" );
 
 		final String repositoryTime3 = "{\"updated_at\": \"2019-02-04T17:34:59Z\"}";
 		when( template.getForObject( anyString(), eq( String.class ) ) ).thenReturn( repositoryTime3 );
@@ -300,7 +317,48 @@ class GithubConnectorTest {
 		when( template.exchange( anyString(), any( HttpMethod.class ), any( HttpEntity.class ), eq( String.class ) ) )
 				.thenReturn( resp3 );
 		assertThat( cut.newestChecksTime( pullRequest ) ).isEqualTo( "2019-02-04T19:23:30Z" );
-		assertThat( cut.getLatestUpdate( pullRequest ).getLastUpdate() ).isEqualTo( "2019-02-04T19:23:30Z" );
+		assertThat( cut.getLatestUpdate( pullRequest ).getLastUpdate() ).hasSameTimeAs( "2019-02-04T19:23:30Z" );
+	}
+
+	@Test
+	void getLatestUpdate_should_work_with_diffrent_timezones() {
+		final PullRequest pullRequest = mock( PullRequest.class );
+		final String repositoryTime1 = "{\"updated_at\": \"2019-02-04T20:18:44-04:00\"}";
+		when( template.getForObject( anyString(), eq( String.class ) ) ).thenReturn( repositoryTime1 );
+
+		final Date lastUpdate = Date.from( OffsetDateTime.parse( "2010-01-01T00:00:00Z" ).toInstant() );
+		when( pullRequest.getLastUpdate() ).thenReturn( lastUpdate );
+
+		final String checksAreFinished1 =
+				"{\"check_runs\":[{\"completed_at\":\"2019-02-04T16:19:00Z\"},{\"completed_at\":\"2019-02-04T16:18:44Z\"},{\"completed_at\":\"2019-02-04T16:18:59Z\"}]}";
+		final ResponseEntity<String> resp = new ResponseEntity<>( checksAreFinished1, HttpStatus.OK );
+		when( template.exchange( anyString(), any( HttpMethod.class ), any( HttpEntity.class ), eq( String.class ) ) )
+				.thenReturn( resp );
+		assertThat( cut.newestChecksTime( pullRequest ) ).isEqualTo( "2019-02-04T16:19:00Z" );
+		assertThat( cut.getLatestUpdate( pullRequest ).getLastUpdate() ).hasSameTimeAs( "2019-02-05T00:18:44Z" );
+
+		final String repositoryTime2 = "{\"updated_at\": \"2019-02-04T16:18:44-04:00\"}";
+		when( template.getForObject( anyString(), eq( String.class ) ) ).thenReturn( repositoryTime2 );
+		final String checksAreFinished2 =
+				"{\"check_runs\":[{\"completed_at\":\"2019-02-04T20:17:00Z\"},{\"completed_at\":\"2019-02-04T20:17:55Z\"},{\"completed_at\":\"2019-02-04T16:18:50Z\"}]}";
+
+		final ResponseEntity<String> resp2 = new ResponseEntity<>( checksAreFinished2, HttpStatus.OK );
+		when( template.exchange( anyString(), any( HttpMethod.class ), any( HttpEntity.class ), eq( String.class ) ) )
+				.thenReturn( resp2 );
+		assertThat( cut.newestChecksTime( pullRequest ) ).isEqualTo( "2019-02-04T20:17:55Z" );
+		assertThat( cut.getLatestUpdate( pullRequest ).getLastUpdate() ).hasSameTimeAs( "2019-02-04T20:18:44Z" );
+
+		final String repositoryTime3 = "{\"updated_at\": \"2019-02-04T16:18:44+01:00\"}";
+		when( template.getForObject( anyString(), eq( String.class ) ) ).thenReturn( repositoryTime3 );
+		final String checksAreFinished3 =
+				"{\"check_runs\":[{\"completed_at\":\"2019-02-04T15:17:00Z\"},{\"completed_at\":\"2019-02-04T15:10:12Z\"},{\"completed_at\":\"2019-02-04T15:18:30Z\"}]}";
+
+		final ResponseEntity<String> resp3 = new ResponseEntity<>( checksAreFinished3, HttpStatus.OK );
+		when( template.exchange( anyString(), any( HttpMethod.class ), any( HttpEntity.class ), eq( String.class ) ) )
+				.thenReturn( resp3 );
+		assertThat( cut.newestChecksTime( pullRequest ) ).isEqualTo( "2019-02-04T15:18:30Z" );
+		assertThat( cut.getLatestUpdate( pullRequest ).getLastUpdate() ).hasSameTimeAs( "2019-02-04T15:18:44Z" );
 
 	}
+
 }
