@@ -1,8 +1,10 @@
 package org.retest.rebazer.connector;
 
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -39,16 +41,15 @@ public class GithubConnector implements RepositoryConnector {
 	@Override
 	public PullRequest getLatestUpdate( final PullRequest pullRequest ) {
 		final DocumentContext jsonPath = jsonPathForPath( requestPath( pullRequest ) );
-		final String repositoryTime = jsonPath.read( "$.updated_at" );
-		final String checksTime = newestChecksTime( pullRequest );
-		final int solution = repositoryTime.compareTo( checksTime );
+		final String repositoryTimeAsString = jsonPath.read( "$.updated_at" );
+		final Date repositoryTime = Date.from( OffsetDateTime.parse( repositoryTimeAsString ).toInstant() );
+		final Date checksTime = Date.from( OffsetDateTime.parse( newestChecksTime( pullRequest ) ).toInstant() );
 		return PullRequest.builder() //
 				.id( pullRequest.getId() ) //
 				.source( pullRequest.getSource() ) //
 				.destination( pullRequest.getDestination() ) //
-				.lastUpdate( solution > 0 ? repositoryTime : checksTime ) //
+				.lastUpdate( repositoryTime.after( checksTime ) ? repositoryTime : checksTime ) //
 				.build();
-
 	}
 
 	@Override
@@ -95,7 +96,7 @@ public class GithubConnector implements RepositoryConnector {
 		return getGitHubChecksTimeStamps( pullRequest ).stream()//
 				.filter( time -> time != null && !time.isEmpty() )//
 				.max( Comparator.naturalOrder() )//
-				.orElse( pullRequest.getLastUpdate() );
+				.orElse( pullRequest.getLastUpdate().toInstant().toString() );
 	}
 
 	@Override
@@ -111,7 +112,9 @@ public class GithubConnector implements RepositoryConnector {
 			final int id = jsonPath.read( "$.[" + i + "].number" );
 			final String source = jsonPath.read( "$.[" + i + "].head.ref" );
 			final String destination = jsonPath.read( "$.[" + i + "].base.ref" );
-			final String lastUpdate = jsonPath.read( "$.[" + i + "].updated_at" );
+			final Date lastUpdate =
+					Date.from( OffsetDateTime.parse( jsonPath.read( "$.[" + i + "].updated_at" ) ).toInstant() );
+
 			results.add( PullRequest.builder() //
 					.id( id ) //
 					.source( source ) //

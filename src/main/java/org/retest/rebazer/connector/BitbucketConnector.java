@@ -1,7 +1,9 @@
 package org.retest.rebazer.connector;
 
 import java.io.IOException;
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -40,11 +42,12 @@ public class BitbucketConnector implements RepositoryConnector {
 	@Override
 	public PullRequest getLatestUpdate( final PullRequest pullRequest ) {
 		final DocumentContext jsonPath = jsonPathForPath( requestPath( pullRequest ) );
+		final Date repositoryTime = Date.from( OffsetDateTime.parse( jsonPath.read( "$.updated_on" ) ).toInstant() );
 		return PullRequest.builder() //
 				.id( pullRequest.getId() ) //
 				.source( pullRequest.getSource() ) //
 				.destination( pullRequest.getDestination() ) //
-				.lastUpdate( jsonPath.read( "$.updated_on" ) ) //
+				.lastUpdate( repositoryTime ) //
 				.build();
 	}
 
@@ -99,7 +102,8 @@ public class BitbucketConnector implements RepositoryConnector {
 			final int id = jsonPath.read( pathPrefix + "id" );
 			final String source = jsonPath.read( pathPrefix + "source.branch.name" );
 			final String destination = jsonPath.read( pathPrefix + "destination.branch.name" );
-			final String lastUpdate = jsonPath.read( pathPrefix + "updated_on" );
+			final Date lastUpdate =
+					Date.from( OffsetDateTime.parse( jsonPath.read( pathPrefix + "updated_on" ) ).toInstant() );
 			results.add( PullRequest.builder() //
 					.id( id ) //
 					.source( source ) //
