@@ -1,7 +1,6 @@
 package org.retest.rebazer.connector;
 
 import java.io.IOException;
-import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -11,6 +10,7 @@ import java.util.Map;
 import org.retest.rebazer.domain.BitbucketPullRequestResponse;
 import org.retest.rebazer.domain.PullRequest;
 import org.retest.rebazer.domain.RepositoryConfig;
+import org.retest.rebazer.service.PullRequestLastUpdateStore;
 import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.web.client.RestTemplate;
 
@@ -42,7 +42,7 @@ public class BitbucketConnector implements RepositoryConnector {
 	@Override
 	public PullRequest getLatestUpdate( final PullRequest pullRequest ) {
 		final DocumentContext jsonPath = jsonPathForPath( requestPath( pullRequest ) );
-		final Date repositoryTime = Date.from( OffsetDateTime.parse( jsonPath.read( "$.updated_on" ) ).toInstant() );
+		final Date repositoryTime = PullRequestLastUpdateStore.parseStringToDate( jsonPath.read( "$.updated_on" ) );
 		return PullRequest.builder() //
 				.id( pullRequest.getId() ) //
 				.source( pullRequest.getSource() ) //
@@ -103,7 +103,7 @@ public class BitbucketConnector implements RepositoryConnector {
 			final String source = jsonPath.read( pathPrefix + "source.branch.name" );
 			final String destination = jsonPath.read( pathPrefix + "destination.branch.name" );
 			final Date lastUpdate =
-					Date.from( OffsetDateTime.parse( jsonPath.read( pathPrefix + "updated_on" ) ).toInstant() );
+					PullRequestLastUpdateStore.parseStringToDate( jsonPath.read( pathPrefix + "updated_on" ) );
 			results.add( PullRequest.builder() //
 					.id( id ) //
 					.source( source ) //

@@ -1,6 +1,5 @@
 package org.retest.rebazer.connector;
 
-import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -11,6 +10,7 @@ import java.util.Map;
 
 import org.retest.rebazer.domain.PullRequest;
 import org.retest.rebazer.domain.RepositoryConfig;
+import org.retest.rebazer.service.PullRequestLastUpdateStore;
 import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -41,8 +41,8 @@ public class GithubConnector implements RepositoryConnector {
 	public PullRequest getLatestUpdate( final PullRequest pullRequest ) {
 		final DocumentContext jsonPath = jsonPathForPath( requestPath( pullRequest ) );
 		final String repositoryTimeAsString = jsonPath.read( "$.updated_at" );
-		final Date repositoryTime = Date.from( OffsetDateTime.parse( repositoryTimeAsString ).toInstant() );
-		final Date checksTime = Date.from( OffsetDateTime.parse( newestChecksTime( pullRequest ) ).toInstant() );
+		final Date repositoryTime = PullRequestLastUpdateStore.parseStringToDate( repositoryTimeAsString );
+		final Date checksTime = PullRequestLastUpdateStore.parseStringToDate( newestChecksTime( pullRequest ) );
 		return PullRequest.builder() //
 				.id( pullRequest.getId() ) //
 				.source( pullRequest.getSource() ) //
@@ -112,8 +112,7 @@ public class GithubConnector implements RepositoryConnector {
 			final String source = jsonPath.read( "$.[" + i + "].head.ref" );
 			final String destination = jsonPath.read( "$.[" + i + "].base.ref" );
 			final Date lastUpdate =
-					Date.from( OffsetDateTime.parse( jsonPath.read( "$.[" + i + "].updated_at" ) ).toInstant() );
-
+					PullRequestLastUpdateStore.parseStringToDate( jsonPath.read( "$.[" + i + "].updated_at" ) );
 			results.add( PullRequest.builder() //
 					.id( id ) //
 					.source( source ) //
