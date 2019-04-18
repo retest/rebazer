@@ -35,7 +35,6 @@ public class GithubConnector implements RepositoryConnector {
 
 		template = builder.basicAuthentication( repoConfig.getUser(), repoConfig.getPass() )
 				.rootUri( BASE_URL + basePath ).build();
-
 	}
 
 	@Override
@@ -144,14 +143,14 @@ public class GithubConnector implements RepositoryConnector {
 	}
 
 	private List<String> getGitHubChecksTimeStamps( final PullRequest pullRequest ) {
-		final String urlPath = "/commits/" + pullRequest.getSource() + "/check-runs";
+		final String pr = template.getForObject( "/pulls/" + pullRequest.getId(), String.class );
+		final String head = JsonPath.parse( pr ).read( "$.head.sha" );
+		final String checksUrl = "/commits/" + head + "/check-runs";
 
 		final HttpHeaders headers = new HttpHeaders();
-		headers.add( "Accept", "application/vnd.github.antiope-preview+json" );
-
+		headers.setAccept( Collections.singletonList( MediaType.parseMediaType( GITHUB_PREVIEW_JSON_MEDIATYPE ) ) );
 		final HttpEntity<String> entity = new HttpEntity<>( "parameters", headers );
-
-		final ResponseEntity<String> json = template.exchange( urlPath, HttpMethod.GET, entity, String.class );
+		final ResponseEntity<String> json = template.exchange( checksUrl, HttpMethod.GET, entity, String.class );
 
 		return JsonPath.parse( json.getBody() ).<List<String>> read( "$.check_runs[*].completed_at" );
 	}
