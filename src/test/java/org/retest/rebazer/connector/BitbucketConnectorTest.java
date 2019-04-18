@@ -9,7 +9,6 @@ import static org.mockito.Mockito.when;
 
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.time.OffsetDateTime;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
@@ -120,7 +119,7 @@ class BitbucketConnectorTest {
 		when( repoConfig.getRepo() ).thenReturn( "test_repo_name" );
 		when( template.getForObject( anyString(), eq( String.class ) ) ).thenReturn( json );
 		final Date lastUpdate =
-				Date.from( OffsetDateTime.parse( documentContext.read( "$.values[0].updated_on" ) ).toInstant() );
+				PullRequestLastUpdateStore.parseStringToDate( documentContext.read( "$.values[0].updated_on" ) );
 		final int expectedId = (int) documentContext.read( "$.values[0].id" );
 		final List<PullRequest> expected = Arrays.asList( PullRequest.builder()//
 				.id( expectedId )//
