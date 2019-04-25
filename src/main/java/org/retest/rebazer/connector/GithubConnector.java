@@ -88,11 +88,11 @@ public class GithubConnector implements RepositoryConnector {
 
 	@Override
 	public boolean greenBuildExists( final PullRequest pullRequest ) {
-		return getGitHubChecks( pullRequest ).stream().allMatch( "success"::equals );
+		return getGitHubChecks( pullRequest, "conclusion" ).stream().allMatch( "success"::equals );
 	}
 
 	public String newestChecksTime( final PullRequest pullRequest ) {
-		return getGitHubChecksTimeStamps( pullRequest ).stream()//
+		return getGitHubChecks( pullRequest, "completed_at" ).stream()//
 				.filter( time -> time != null && !time.isEmpty() )//
 				.max( Comparator.naturalOrder() )//
 				.orElse( pullRequest.getLastUpdate().toInstant().toString() );
@@ -127,7 +127,7 @@ public class GithubConnector implements RepositoryConnector {
 		return "/pulls/" + pullRequest.getId();
 	}
 
-	private List<String> getGitHubChecks( final PullRequest pullRequest ) {
+	private List<String> getGitHubChecks( final PullRequest pullRequest, final String instruction ) {
 		final String pr = template.getForObject( "/pulls/" + pullRequest.getId(), String.class );
 		final String head = JsonPath.parse( pr ).read( "$.head.sha" );
 		final String checksUrl = "/commits/" + head + "/check-runs";
@@ -138,20 +138,7 @@ public class GithubConnector implements RepositoryConnector {
 
 		final ResponseEntity<String> json = template.exchange( checksUrl, HttpMethod.GET, entity, String.class );
 
-		return JsonPath.parse( json.getBody() ).<List<String>> read( "$.check_runs[*].conclusion" );
-	}
-
-	private List<String> getGitHubChecksTimeStamps( final PullRequest pullRequest ) {
-		final String pr = template.getForObject( "/pulls/" + pullRequest.getId(), String.class );
-		final String head = JsonPath.parse( pr ).read( "$.head.sha" );
-		final String checksUrl = "/commits/" + head + "/check-runs";
-
-		final HttpHeaders headers = new HttpHeaders();
-		headers.setAccept( Collections.singletonList( MediaType.parseMediaType( GITHUB_PREVIEW_JSON_MEDIATYPE ) ) );
-		final HttpEntity<String> entity = new HttpEntity<>( "parameters", headers );
-		final ResponseEntity<String> json = template.exchange( checksUrl, HttpMethod.GET, entity, String.class );
-
-		return JsonPath.parse( json.getBody() ).<List<String>> read( "$.check_runs[*].completed_at" );
+		return JsonPath.parse( json.getBody() ).<List<String>> read( "$.check_runs[*]." + instruction );
 	}
 
 	private DocumentContext jsonPathForPath( final String urlPath ) {
