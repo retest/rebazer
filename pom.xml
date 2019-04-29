@@ -298,10 +298,14 @@
 							</execution>
 						</executions>
 						<configuration>
-							<repository>martinvietz/${project.artifactId}</repository>
+							<repository>retest/${project.artifactId}</repository>
 							<buildArgs>
 								<JAR_FILE>target/${project.build.finalName}.jar</JAR_FILE>
 							</buildArgs>
+							<imageTags>
+								<imageTag>latest</imageTag>
+								<imageTag>${project.version}</imageTag>
+							</imageTags>
 						</configuration>
 					</plugin>
 				</plugins>
