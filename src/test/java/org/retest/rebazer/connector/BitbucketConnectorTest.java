@@ -10,6 +10,7 @@ import static org.mockito.Mockito.when;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -117,12 +118,15 @@ class BitbucketConnectorTest {
 		when( repoConfig.getTeam() ).thenReturn( "test_team" );
 		when( repoConfig.getRepo() ).thenReturn( "test_repo_name" );
 		when( template.getForObject( anyString(), eq( String.class ) ) ).thenReturn( json );
-
+		final Date lastUpdate =
+				PullRequestLastUpdateStore.parseStringToDate( documentContext.read( "$.values[0].updated_on" ) );
 		final int expectedId = (int) documentContext.read( "$.values[0].id" );
-		final List<PullRequest> expected = Arrays.asList( PullRequest.builder().id( expectedId )
-				.source( documentContext.read( "$.values[0].source.branch.name" ) )
-				.destination( documentContext.read( "$.values[0].destination.branch.name" ) )
-				.lastUpdate( documentContext.read( "$.values[0].updated_on" ) ).build() );
+		final List<PullRequest> expected = Arrays.asList( PullRequest.builder()//
+				.id( expectedId )//
+				.source( documentContext.read( "$.values[0].source.branch.name" ) )//
+				.destination( documentContext.read( "$.values[0].destination.branch.name" ) )//
+				.lastUpdate( lastUpdate )//
+				.build() );
 		final List<PullRequest> actual = cut.getAllPullRequests();
 
 		assertThat( actual ).isEqualTo( expected );
@@ -131,9 +135,9 @@ class BitbucketConnectorTest {
 	@Test
 	void getLatestUpdate_should_return_updated_PullRequest() {
 		final PullRequest pullRequest = mock( PullRequest.class );
-		final String json = "{\"updated_on\": \"someTimestamp\"}";
+		final String json = "{\"updated_on\": \"2019-02-04T20:18:44Z\"}";
 		when( template.getForObject( anyString(), eq( String.class ) ) ).thenReturn( json );
 
-		assertThat( cut.getLatestUpdate( pullRequest ).getLastUpdate() ).isEqualTo( "someTimestamp" );
+		assertThat( cut.getLatestUpdate( pullRequest ).getLastUpdate() ).isEqualTo( "2019-02-04T20:18:44Z" );
 	}
 }

@@ -54,13 +54,13 @@ public class RebazerService {
 			final PullRequest pullRequest ) {
 		log.debug( "Processing {}.", pullRequest );
 
-		if ( rebazerConfig.isChangeDetection() && pullRequestLastUpdateStore.isHandled( repoConfig, pullRequest ) ) {
+		if ( pullRequestLastUpdateStore.isHandled( repoConfig, pullRequest ) ) {
 			log.info( "{} is unchanged since last run (last change: {}).", pullRequest,
 					pullRequestLastUpdateStore.getLastDate( repoConfig, pullRequest ) );
 
 		} else if ( !repoConnector.greenBuildExists( pullRequest ) ) {
 			log.info( "Waiting for green build of {}.", pullRequest );
-			pullRequestLastUpdateStore.setHandled( repoConfig, pullRequest );
+			pullRequestLastUpdateStore.setHandled( repoConfig, repoConnector.getLatestUpdate( pullRequest ) );
 
 		} else if ( repoConnector.rebaseNeeded( pullRequest ) ) {
 			if ( !rebaseService.rebase( repoConfig, pullRequest ) ) {

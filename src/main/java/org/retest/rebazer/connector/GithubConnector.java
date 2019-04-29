@@ -2,12 +2,15 @@ package org.retest.rebazer.connector;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import org.retest.rebazer.domain.PullRequest;
 import org.retest.rebazer.domain.RepositoryConfig;
+import org.retest.rebazer.service.PullRequestLastUpdateStore;
 import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -37,11 +40,14 @@ public class GithubConnector implements RepositoryConnector {
 	@Override
 	public PullRequest getLatestUpdate( final PullRequest pullRequest ) {
 		final DocumentContext jsonPath = jsonPathForPath( requestPath( pullRequest ) );
+		final String repositoryTimeAsString = jsonPath.read( "$.updated_at" );
+		final Date repositoryTime = PullRequestLastUpdateStore.parseStringToDate( repositoryTimeAsString );
+		final Date checksTime = PullRequestLastUpdateStore.parseStringToDate( newestChecksTime( pullRequest ) );
 		return PullRequest.builder() //
 				.id( pullRequest.getId() ) //
 				.source( pullRequest.getSource() ) //
 				.destination( pullRequest.getDestination() ) //
-				.lastUpdate( jsonPath.read( "$.updated_at" ) ) //
+				.lastUpdate( repositoryTime.after( checksTime ) ? repositoryTime : checksTime ) //
 				.build();
 	}
 
@@ -82,7 +88,14 @@ public class GithubConnector implements RepositoryConnector {
 
 	@Override
 	public boolean greenBuildExists( final PullRequest pullRequest ) {
-		return getGitHubChecks( pullRequest ).stream().allMatch( "success"::equals );
+		return getGitHubChecks( pullRequest, "conclusion" ).stream().allMatch( "success"::equals );
+	}
+
+	public String newestChecksTime( final PullRequest pullRequest ) {
+		return getGitHubChecks( pullRequest, "completed_at" ).stream()//
+				.filter( time -> time != null && !time.isEmpty() )//
+				.max( Comparator.naturalOrder() )//
+				.orElse( pullRequest.getLastUpdate().toInstant().toString() );
 	}
 
 	@Override
@@ -98,7 +111,8 @@ public class GithubConnector implements RepositoryConnector {
 			final int id = jsonPath.read( "$.[" + i + "].number" );
 			final String source = jsonPath.read( "$.[" + i + "].head.ref" );
 			final String destination = jsonPath.read( "$.[" + i + "].base.ref" );
-			final String lastUpdate = jsonPath.read( "$.[" + i + "].updated_at" );
+			final Date lastUpdate =
+					PullRequestLastUpdateStore.parseStringToDate( jsonPath.read( "$.[" + i + "].updated_at" ) );
 			results.add( PullRequest.builder() //
 					.id( id ) //
 					.source( source ) //
@@ -113,7 +127,7 @@ public class GithubConnector implements RepositoryConnector {
 		return "/pulls/" + pullRequest.getId();
 	}
 
-	private List<String> getGitHubChecks( final PullRequest pullRequest ) {
+	private List<String> getGitHubChecks( final PullRequest pullRequest, final String instruction ) {
 		final String pr = template.getForObject( "/pulls/" + pullRequest.getId(), String.class );
 		final String head = JsonPath.parse( pr ).read( "$.head.sha" );
 		final String checksUrl = "/commits/" + head + "/check-runs";
@@ -124,7 +138,7 @@ public class GithubConnector implements RepositoryConnector {
 
 		final ResponseEntity<String> json = template.exchange( checksUrl, HttpMethod.GET, entity, String.class );
 
-		return JsonPath.parse( json.getBody() ).<List<String>> read( "$.check_runs[*].conclusion" );
+		return JsonPath.parse( json.getBody() ).<List<String>> read( "$.check_runs[*]." + instruction );
 	}
 
 	private DocumentContext jsonPathForPath( final String urlPath ) {

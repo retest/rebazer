@@ -33,5 +33,3 @@ rebazer:
   # Delay between each polling interval, optional.
   #pollInterval: 60
 
-  # Detect if a branch changed since last processing.
-  #changeDetection: true

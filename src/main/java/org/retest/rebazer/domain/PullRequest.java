@@ -1,5 +1,7 @@
 package org.retest.rebazer.domain;
 
+import java.util.Date;
+
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Value;
@@ -12,7 +14,7 @@ public class PullRequest {
 	private final String source;
 	private final String destination;
 	@EqualsAndHashCode.Exclude
-	private final String lastUpdate;
+	private final Date lastUpdate;
 
 	@Override
 	public String toString() {

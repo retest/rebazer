@@ -34,8 +34,6 @@ public class RebazerConfig {
 	private String workspace = "rebazer-workspace";
 	private int garbageCollectionCountdown = 20;
 
-	private boolean changeDetection = true;
-
 	@Getter( AccessLevel.NONE )
 	private List<Host> hosts;
 
