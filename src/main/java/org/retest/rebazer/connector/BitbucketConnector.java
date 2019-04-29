@@ -1,47 +1,51 @@
 package org.retest.rebazer.connector;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.retest.rebazer.config.RebazerConfig.RepositoryConfig;
-import org.retest.rebazer.config.RebazerConfig.RepositoryTeam;
+import org.retest.rebazer.domain.BitbucketPullRequestResponse;
 import org.retest.rebazer.domain.PullRequest;
+import org.retest.rebazer.domain.RepositoryConfig;
 import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.web.client.RestTemplate;
 
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.jayway.jsonpath.DocumentContext;
 import com.jayway.jsonpath.JsonPath;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 public class BitbucketConnector implements RepositoryConnector {
 
-	private final static String baseUrlV1 = "https://api.bitbucket.org/1.0";
-	private final static String baseUrlV2 = "https://api.bitbucket.org/2.0";
+	private static final String BASE_URL_V_2 = "https://api.bitbucket.org/2.0";
 
-	private final RestTemplate legacyTemplate;
 	private final RestTemplate template;
+	private final ObjectMapper objectMapper;
 
-	public BitbucketConnector( final RepositoryTeam repoTeam, final RepositoryConfig repoConfig,
-			final RestTemplateBuilder templateBuilder ) {
-		final String basePath = "/repositories/" + repoTeam.getName() + "/" + repoConfig.getName();
+	public BitbucketConnector( final RepositoryConfig repoConfig, final RestTemplateBuilder templateBuilder ) {
+		final String basePath = "/repositories/" + repoConfig.getTeam() + "/" + repoConfig.getRepo();
 
-		legacyTemplate = templateBuilder.basicAuthorization( repoTeam.getUser(), repoTeam.getPass() )
-				.rootUri( baseUrlV1 + basePath ).build();
-		template = templateBuilder.basicAuthorization( repoTeam.getUser(), repoTeam.getPass() )
-				.rootUri( baseUrlV2 + basePath ).build();
+		template = templateBuilder.basicAuthentication( repoConfig.getUser(), repoConfig.getPass() )
+				.rootUri( BASE_URL_V_2 + basePath ).build();
+
+		objectMapper = new ObjectMapper().configure( DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false );
 	}
 
 	@Override
 	public PullRequest getLatestUpdate( final PullRequest pullRequest ) {
 		final DocumentContext jsonPath = jsonPathForPath( requestPath( pullRequest ) );
-		final PullRequest updatedPullRequest = PullRequest.builder() //
+		return PullRequest.builder() //
 				.id( pullRequest.getId() ) //
 				.source( pullRequest.getSource() ) //
 				.destination( pullRequest.getDestination() ) //
 				.lastUpdate( jsonPath.read( "$.updated_on" ) ) //
 				.build();
-		return updatedPullRequest;
 	}
 
 	@Override
@@ -52,29 +56,17 @@ public class BitbucketConnector implements RepositoryConnector {
 
 	@Override
 	public boolean rebaseNeeded( final PullRequest pullRequest ) {
-		return !getLastCommonCommitId( pullRequest ).equals( getHeadOfBranch( pullRequest ) );
+		return !getLastParentCommitId( pullRequest ).equals( getHeadOfBranch( pullRequest ) );
 	}
 
 	String getHeadOfBranch( final PullRequest pullRequest ) {
 		return jsonPathForPath( "/refs/branches/" + pullRequest.getDestination() ).read( "$.target.hash" );
 	}
 
-	String getLastCommonCommitId( final PullRequest pullRequest ) {
-		DocumentContext jsonPath = jsonPathForPath( requestPath( pullRequest ) + "/commits" );
-
-		final int pageLength = jsonPath.read( "$.pagelen" );
-		final int size = jsonPath.read( "$.size" );
-		final int lastPage = (pageLength + size - 1) / pageLength;
-
-		if ( lastPage > 1 ) {
-			jsonPath = jsonPathForPath( requestPath( pullRequest ) + "/commits?page=" + lastPage );
-		}
-
-		final List<String> commitIds = jsonPath.read( "$.values[*].hash" );
-		final List<String> parentIds = jsonPath.read( "$.values[*].parents[0].hash" );
-
-		return parentIds.stream().filter( parent -> !commitIds.contains( parent ) ).findFirst()
-				.orElseThrow( IllegalStateException::new );
+	String getLastParentCommitId( final PullRequest pullRequest ) {
+		final DocumentContext document = getLastPage( pullRequest );
+		final List<String> parentIds = document.read( "$.values[*].parents[0].hash" );
+		return parentIds.get( parentIds.size() - 1 );
 	}
 
 	@Override
@@ -90,7 +82,7 @@ public class BitbucketConnector implements RepositoryConnector {
 	@Override
 	public boolean greenBuildExists( final PullRequest pullRequest ) {
 		final DocumentContext jsonPath = jsonPathForPath( requestPath( pullRequest ) + "/statuses" );
-		return jsonPath.<List<String>> read( "$.values[*].state" ).stream().anyMatch( s -> "SUCCESSFUL".equals( s ) );
+		return jsonPath.<List<String>> read( "$.values[*].state" ).stream().anyMatch( "SUCCESSFUL"::equals );
 	}
 
 	@Override
@@ -103,10 +95,11 @@ public class BitbucketConnector implements RepositoryConnector {
 		final int numPullRequests = jsonPath.read( "$.size" );
 		final List<PullRequest> results = new ArrayList<>( numPullRequests );
 		for ( int i = 0; i < numPullRequests; i++ ) {
-			final int id = jsonPath.read( "$.values[" + i + "].id" );
-			final String source = jsonPath.read( "$.values[" + i + "].source.branch.name" );
-			final String destination = jsonPath.read( "$.values[" + i + "].destination.branch.name" );
-			final String lastUpdate = jsonPath.read( "$.values[" + i + "].updated_on" );
+			final String pathPrefix = "$.values[" + i + "].";
+			final int id = jsonPath.read( pathPrefix + "id" );
+			final String source = jsonPath.read( pathPrefix + "source.branch.name" );
+			final String destination = jsonPath.read( pathPrefix + "destination.branch.name" );
+			final String lastUpdate = jsonPath.read( pathPrefix + "updated_on" );
 			results.add( PullRequest.builder() //
 					.id( id ) //
 					.source( source ) //
@@ -128,10 +121,31 @@ public class BitbucketConnector implements RepositoryConnector {
 
 	@Override
 	public void addComment( final PullRequest pullRequest, final String message ) {
-		final Map<String, String> request = new HashMap<>();
-		request.put( "content", message );
+		final ObjectNode messageNode = objectMapper.createObjectNode();
+		messageNode.put( "raw", message );
+		final ObjectNode contentNode = objectMapper.createObjectNode();
+		contentNode.set( "content", messageNode );
 
-		legacyTemplate.postForObject( requestPath( pullRequest ) + "/comments", request, String.class );
+		template.postForObject( requestPath( pullRequest ) + "/comments", contentNode, String.class );
+	}
+
+	private DocumentContext getLastPage( final PullRequest pullRequest ) {
+		DocumentContext document = jsonPathForPath( requestPath( pullRequest ) + "/commits" );
+
+		try {
+			BitbucketPullRequestResponse response =
+					objectMapper.readValue( document.jsonString(), BitbucketPullRequestResponse.class );
+
+			while ( response.getNext() != null ) {
+				final String url = response.getNext();
+				document = jsonPathForPath( url );
+				response = objectMapper.readValue( document.jsonString(), BitbucketPullRequestResponse.class );
+			}
+		} catch ( final IOException e ) {
+			log.error( "Error parsing JSON.", e );
+		}
+
+		return document;
 	}
 
 }

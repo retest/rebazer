@@ -1,14 +1,24 @@
 package org.retest.rebazer.config;
 
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.List;
 
 import org.retest.rebazer.RepositoryHostingTypes;
+import org.retest.rebazer.domain.RepositoryConfig;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 
+import lombok.AccessLevel;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.Setter;
 
+/**
+ * This class and it internal objects are primary to read the spring configuration. For repository configurations use
+ * aggregated objects form {@link #getRepos()}.
+ */
 @Data
 @Configuration
 @ConfigurationProperties( "rebazer" )
@@ -17,20 +27,24 @@ public class RebazerConfig {
 	/**
 	 * Values used for {@link org.retest.rebazer.RebazerService#pollToHandleAllPullRequests()}
 	 */
-	public final static String POLL_INTERVAL_KEY = "rebazer.pollInterval";
-	public final static int POLL_INTERVAL_DEFAULT = 60;
+	public static final String POLL_INTERVAL_KEY = "rebazer.pollInterval";
+	public static final int POLL_INTERVAL_DEFAULT = 60;
 	private long pollInterval = POLL_INTERVAL_DEFAULT;
 
-	private String workspace = "./rebazer-workspace";
+	private String workspace = "rebazer-workspace";
 	private int garbageCollectionCountdown = 20;
 
-	private List<RepositoryHost> hosts;
+	private boolean changeDetection = true;
 
-	@Data
-	public static class RepositoryHost {
-		private RepositoryHostingTypes type;
+	@Getter( AccessLevel.NONE )
+	private List<Host> hosts;
+
+	@Setter
+	@EqualsAndHashCode
+	static class Host {
+		RepositoryHostingTypes type;
 		private URL url;
-		private List<RepositoryTeam> teams;
+		List<Team> teams;
 
 		public URL getUrl() {
 			if ( url != null ) {
@@ -39,14 +53,16 @@ public class RebazerConfig {
 				return type.getDefaultUrl();
 			}
 		}
+
 	}
 
-	@Data
-	public static class RepositoryTeam {
-		private String name;
+	@Setter
+	@EqualsAndHashCode
+	static class Team {
+		String name;
 		private String user;
-		private String pass;
-		private List<RepositoryConfig> repos;
+		String pass;
+		List<Repo> repos;
 
 		public String getUser() {
 			if ( user != null && !user.isEmpty() ) {
@@ -57,10 +73,40 @@ public class RebazerConfig {
 		}
 	}
 
-	@Data
-	public static class RepositoryConfig {
-		private String name;
-		private String masterBranch = "master";
+	@Setter
+	@EqualsAndHashCode
+	static class Repo {
+		String name;
+		String masterBranch = "master";
+	}
+
+	/**
+	 * This method converts the objects optimized for spring config to objects optimized for internal processing
+	 */
+	public List<RepositoryConfig> getRepos() {
+		checkThatConfigurationIsReaded();
+
+		final List<RepositoryConfig> configs = new ArrayList<>();
+		for ( final Host host : hosts ) {
+			for ( final Team team : host.teams ) {
+				for ( final Repo repo : team.repos ) {
+					configs.add( RepositoryConfig.builder() //
+							.type( host.type ).host( host.getUrl() ) //
+							.team( team.name ).repo( repo.name ) //
+							.user( team.getUser() ).pass( team.pass ) //
+							.masterBranch( repo.masterBranch ) //
+							.build() );
+				}
+			}
+		}
+		return configs;
+	}
+
+	private void checkThatConfigurationIsReaded() {
+		if ( hosts == null || hosts.isEmpty() ) {
+			throw new IllegalStateException( "No repositories defined, please verify that application.yml is placed"
+					+ " at the correct location and is readable!" );
+		}
 	}
 
 }

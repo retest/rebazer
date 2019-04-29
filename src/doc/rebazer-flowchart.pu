@@ -1,0 +1,45 @@
+@startuml
+start
+
+if (Has PR changed \nsince last run?) then (yes)
+
+  if (Is build status green?) then (yes)
+
+    if (Is source branch on\ntop of target branch?) then (yes)
+      if (Is PR approved?) then (yes)
+        #lightblue:Merge PR into target;
+        #lightblue:Delete merged branch;
+        stop
+      else (no)
+        :Wait for
+        approval>
+        stop
+      endif
+
+    else(no)
+      #lightblue:Rebase source branch;
+      if (Conflict while rebasing?) then (no)
+        :Wait for
+        green build>
+        stop
+      else(yes)
+        #lightblue:Abort rebase
+        and comment PR;
+        stop
+      endif
+    endif
+
+  else(no)
+    :Wait for
+    green build>
+    stop
+  endif
+
+else(no)
+  :Wait for source / target
+  branch, build result
+  or approval change>
+  stop
+endif
+
+@enduml

@@ -1,0 +1,37 @@
+rebazer:
+  hosts:
+  # Type of Repos, possible values GITHUB or BITBUCKET
+  - type: BITBUCKET
+
+    # optional, default is type dependent (github.com, bitbucket.org)
+    url: https://bitbucket.org/
+
+    teams:
+      #
+    - name: your_company
+      user: service_user # optional value, default is $name
+      pass: dont_use_this_pass_at_home
+      repos:
+      - name: the_repo_name
+        masterBranch: develop # optional value, default is "master"
+      - name: other_repo
+        masterBranch: trunk
+
+  - type: GITHUB
+    teams:
+    - name: your_company
+      pass: dont_use_this_pass_at_home
+      repos:
+      - name: foo
+
+  # Workspace Directory for checkouts, optional.
+  #workspace: ./rebazer-workspace
+
+  # Number of rebases before git garbage collection, optional.
+  #garbageCollectionCountdown: 20
+
+  # Delay between each polling interval, optional.
+  #pollInterval: 60
+
+  # Detect if a branch changed since last processing.
+  #changeDetection: true

@@ -1,0 +1,9 @@
+version: '2'
+
+services:
+  rebazer:
+    image: martinvietz/rebazer
+    mem_limit: 1g
+    volumes:
+      - /PATH_TO_YOUR/application.yml:/application.yml
+      - /OPTIONAL_PATH_TO_YOUR/rebazer-workspace:/rebazer-workspace

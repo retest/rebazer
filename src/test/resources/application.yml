@@ -1,0 +1,7 @@
+rebazer:
+  hosts:
+    - type: BITBUCKET
+      teams:
+      - name: dummy
+        pass: dummy
+        repos:

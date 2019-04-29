@@ -1,14 +1,19 @@
 package org.retest.rebazer.connector;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.retest.rebazer.config.RebazerConfig.RepositoryConfig;
-import org.retest.rebazer.config.RebazerConfig.RepositoryTeam;
 import org.retest.rebazer.domain.PullRequest;
+import org.retest.rebazer.domain.RepositoryConfig;
 import org.springframework.boot.web.client.RestTemplateBuilder;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.RestTemplate;
 
 import com.jayway.jsonpath.DocumentContext;
@@ -16,34 +21,34 @@ import com.jayway.jsonpath.JsonPath;
 
 public class GithubConnector implements RepositoryConnector {
 
-	private final static String baseUrl = "https://api.github.com";
+	private static final String GITHUB_PREVIEW_JSON_MEDIATYPE = "application/vnd.github.antiope-preview+json";
+
+	private static final String BASE_URL = "https://api.github.com";
 
 	private final RestTemplate template;
 
-	public GithubConnector( final RepositoryTeam repoTeam, final RepositoryConfig repoConfig,
-			final RestTemplateBuilder builder ) {
-		final String basePath = "/repos/" + repoTeam.getName() + "/" + repoConfig.getName();
+	public GithubConnector( final RepositoryConfig repoConfig, final RestTemplateBuilder builder ) {
+		final String basePath = "/repos/" + repoConfig.getTeam() + "/" + repoConfig.getRepo();
 
-		template = builder.basicAuthorization( repoTeam.getUser(), repoTeam.getPass() ).rootUri( baseUrl + basePath )
-				.build();
+		template = builder.basicAuthentication( repoConfig.getUser(), repoConfig.getPass() )
+				.rootUri( BASE_URL + basePath ).build();
 	}
 
 	@Override
 	public PullRequest getLatestUpdate( final PullRequest pullRequest ) {
 		final DocumentContext jsonPath = jsonPathForPath( requestPath( pullRequest ) );
-		final PullRequest updatedPullRequest = PullRequest.builder() //
+		return PullRequest.builder() //
 				.id( pullRequest.getId() ) //
 				.source( pullRequest.getSource() ) //
 				.destination( pullRequest.getDestination() ) //
 				.lastUpdate( jsonPath.read( "$.updated_at" ) ) //
 				.build();
-		return updatedPullRequest;
 	}
 
 	@Override
 	public boolean isApproved( final PullRequest pullRequest ) {
 		final DocumentContext jsonPath = jsonPathForPath( requestPath( pullRequest ) + "/reviews" );
-		return jsonPath.<List<String>> read( "$..state" ).stream().anyMatch( s -> "APPROVED".equals( s ) );
+		return jsonPath.<List<String>> read( "$..state" ).stream().anyMatch( "APPROVED"::equals );
 	}
 
 	@Override
@@ -61,8 +66,7 @@ public class GithubConnector implements RepositoryConnector {
 		final List<String> commitIds = jsonPath.read( "$..sha" );
 		final List<String> parentIds = jsonPath.read( "$..parents..sha" );
 
-		return parentIds.stream().filter( parent -> commitIds.contains( parent ) ).findFirst()
-				.orElseThrow( IllegalStateException::new );
+		return parentIds.stream().filter( commitIds::contains ).findFirst().orElseThrow( IllegalStateException::new );
 	}
 
 	@Override
@@ -72,13 +76,13 @@ public class GithubConnector implements RepositoryConnector {
 		request.put( "merge_method", "merge" );
 
 		template.put( requestPath( pullRequest ) + "/merge", request, Object.class );
+
+		template.delete( "/git/refs/heads/" + pullRequest.getSource() );
 	}
 
 	@Override
 	public boolean greenBuildExists( final PullRequest pullRequest ) {
-		final String urlPath = "/commits/" + pullRequest.getSource() + "/status";
-		final DocumentContext jsonPath = jsonPathForPath( urlPath );
-		return jsonPath.<List<String>> read( "$.statuses[*].state" ).stream().anyMatch( s -> "success".equals( s ) );
+		return getGitHubChecks( pullRequest ).stream().allMatch( "success"::equals );
 	}
 
 	@Override
@@ -107,6 +111,20 @@ public class GithubConnector implements RepositoryConnector {
 
 	private static String requestPath( final PullRequest pullRequest ) {
 		return "/pulls/" + pullRequest.getId();
+	}
+
+	private List<String> getGitHubChecks( final PullRequest pullRequest ) {
+		final String pr = template.getForObject( "/pulls/" + pullRequest.getId(), String.class );
+		final String head = JsonPath.parse( pr ).read( "$.head.sha" );
+		final String checksUrl = "/commits/" + head + "/check-runs";
+
+		final HttpHeaders headers = new HttpHeaders();
+		headers.setAccept( Collections.singletonList( MediaType.parseMediaType( GITHUB_PREVIEW_JSON_MEDIATYPE ) ) );
+		final HttpEntity<String> entity = new HttpEntity<>( "parameters", headers );
+
+		final ResponseEntity<String> json = template.exchange( checksUrl, HttpMethod.GET, entity, String.class );
+
+		return JsonPath.parse( json.getBody() ).<List<String>> read( "$.check_runs[*].conclusion" );
 	}
 
 	private DocumentContext jsonPathForPath( final String urlPath ) {
