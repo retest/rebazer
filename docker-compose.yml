@@ -2,7 +2,7 @@ version: '2'
 
 services:
   rebazer:
-    image: martinvietz/rebazer
+    image: retest/rebazer
     mem_limit: 1g
     volumes:
       - /PATH_TO_YOUR/application.yml:/application.yml

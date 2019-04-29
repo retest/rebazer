@@ -86,7 +86,7 @@ If e.g. all parameters are specified in a file called `application.yml`, the fol
 
 ### Docker
 
-There exist a docker image on [docker hub](https://hub.docker.com/r/martinvietz/rebazer/).
+There exist a docker image on [docker hub](https://hub.docker.com/r/retest/rebazer/).
 An example configuration for the docker container is placed in the [docker-compose.yml](./docker-compose.yml).
 
 To configure the rebazer mount the configuration file at `/application.yml`.

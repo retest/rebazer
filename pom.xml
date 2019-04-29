@@ -298,7 +298,7 @@
 							</execution>
 						</executions>
 						<configuration>
-							<repository>martinvietz/${project.artifactId}</repository>
+							<repository>retest/${project.artifactId}</repository>
 							<buildArgs>
 								<JAR_FILE>target/${project.build.finalName}.jar</JAR_FILE>
 							</buildArgs>
