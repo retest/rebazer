@@ -1,5 +1,5 @@
 language: java
-sudo: required
+dist: trusty
 
 addons:
   sonarcloud:
