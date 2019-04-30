@@ -22,7 +22,7 @@ public class PullRequest {
 	}
 
 	public String mergeCommitMessage() {
-		return String.format( "Merged in %s (pull request #%d) by ReBaZer", source, id );
+		return String.format( "Merged in %s (pull request #%d) by rebazer", source, id );
 	}
 
 }
