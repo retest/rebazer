@@ -4,6 +4,8 @@ services:
   rebazer:
     image: retest/rebazer
     mem_limit: 1g
+    environment:
+      - SPRING_CONFIG_LOCATION=file:/application.yml
     volumes:
       - /PATH_TO_YOUR/application.yml:/application.yml
       - /OPTIONAL_PATH_TO_YOUR/rebazer-workspace:/rebazer-workspace
