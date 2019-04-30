@@ -25,6 +25,6 @@ class PullRequestTest {
 
 	@Test
 	void mergeCommitMessage_should_return_corrct_string() {
-		assertThat( pullRequest.mergeCommitMessage() ).isEqualTo( "Merged in source (pull request #1) by ReBaZer" );
+		assertThat( pullRequest.mergeCommitMessage() ).isEqualTo( "Merged in source (pull request #1) by rebazer" );
 	}
 }

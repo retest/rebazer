@@ -1,5 +1,5 @@
 [Unit]
-Description=ReTest ReBaZer
+Description=ReTest rebazer
 
 [Service]
 ExecStart=/usr/bin/rebazer
