@@ -21,7 +21,7 @@ services:
 install: true
 
 script:
-  - mvn clean org.jacoco:jacoco-maven-plugin:prepare-agent verify sonar:sonar -P deb,docker
+  - mvn clean org.jacoco:jacoco-maven-plugin:prepare-agent verify sonar:sonar -P deb
 
 deploy:
   - provider: releases
@@ -35,9 +35,7 @@ deploy:
       tags: true
 
   - provider: script
-    script:
-      - docker login -u "$DOCKER_USERNAME" -p "$DOCKER_PASSWORD" ;
-        mvn dockerfile:push -Pdocker
+    script: mvn jib:build -Djib.to.auth.username=${DOCKER_USERNAME} -Djib.to.auth.password=${DOCKER_PASSWORD}
     skip_cleanup: true
     on:
       tags: true
