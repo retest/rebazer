@@ -111,11 +111,10 @@
 	</build>
 
 	<profiles>
-
 		<profile>
 			<id>check</id>
 			<activation>
-				<activeByDefault>true</activeByDefault>
+				<activeByDefault>false</activeByDefault>
 			</activation>
 			<build>
 				<plugins>
@@ -165,7 +164,6 @@
 				</plugins>
 			</build>
 		</profile>
-
 		<profile>
 			<id>deb</id>
 			<activation>
