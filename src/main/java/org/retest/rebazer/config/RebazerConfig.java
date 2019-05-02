@@ -80,6 +80,7 @@ public class RebazerConfig {
 
 	/**
 	 * This method converts the objects optimized for spring config to objects optimized for internal processing
+	 * @return List of all configured repos
 	 */
 	public List<RepositoryConfig> getRepos() {
 		checkThatConfigurationIsReaded();
