@@ -86,13 +86,15 @@ If e.g. all parameters are specified in a file called `application.yml`, the fol
 
 ### Docker
 
-There exist a docker image on [docker hub](https://hub.docker.com/r/retest/rebazer/).
+We provide a docker image on [docker hub](https://hub.docker.com/r/retest/rebazer/).
 An example configuration for the docker container is placed in the [docker-compose.yml](./docker-compose.yml).
 
 To configure the rebazer mount the configuration file at `/application.yml`.
-To optimize production setups it is recommended to mount `/rebazer-workspace`
-as a external storage or ram disk.
+To optimize production setups it is recommended to mount `/rebazer-workspace` as an external storage or ram disk.
 
+Example:
+
+`docker run -v $(pwd)/application.yml:/application.yml -e SPRING_CONFIG_LOCATION=file:/application.yml retest/rebazer`
 
 ### Debian package
 
