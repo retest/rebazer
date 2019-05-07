@@ -22,6 +22,9 @@ import org.springframework.web.client.RestTemplate;
 import com.jayway.jsonpath.DocumentContext;
 import com.jayway.jsonpath.JsonPath;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 public class GithubConnector implements RepositoryConnector {
 
 	private static final String GITHUB_PREVIEW_JSON_MEDIATYPE = "application/vnd.github.antiope-preview+json";
@@ -108,17 +111,23 @@ public class GithubConnector implements RepositoryConnector {
 		final int size = jsonPath.read( "$.length()" );
 		final List<PullRequest> results = new ArrayList<>( size );
 		for ( int i = 0; i < size; i++ ) {
-			final int id = jsonPath.read( "$.[" + i + "].number" );
-			final String source = jsonPath.read( "$.[" + i + "].head.ref" );
-			final String destination = jsonPath.read( "$.[" + i + "].base.ref" );
-			final Date lastUpdate =
-					PullRequestLastUpdateStore.parseStringToDate( jsonPath.read( "$.[" + i + "].updated_at" ) );
-			results.add( PullRequest.builder() //
-					.id( id ) //
-					.source( source ) //
-					.destination( destination ) //
-					.lastUpdate( lastUpdate ) //
-					.build() ); //
+			final String fullName = jsonPath.read( "$.[" + i + "].head.repo.full_name" );
+
+			if ( fullName.startsWith( "retest" ) ) {
+				final int id = jsonPath.read( "$.[" + i + "].number" );
+				final String source = jsonPath.read( "$.[" + i + "].head.ref" );
+				final String destination = jsonPath.read( "$.[" + i + "].base.ref" );
+				final Date lastUpdate =
+						PullRequestLastUpdateStore.parseStringToDate( jsonPath.read( "$.[" + i + "].updated_at" ) );
+				results.add( PullRequest.builder() //
+						.id( id ) //
+						.source( source ) //
+						.destination( destination ) //
+						.lastUpdate( lastUpdate ) //
+						.build() ); //
+			} else {
+				log.info( "Ignoring external PR {}", fullName );
+			}
 		}
 		return results;
 	}

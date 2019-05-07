@@ -1,12 +1,15 @@
 [
-    {
-			"number": 2,
-			"head": {
-				"ref": "test/source-branch"
-			},
-			"base": {
-				"ref": "master"
-			},
-			"updated_at": "2019-02-04T20:18:44Z"
-    }
+	{
+		"number": 2,
+		"head": {
+			"ref": "test/source-branch",
+			"repo": {
+				"full_name": "retest:demo"
+			}
+		},
+		"base": {
+			"ref": "master"
+		},
+		"updated_at": "2019-02-04T20:18:44Z"
+	}
 ]
