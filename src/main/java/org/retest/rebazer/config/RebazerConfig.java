@@ -34,6 +34,8 @@ public class RebazerConfig {
 	private String workspace = "rebazer-workspace";
 	private int garbageCollectionCountdown = 20;
 
+	private boolean changeDetection = false;
+
 	@Getter( AccessLevel.NONE )
 	private List<Host> hosts;
 
@@ -80,6 +82,7 @@ public class RebazerConfig {
 
 	/**
 	 * This method converts the objects optimized for spring config to objects optimized for internal processing
+	 * 
 	 * @return List of all configured repos
 	 */
 	public List<RepositoryConfig> getRepos() {
