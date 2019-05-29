@@ -54,7 +54,10 @@ public class RebazerService {
 			final PullRequest pullRequest ) {
 		log.debug( "Processing {}.", pullRequest );
 
-		if ( rebazerConfig.isChangeDetection() && pullRequestLastUpdateStore.isHandled( repoConfig, pullRequest ) ) {
+		if ( !branchMatches( pullRequest ) ) {
+			log.info( "Ignoring {} because it does not match '{}'", pullRequest, rebazerConfig.getBranchMatcher() );
+		} else if ( rebazerConfig.isChangeDetection()
+				&& pullRequestLastUpdateStore.isHandled( repoConfig, pullRequest ) ) {
 			log.info( "{} is unchanged since last run (last change: {}).", pullRequest,
 					pullRequestLastUpdateStore.getLastDate( repoConfig, pullRequest ) );
 
@@ -78,6 +81,12 @@ public class RebazerService {
 			repoConnector.merge( pullRequest );
 			pullRequestLastUpdateStore.resetAllInThisRepo( repoConfig );
 		}
+	}
+
+	private boolean branchMatches( final PullRequest pullRequest ) {
+		final String branchName = pullRequest.getSource();
+		final String branchMatcher = rebazerConfig.getBranchMatcher();
+		return branchName.matches( branchMatcher );
 	}
 
 }
