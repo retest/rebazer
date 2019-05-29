@@ -36,6 +36,8 @@ public class RebazerConfig {
 
 	private boolean changeDetection = false;
 
+	private String branchMatcher = "^feature/.*";
+
 	@Getter( AccessLevel.NONE )
 	private List<Host> hosts;
 

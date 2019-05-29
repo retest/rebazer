@@ -8,6 +8,9 @@ rebazer:
   # Delay between each polling interval, optional.
   #pollInterval: 60
   
+  # Regex to match branch names that should be rebased.
+  #branchMatcher: ^feature/.*
+  
   hosts:
   # Repo type, possible values GITHUB or BITBUCKET.
   - type: BITBUCKET
