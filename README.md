@@ -1,4 +1,4 @@
-# rebazer
+# <img src="https://assets.retest.org/retest/ci/logos/retest-wordmark-screen.svg" width="300"/>rebazer
 
 [![Build Status](https://travis-ci.com/retest/rebazer.svg?branch=develop)](https://travis-ci.com/retest/rebazer)
 [![Sonarcloud Status](https://sonarcloud.io/api/project_badges/measure?project=org.retest%3Arebazer&metric=alert_status)](https://sonarcloud.io/dashboard?id=org.retest%3Arebazer)
