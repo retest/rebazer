@@ -10,13 +10,14 @@ import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Date;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 import org.retest.rebazer.config.RebazerConfig;
 import org.retest.rebazer.connector.RepositoryConnector;
 import org.retest.rebazer.domain.PullRequest;
@@ -26,6 +27,7 @@ import org.retest.rebazer.service.RebaseService;
 import org.springframework.boot.web.client.RestTemplateBuilder;
 
 @ExtendWith( MockitoExtension.class )
+@MockitoSettings( strictness = Strictness.LENIENT )
 class RebazerServiceTest {
 
 	RebazerService cut;
@@ -47,6 +49,8 @@ class RebazerServiceTest {
 
 	@BeforeEach
 	void setUp() {
+		when( rebazerConfig.getBranchMatcher() ).thenReturn( "^feature/.*" );
+		when( pullRequest.getSource() ).thenReturn( "feature/foo" );
 		cut = spy( new RebazerService( rebaseService, rebazerConfig, pullRequestLastUpdateStore, templateBuilder ) );
 	}
 
@@ -93,7 +97,9 @@ class RebazerServiceTest {
 	@Test
 	void handleRepo_call_handlePullRequest_foreach_PR() {
 		final PullRequest pullRequest1 = mock( PullRequest.class );
+		when( pullRequest1.getSource() ).thenReturn( "feature/bar" );
 		final PullRequest pullRequest2 = mock( PullRequest.class );
+		when( pullRequest2.getSource() ).thenReturn( "feature/baz" );
 		when( repoConfig.getConnector( templateBuilder ) ).thenReturn( repoConnector );
 		when( repoConnector.getAllPullRequests() )
 				.thenReturn( Arrays.asList( pullRequest, pullRequest1, pullRequest2 ) );
@@ -116,24 +122,12 @@ class RebazerServiceTest {
 
 	@Test
 	void non_matching_branches_should_be_ignored() {
-		when( rebazerConfig.getBranchMatcher() ).thenReturn( "^feature/.*" );
+		cut.handlePullRequest( repoConnector, repoConfig, pullRequest );
+		verify( repoConnector, times( 1 ) ).greenBuildExists( pullRequest );
 
-		final PullRequest pr0 = PullRequest.builder() //
-				.source( "feature/foo" ) //
-				.destination( "master" ) //
-				.id( 0 ) //
-				.lastUpdate( new Date() ) //
-				.build();
-		cut.handlePullRequest( repoConnector, repoConfig, pr0 );
-		verify( repoConnector, times( 1 ) ).greenBuildExists( pr0 );
-
-		final PullRequest pr1 = PullRequest.builder() //
-				.source( "release/bar" ) //
-				.destination( "master" ) //
-				.id( 1 ) //
-				.lastUpdate( new Date() ) //
-				.build();
-		cut.handlePullRequest( repoConnector, repoConfig, pr1 );
-		verify( repoConnector, never() ).greenBuildExists( pr1 );
+		final PullRequest pullRequest1 = mock( PullRequest.class );
+		when( pullRequest1.getSource() ).thenReturn( "release/bar" );
+		cut.handlePullRequest( repoConnector, repoConfig, pullRequest1 );
+		verify( repoConnector, never() ).greenBuildExists( pullRequest1 );
 	}
 }
