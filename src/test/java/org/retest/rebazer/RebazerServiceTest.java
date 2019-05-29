@@ -1,13 +1,16 @@
 package org.retest.rebazer;
 
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -109,5 +112,28 @@ class RebazerServiceTest {
 		// TODO implement tests for logic in handlePullRequest()
 
 		cut.handlePullRequest( repoConnector, repoConfig, pullRequest );
+	}
+
+	@Test
+	void non_matching_branches_should_be_ignored() {
+		when( rebazerConfig.getBranchMatcher() ).thenReturn( "^feature/.*" );
+
+		final PullRequest pr0 = PullRequest.builder() //
+				.source( "feature/foo" ) //
+				.destination( "master" ) //
+				.id( 0 ) //
+				.lastUpdate( new Date() ) //
+				.build();
+		cut.handlePullRequest( repoConnector, repoConfig, pr0 );
+		verify( repoConnector, times( 1 ) ).greenBuildExists( pr0 );
+
+		final PullRequest pr1 = PullRequest.builder() //
+				.source( "release/bar" ) //
+				.destination( "master" ) //
+				.id( 1 ) //
+				.lastUpdate( new Date() ) //
+				.build();
+		cut.handlePullRequest( repoConnector, repoConfig, pr1 );
+		verify( repoConnector, never() ).greenBuildExists( pr1 );
 	}
 }
