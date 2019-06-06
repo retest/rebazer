@@ -49,7 +49,7 @@ class RebazerServiceTest {
 
 	@BeforeEach
 	void setUp() {
-		when( rebazerConfig.getBranchBlacklist() ).thenReturn( "^(master|develop|release|hotfix)" );
+		when( rebazerConfig.getBranchBlacklist() ).thenReturn( new RebazerConfig().getBranchBlacklist() );
 		when( pullRequest.getSource() ).thenReturn( "feature/foo" );
 		cut = spy( new RebazerService( rebaseService, rebazerConfig, pullRequestLastUpdateStore, templateBuilder ) );
 	}
