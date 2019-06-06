@@ -36,7 +36,7 @@ public class RebazerConfig {
 
 	private boolean changeDetection = false;
 
-	private String branchMatcher = "^feature/.*";
+	private String branchBlacklist = "^(master|develop|release|hotfix)";
 
 	@Getter( AccessLevel.NONE )
 	private List<Host> hosts;

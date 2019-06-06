@@ -8,8 +8,8 @@ rebazer:
   # Delay between each polling interval, optional.
   #pollInterval: 60
   
-  # Regex to match branch names that should be rebased.
-  #branchMatcher: ^feature/.*
+  # Regex to blacklist branch names that should not be processed.
+  #branchBlacklist: ^(master|develop|release|hotfix)
   
   hosts:
   # Repo type, possible values GITHUB or BITBUCKET.
