@@ -121,7 +121,7 @@ class RebazerServiceTest {
 	}
 
 	@Test
-	void non_matching_branches_should_be_ignored() {
+	void blacklisted_branches_should_be_ignored() {
 		cut.handlePullRequest( repoConnector, repoConfig, pullRequest );
 		verify( repoConnector, times( 1 ) ).greenBuildExists( pullRequest );
 
