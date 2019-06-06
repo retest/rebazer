@@ -9,7 +9,7 @@ rebazer:
   #pollInterval: 60
   
   # Regex to blacklist branch names that should not be processed.
-  #branchBlacklist: ^(master|develop|release|hotfix)
+  #branchBlacklist: ^(master|develop|release|hotfix).*
   
   hosts:
   # Repo type, possible values GITHUB or BITBUCKET.
