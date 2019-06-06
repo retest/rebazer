@@ -84,9 +84,7 @@ public class RebazerService {
 	}
 
 	private boolean sourceBranchIsBlacklisted( final PullRequest pullRequest ) {
-		final String branchName = pullRequest.getSource();
-		final String branchBlacklist = rebazerConfig.getBranchBlacklist();
-		return branchName.matches( branchBlacklist );
+		return pullRequest.getSource().matches( rebazerConfig.getBranchBlacklist() );
 	}
 
 }
