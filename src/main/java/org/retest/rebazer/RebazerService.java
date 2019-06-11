@@ -54,7 +54,10 @@ public class RebazerService {
 			final PullRequest pullRequest ) {
 		log.debug( "Processing {}.", pullRequest );
 
-		if ( rebazerConfig.isChangeDetection() && pullRequestLastUpdateStore.isHandled( repoConfig, pullRequest ) ) {
+		if ( sourceBranchIsBlacklisted( pullRequest ) ) {
+			log.info( "Ignoring {} because source branch is blacklisted.", pullRequest );
+		} else if ( rebazerConfig.isChangeDetection()
+				&& pullRequestLastUpdateStore.isHandled( repoConfig, pullRequest ) ) {
 			log.info( "{} is unchanged since last run (last change: {}).", pullRequest,
 					pullRequestLastUpdateStore.getLastDate( repoConfig, pullRequest ) );
 
@@ -78,6 +81,10 @@ public class RebazerService {
 			repoConnector.merge( pullRequest );
 			pullRequestLastUpdateStore.resetAllInThisRepo( repoConfig );
 		}
+	}
+
+	private boolean sourceBranchIsBlacklisted( final PullRequest pullRequest ) {
+		return pullRequest.getSource().matches( rebazerConfig.getBranchBlacklist() );
 	}
 
 }
