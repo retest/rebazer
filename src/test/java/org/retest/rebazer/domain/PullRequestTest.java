@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.time.OffsetDateTime;
 import java.util.Date;
 
+import org.assertj.core.util.Maps;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -15,7 +16,8 @@ class PullRequestTest {
 	@BeforeEach
 	void setUp() {
 		final Date lastUpdate = Date.from( OffsetDateTime.parse( "2017-11-30T10:05:28Z" ).toInstant() );
-		pullRequest = new PullRequest( 1, "source", "destination", lastUpdate );
+		pullRequest = new PullRequest( 1, "title", 2, "description", Maps.newHashMap( 1, "CHANGES_REQUESTED" ),
+				"source", "destination", lastUpdate );
 	}
 
 	@Test

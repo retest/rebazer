@@ -123,6 +123,8 @@ class BitbucketConnectorTest {
 		final int expectedId = (int) documentContext.read( "$.values[0].id" );
 		final List<PullRequest> expected = Arrays.asList( PullRequest.builder()//
 				.id( expectedId )//
+				.title( documentContext.read( "$.values[0].title" ) )
+				.description( documentContext.read( "$.values[0].description" ) )
 				.source( documentContext.read( "$.values[0].source.branch.name" ) )//
 				.destination( documentContext.read( "$.values[0].destination.branch.name" ) )//
 				.lastUpdate( lastUpdate )//

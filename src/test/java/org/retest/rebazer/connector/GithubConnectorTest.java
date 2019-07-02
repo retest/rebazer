@@ -193,9 +193,16 @@ class GithubConnectorTest {
 		final Date lastUpdate =
 				PullRequestLastUpdateStore.parseStringToDate( documentContext.read( "$.[0].updated_at" ) );
 		final int expectedId = (int) documentContext.read( "$.[0].number" );
+		final List<Integer> reviewerId = documentContext.read( "$.[0].requested_reviewers[*].id" );
+		final Map<Integer, String> reviewers = Maps.newHashMap( reviewerId.get( 0 ), null );
+
 		final List<PullRequest> expected = Arrays.asList( PullRequest.builder()//
 				.id( expectedId )//
-				.source( documentContext.read( "$.[0].head.ref" ) )
+				.title( documentContext.read( "$.[0].title" ) ) //
+				.creator( documentContext.read( "$.[0].user.id" ) ) //
+				.description( documentContext.read( "$.[0].body" ) ) //
+				.reviewers( reviewers ) //
+				.source( documentContext.read( "$.[0].head.ref" ) ) //
 				.destination( documentContext.read( "$.[0].base.ref" ) )//
 				.lastUpdate( lastUpdate ).build() );
 		final List<PullRequest> actual = cut.getAllPullRequests();
