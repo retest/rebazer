@@ -16,6 +16,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 
+import org.assertj.core.util.Maps;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -125,6 +126,26 @@ class GithubConnectorTest {
 						"Please pull these awesome changes @All", true ) );
 	}
 
+	private static Stream<Arguments> overrideDifferentStates() {
+		return Stream.of( //
+				Arguments.of( "[{\"user\": {\"id\": 2}, \"state\": \"COMMENTED\"}]", "COMMENTED" ),
+				Arguments.of(
+						"[{ \"user\": {\"id\": 2}, \"state\": \"APPROVED\"}, {\"user\": {\"id\": 2}, \"state\": \"COMMENTED\"}]",
+						"APPROVED" ),
+				Arguments.of(
+						"[{ \"user\": {\"id\": 2}, \"state\": \"CHANGES_REQUESTED\"}, {\"user\": {\"id\": 2}, \"state\": \"COMMENTED\"}]",
+						"CHANGES_REQUESTED" ),
+				Arguments.of(
+						"[{ \"user\": {\"id\": 2}, \"state\": \"APPROVED\"}, {\"user\": {\"id\": 2}, \"state\": \"CHANGES_REQUESTED\"}]",
+						"CHANGES_REQUESTED" ),
+				Arguments.of(
+						"[{ \"user\": {\"id\": 2}, \"state\": \"CHANGES_REQUESTED\"}, {\"user\": {\"id\": 2}, \"state\": \"APPROVED\"}]",
+						"APPROVED" ),
+				Arguments.of(
+						"[{ \"user\": {\"id\": 2}, \"state\": \"APPROVED\"}, {\"user\": {\"id\": 2}, \"state\": \"CHANGES_REQUESTED\"}, {\"user\": {\"id\": 2}, \"state\": \"APPROVED\"}]",
+						"APPROVED" ) );
+	}
+
 	@BeforeEach
 	void setUp() {
 		template = mock( RestTemplate.class );
@@ -182,12 +203,17 @@ class GithubConnectorTest {
 		assertThat( cut.isApproved( pullRequest ) ).isEqualTo( result );
 	}
 
-	@Test
-	void isApproved_should_return_true_if_approved_is_true() {
-		final String json = "{review: [{\"state\": \"APPROVED\"}]}\"";
-		when( template.getForObject( anyString(), eq( String.class ) ) ).thenReturn( json );
+	@ParameterizedTest
+	@MethodSource( "overrideDifferentStates" )
+	void getReviewers_should_provide_always_the_newest_state( final String actions, final String result ) {
+		when( pullRequest.getTitle() ).thenReturn( "not important" );
+		when( pullRequest.getDescription() ).thenReturn( "not important" );
+		when( template.getForObject( anyString(), eq( String.class ) ) ).thenReturn( actions );
+		when( pullRequest.getReviewers() ).thenReturn( Maps.newHashMap( 2, null ) );
 
-		assertThat( cut.isApproved( pullRequest ) ).isTrue();
+		cut.isApproved( pullRequest );
+
+		assertThat( pullRequest.getReviewers().get( 2 ) ).isEqualTo( result );
 	}
 
 	@Test
