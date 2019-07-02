@@ -49,7 +49,9 @@ public class GithubConnector implements RepositoryConnector {
 		return PullRequest.builder() //
 				.id( pullRequest.getId() ) //
 				.title( pullRequest.getTitle() ) //
+				.creator( pullRequest.getCreator() ) //
 				.description( pullRequest.getDescription() ) //
+				.reviewers( pullRequest.getReviewers() ) //
 				.source( pullRequest.getSource() ) //
 				.destination( pullRequest.getDestination() ) //
 				.lastUpdate( repositoryTime.after( checksTime ) ? repositoryTime : checksTime ) //
@@ -118,7 +120,11 @@ public class GithubConnector implements RepositoryConnector {
 			if ( fullName.startsWith( "retest" ) ) {
 				final int id = jsonPath.read( "$.[" + i + "].number" );
 				final String title = jsonPath.read( "$.[" + i + "].title" );
+				final int creator = jsonPath.read( "$.[" + i + "].user.id" );
 				final String description = jsonPath.read( "$.[" + i + "].body" );
+				final List<Integer> reviewerId = jsonPath.read( "$.[" + i + "].requested_reviewers[*].id" );
+				final Map<Integer, String> reviewers = new HashMap<>();
+				reviewerId.stream().forEach( userId -> reviewers.put( userId, null ) );
 				final String source = jsonPath.read( "$.[" + i + "].head.ref" );
 				final String destination = jsonPath.read( "$.[" + i + "].base.ref" );
 				final Date lastUpdate =
@@ -126,7 +132,9 @@ public class GithubConnector implements RepositoryConnector {
 				results.add( PullRequest.builder() //
 						.id( id ) //
 						.title( title ) //
+						.creator( creator ) //
 						.description( description ) //
+						.reviewers( reviewers ) //
 						.source( source ) //
 						.destination( destination ) //
 						.lastUpdate( lastUpdate ) //
