@@ -2,6 +2,8 @@
 	"values": [
 		{
 			"id": 2,
+			"title": "new-feature",
+			"description": "Please pull these awesome changes",
 			"source": {
 				"branch": {
 					"name": "test/source-branch"

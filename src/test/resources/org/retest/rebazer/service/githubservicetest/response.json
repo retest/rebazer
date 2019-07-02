@@ -1,6 +1,16 @@
 [
 	{
 		"number": 2,
+		"title": "new-feature",
+		"user":{
+			"id": 3
+		},
+		"body": "Please pull these awesome changes",
+		"requested_reviewers": [
+    		{
+				"id": 1
+    		}
+ 		],
 		"head": {
 			"ref": "test/source-branch",
 			"repo": {
