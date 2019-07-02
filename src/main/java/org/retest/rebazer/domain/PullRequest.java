@@ -11,6 +11,8 @@ import lombok.Value;
 public class PullRequest {
 
 	private final Integer id;
+	private final String title;
+	private final String description;
 	private final String source;
 	private final String destination;
 	@EqualsAndHashCode.Exclude

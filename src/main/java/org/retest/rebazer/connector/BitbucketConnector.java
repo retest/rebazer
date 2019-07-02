@@ -45,6 +45,8 @@ public class BitbucketConnector implements RepositoryConnector {
 		final Date repositoryTime = PullRequestLastUpdateStore.parseStringToDate( jsonPath.read( "$.updated_on" ) );
 		return PullRequest.builder() //
 				.id( pullRequest.getId() ) //
+				.title( pullRequest.getTitle() ) //
+				.description( pullRequest.getDescription() ) //
 				.source( pullRequest.getSource() ) //
 				.destination( pullRequest.getDestination() ) //
 				.lastUpdate( repositoryTime ) //
@@ -100,12 +102,16 @@ public class BitbucketConnector implements RepositoryConnector {
 		for ( int i = 0; i < numPullRequests; i++ ) {
 			final String pathPrefix = "$.values[" + i + "].";
 			final int id = jsonPath.read( pathPrefix + "id" );
+			final String title = jsonPath.read( pathPrefix + "title" );
+			final String description = jsonPath.read( pathPrefix + "description" );
 			final String source = jsonPath.read( pathPrefix + "source.branch.name" );
 			final String destination = jsonPath.read( pathPrefix + "destination.branch.name" );
 			final Date lastUpdate =
 					PullRequestLastUpdateStore.parseStringToDate( jsonPath.read( pathPrefix + "updated_on" ) );
 			results.add( PullRequest.builder() //
 					.id( id ) //
+					.title( title ) //
+					.description( description ) //
 					.source( source ) //
 					.destination( destination ) //
 					.lastUpdate( lastUpdate ) //
@@ -151,5 +157,4 @@ public class BitbucketConnector implements RepositoryConnector {
 
 		return document;
 	}
-
 }

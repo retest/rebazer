@@ -48,6 +48,8 @@ public class GithubConnector implements RepositoryConnector {
 		final Date checksTime = PullRequestLastUpdateStore.parseStringToDate( newestChecksTime( pullRequest ) );
 		return PullRequest.builder() //
 				.id( pullRequest.getId() ) //
+				.title( pullRequest.getTitle() ) //
+				.description( pullRequest.getDescription() ) //
 				.source( pullRequest.getSource() ) //
 				.destination( pullRequest.getDestination() ) //
 				.lastUpdate( repositoryTime.after( checksTime ) ? repositoryTime : checksTime ) //
@@ -115,12 +117,16 @@ public class GithubConnector implements RepositoryConnector {
 
 			if ( fullName.startsWith( "retest" ) ) {
 				final int id = jsonPath.read( "$.[" + i + "].number" );
+				final String title = jsonPath.read( "$.[" + i + "].title" );
+				final String description = jsonPath.read( "$.[" + i + "].body" );
 				final String source = jsonPath.read( "$.[" + i + "].head.ref" );
 				final String destination = jsonPath.read( "$.[" + i + "].base.ref" );
 				final Date lastUpdate =
 						PullRequestLastUpdateStore.parseStringToDate( jsonPath.read( "$.[" + i + "].updated_at" ) );
 				results.add( PullRequest.builder() //
 						.id( id ) //
+						.title( title ) //
+						.description( description ) //
 						.source( source ) //
 						.destination( destination ) //
 						.lastUpdate( lastUpdate ) //
