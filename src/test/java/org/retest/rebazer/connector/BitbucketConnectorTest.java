@@ -12,9 +12,13 @@ import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
+import java.util.stream.Stream;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.retest.rebazer.config.RebazerConfig;
 import org.retest.rebazer.domain.PullRequest;
 import org.retest.rebazer.domain.RepositoryConfig;
@@ -33,6 +37,31 @@ class BitbucketConnectorTest {
 	RepositoryConfig repoConfig;
 
 	BitbucketConnector cut;
+
+	private static Stream<Arguments> reviewActions() {
+		return Stream.of( //
+				Arguments.of( "{participants: []}", "new_feature", "", false ),
+				Arguments.of( "{participants: []}", "new_feature @All", "Please pull these awesome changes", false ),
+				Arguments.of( "{participants: []}", "new_feature", "Please pull these awesome changes @All", false ),
+				Arguments.of( "{participants: [{\"approved\": false}, {\"approved\": false}]}", "new_feature",
+						"Please pull these awesome changes", false ),
+				Arguments.of( "{participants: [{\"approved\": false}, {\"approved\": false}]}", "new_feature @All",
+						"Please pull these awesome changes", false ),
+				Arguments.of( "{participants: [{\"approved\": false}, {\"approved\": false}]}", "new_feature",
+						"Please pull these awesome changes @All", false ),
+				Arguments.of( "{participants: [{\"approved\": false}, {\"approved\": true}]}", "new_feature",
+						"Please pull these awesome changes", true ),
+				Arguments.of( "{participants: [{\"approved\": true}, {\"approved\": false}]}", "new_feature @All",
+						"Please pull these awesome changes", false ),
+				Arguments.of( "{participants: [{\"approved\": true}, {\"approved\": false}]}", "new_feature",
+						"Please pull these awesome changes @All", false ),
+				Arguments.of( "{participants: [{\"approved\": true}, {\"approved\": true}]}", "new_feature @All",
+						"Please pull these awesome changes", true ),
+				Arguments.of( "{participants: [{\"approved\": true}, {\"approved\": true}]}", "new_feature",
+						"Please pull these awesome changes @All", true ),
+				Arguments.of( "{participants: [{\"approved\": true}, {\"approved\": true}]}", "new_feature @All",
+						"Please pull these awesome changes @All", true ) );
+	}
 
 	@BeforeEach
 	void setUp() {
@@ -73,22 +102,16 @@ class BitbucketConnectorTest {
 		assertThat( cut.rebaseNeeded( pullRequest ) ).isTrue();
 	}
 
-	@Test
-	void isApproved_should_return_false_if_approved_is_false() {
+	@ParameterizedTest
+	@MethodSource( "reviewActions" )
+	void isApproved_should_handle_all_different_review_actions( final String actions, final String title,
+			final String descrition, final boolean result ) {
 		final PullRequest pullRequest = mock( PullRequest.class );
-		final String json = "{participants: [{\"approved\": false}]}\"";
-		when( template.getForObject( anyString(), eq( String.class ) ) ).thenReturn( json );
+		when( pullRequest.getTitle() ).thenReturn( title );
+		when( pullRequest.getDescription() ).thenReturn( descrition );
+		when( template.getForObject( anyString(), eq( String.class ) ) ).thenReturn( actions );
 
-		assertThat( cut.isApproved( pullRequest ) ).isFalse();
-	}
-
-	@Test
-	void isApproved_should_return_ture_if_approved_is_true() {
-		final PullRequest pullRequest = mock( PullRequest.class );
-		final String json = "{participants: [{\"approved\": true}]}\"";
-		when( template.getForObject( anyString(), eq( String.class ) ) ).thenReturn( json );
-
-		assertThat( cut.isApproved( pullRequest ) ).isTrue();
+		assertThat( cut.isApproved( pullRequest ) ).isEqualTo( result );
 	}
 
 	@Test
