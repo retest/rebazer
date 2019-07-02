@@ -11,7 +11,9 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -102,6 +104,27 @@ class GithubConnectorTest {
 						"2019-02-04T15:18:30Z", "2019-02-04T15:18:44Z" ) );
 	}
 
+	private static Stream<Arguments> reviewStates() {
+		return Stream.of( //
+				Arguments.of( "\"\"", "\"\"", "\"\"", "new_feature", "", false ),
+				Arguments.of( "\"\"", "\"\"", "\"\"", "new_feature @All", "Please pull these awesome changes", false ),
+				Arguments.of( "\"\"", "\"\"", "\"\"", "new_feature", "Please pull these awesome changes @All", false ),
+				Arguments.of( "APPROVED", "COMMENTED", "COMMENTED", "new_feature", "", true ),
+				Arguments.of( "APPROVED", "COMMENTED", "\"\"", "new_feature @All", "", false ),
+				Arguments.of( "CHANGES_REQUESTED", "COMMENTED", "\"\"", "new_feature @All",
+						"Please pull these awesome changes", false ),
+				Arguments.of( "CHANGES_REQUESTED", "COMMENTED", "\"\"", "new_feature",
+						"Please pull these awesome changes @All", false ),
+				Arguments.of( "APPROVED", "CHANGES_REQUESTED", "APPROVED", "new_feature",
+						"Please pull these awesome changes @All", false ),
+				Arguments.of( "APPROVED", "COMMENTED", "\"\"", "new_feature @All", "Please pull these awesome changes",
+						false ),
+				Arguments.of( "APPROVED", "APPROVED", "APPROVED", "new_feature @All",
+						"Please pull these awesome changes", true ),
+				Arguments.of( "APPROVED", "APPROVED", "APPROVED", "new_feature",
+						"Please pull these awesome changes @All", true ) );
+	}
+
 	@BeforeEach
 	void setUp() {
 		template = mock( RestTemplate.class );
@@ -141,12 +164,22 @@ class GithubConnectorTest {
 		assertThat( cut.rebaseNeeded( pullRequest ) ).isTrue();
 	}
 
-	@Test
-	void isApproved_should_return_false_if_approved_is_false() {
-		final String json = "{review: [{\"state\": \"CHANGES_REQUESTED\"}]}\"";
-		when( template.getForObject( anyString(), eq( String.class ) ) ).thenReturn( json );
+	@ParameterizedTest
+	@MethodSource( "reviewStates" )
+	void isApproved_should_handle_all_different_review_states( final String state1, final String state2,
+			final String state3, final String title, final String description, final boolean result ) {
+		when( pullRequest.getTitle() ).thenReturn( title );
+		when( pullRequest.getDescription() ).thenReturn( description );
 
-		assertThat( cut.isApproved( pullRequest ) ).isFalse();
+		final Map<Integer, String> reviewersState = new HashMap<>();
+		reviewersState.put( 1, state1 );
+		reviewersState.put( 2, state2 );
+		reviewersState.put( 3, state3 );
+
+		when( pullRequest.getReviewers() ).thenReturn( reviewersState );
+		when( template.getForObject( anyString(), eq( String.class ) ) ).thenReturn( "{\"review\": []}" );
+
+		assertThat( cut.isApproved( pullRequest ) ).isEqualTo( result );
 	}
 
 	@Test
