@@ -107,23 +107,23 @@ class GithubConnectorTest {
 
 	private static Stream<Arguments> reviewStates() {
 		return Stream.of( //
-				Arguments.of( "\"\"", "\"\"", "\"\"", "new_feature", "", false ),
-				Arguments.of( "\"\"", "\"\"", "\"\"", "new_feature @All", "Please pull these awesome changes", false ),
-				Arguments.of( "\"\"", "\"\"", "\"\"", "new_feature", "Please pull these awesome changes @All", false ),
-				Arguments.of( "APPROVED", "COMMENTED", "COMMENTED", "new_feature", "", true ),
-				Arguments.of( "APPROVED", "COMMENTED", "\"\"", "new_feature @All", "", false ),
-				Arguments.of( "CHANGES_REQUESTED", "COMMENTED", "\"\"", "new_feature @All",
-						"Please pull these awesome changes", false ),
-				Arguments.of( "CHANGES_REQUESTED", "COMMENTED", "\"\"", "new_feature",
-						"Please pull these awesome changes @All", false ),
-				Arguments.of( "APPROVED", "CHANGES_REQUESTED", "APPROVED", "new_feature",
-						"Please pull these awesome changes @All", false ),
-				Arguments.of( "APPROVED", "COMMENTED", "\"\"", "new_feature @All", "Please pull these awesome changes",
+				Arguments.of( "\"\"", "\"\"", "\"\"", "new_feature", false ),
+				Arguments.of( "\"\"", "\"\"", "\"\"", "new_feature @AllPlease pull these awesome changes", false ),
+				Arguments.of( "\"\"", "\"\"", "\"\"", "new_featurePlease pull these awesome changes @All", false ),
+				Arguments.of( "APPROVED", "COMMENTED", "COMMENTED", "new_feature", true ),
+				Arguments.of( "APPROVED", "COMMENTED", "\"\"", "new_feature @All", false ),
+				Arguments.of( "CHANGES_REQUESTED", "COMMENTED", "\"\"",
+						"new_feature @AllPlease pull these awesome changes", false ),
+				Arguments.of( "CHANGES_REQUESTED", "COMMENTED", "\"\"",
+						"new_featurePlease pull these awesome changes @All", false ),
+				Arguments.of( "APPROVED", "CHANGES_REQUESTED", "APPROVED",
+						"new_featurePlease pull these awesome changes @All", false ),
+				Arguments.of( "APPROVED", "COMMENTED", "\"\"", "new_feature @AllPlease pull these awesome changes",
 						false ),
-				Arguments.of( "APPROVED", "APPROVED", "APPROVED", "new_feature @All",
-						"Please pull these awesome changes", true ),
-				Arguments.of( "APPROVED", "APPROVED", "APPROVED", "new_feature",
-						"Please pull these awesome changes @All", true ) );
+				Arguments.of( "APPROVED", "APPROVED", "APPROVED", "new_feature @AllPlease pull these awesome changes",
+						true ),
+				Arguments.of( "APPROVED", "APPROVED", "APPROVED", "new_featurePlease pull these awesome changes @All",
+						true ) );
 	}
 
 	private static Stream<Arguments> overrideDifferentStates() {
@@ -188,9 +188,8 @@ class GithubConnectorTest {
 	@ParameterizedTest
 	@MethodSource( "reviewStates" )
 	void isApproved_should_handle_all_different_review_states( final String state1, final String state2,
-			final String state3, final String title, final String description, final boolean result ) {
-		when( pullRequest.getTitle() ).thenReturn( title );
-		when( pullRequest.getDescription() ).thenReturn( description );
+			final String state3, final String titleAndDescription, final boolean result ) {
+		when( pullRequest.reviewByAllReviewersRequested() ).thenReturn( titleAndDescription );
 
 		final Map<Integer, String> reviewersState = new HashMap<>();
 		reviewersState.put( 1, state1 );
@@ -206,8 +205,7 @@ class GithubConnectorTest {
 	@ParameterizedTest
 	@MethodSource( "overrideDifferentStates" )
 	void getReviewers_should_provide_always_the_newest_state( final String actions, final String result ) {
-		when( pullRequest.getTitle() ).thenReturn( "not important" );
-		when( pullRequest.getDescription() ).thenReturn( "not important" );
+		when( pullRequest.reviewByAllReviewersRequested() ).thenReturn( "not important" );
 		when( template.getForObject( anyString(), eq( String.class ) ) ).thenReturn( actions );
 		when( pullRequest.getReviewers() ).thenReturn( Maps.newHashMap( 2, null ) );
 
