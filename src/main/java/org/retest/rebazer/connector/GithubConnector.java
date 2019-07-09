@@ -76,10 +76,12 @@ public class GithubConnector implements RepositoryConnector {
 		for ( int i = 0; i < reviews; i++ ) {
 			final String reviewsState = jsonPath.read( "$.[" + i + "].state" );
 			final int reviewer = jsonPath.read( "$.[" + i + "].user.id" );
-			if ( reviewer != creator && !reviewsState.equals( "COMMENTED" ) ) {
-				pullRequest.getReviewers().put( reviewer, reviewsState );
-			} else {
-				pullRequest.getReviewers().compute( reviewer, ( k, v ) -> v == null ? reviewsState : v );
+			if ( reviewer != creator ) {
+				if ( !reviewsState.equals( "COMMENTED" ) ) {
+					pullRequest.getReviewers().put( reviewer, reviewsState );
+				} else {
+					pullRequest.getReviewers().compute( reviewer, ( k, v ) -> v == null ? reviewsState : v );
+				}
 			}
 		}
 	}

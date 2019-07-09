@@ -217,6 +217,18 @@ class GithubConnectorTest {
 	}
 
 	@Test
+	void isApproved_should_ignore_the_creater() {
+		when( pullRequest.reviewByAllReviewersRequested() ).thenReturn( "not important" );
+		final String action = "[{\"user\": {\"id\": 2}, \"state\": \"COMMENTED\"}]";
+		when( template.getForObject( anyString(), eq( String.class ) ) ).thenReturn( action );
+		when( pullRequest.getReviewers() ).thenReturn( new HashMap<Integer, String>() );
+		when( pullRequest.getCreator() ).thenReturn( 2 );
+		cut.isApproved( pullRequest );
+
+		assertThat( pullRequest.getReviewers().get( 2 ) ).isNull();
+	}
+
+	@Test
 	void greenBuildExists_should_return_false_if_state_is_failed() {
 		final String json = "{\"check_runs\":[{\"conclusion\":\"failure\"},{\"conclusion\":\"success\"}]}";
 		final String headResponse = "{\"head\":{\"sha\": \"3ce2b596bcdb72f82425c809f56a0b56f089443e\"}}";
