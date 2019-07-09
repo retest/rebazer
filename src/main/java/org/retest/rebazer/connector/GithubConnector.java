@@ -60,20 +60,19 @@ public class GithubConnector implements RepositoryConnector {
 
 	@Override
 	public boolean isApproved( final PullRequest pullRequest ) {
-		final DocumentContext jsonPath = jsonPathForPath( requestPath( pullRequest ) + "/reviews" );
-		final List<String> reviews = jsonPath.<List<String>> read( "$..state" );
-		final String titleAndDescription = pullRequest.getTitle().concat( pullRequest.getDescription() );
-		safeReviewStates( pullRequest, reviews.size(), jsonPath );
+		final String titleAndDescription = pullRequest.reviewByAllReviewersRequested();
+		safeReviewStates( pullRequest );
 
 		return titleAndDescription.contains( "@All" ) && !pullRequest.getReviewers().isEmpty()
 				? pullRequest.getReviewers().values().stream().allMatch( "APPROVED"::equals )
 				: pullRequest.getReviewers().values().stream().anyMatch( "APPROVED"::equals );
 	}
 
-	private static void safeReviewStates( final PullRequest pullRequest, final long reviews,
-			final DocumentContext jsonPath ) {
+	private void safeReviewStates( final PullRequest pullRequest ) {
+		final DocumentContext jsonPath = jsonPathForPath( requestPath( pullRequest ) + "/reviews" );
+		final List<String> reviews = jsonPath.<List<String>> read( "$..state" );
 		final Integer creator = pullRequest.getCreator();
-		for ( int i = 0; i < reviews; i++ ) {
+		for ( int i = 0; i < reviews.size(); i++ ) {
 			final String reviewsState = jsonPath.read( "$.[" + i + "].state" );
 			final int reviewer = jsonPath.read( "$.[" + i + "].user.id" );
 			if ( reviewer != creator ) {
