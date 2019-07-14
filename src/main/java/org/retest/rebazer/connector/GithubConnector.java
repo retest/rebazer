@@ -1,6 +1,7 @@
 package org.retest.rebazer.connector;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
@@ -61,10 +62,11 @@ public class GithubConnector implements RepositoryConnector {
 	@Override
 	public boolean isApproved( final PullRequest pullRequest ) {
 		safeReviewStates( pullRequest );
+		final Collection<String> reviewers = pullRequest.getReviewers().values();
 
-		return pullRequest.isReviewByAllReviewersRequested() && !pullRequest.getReviewers().isEmpty()
-				? pullRequest.getReviewers().values().stream().allMatch( "APPROVED"::equals )
-				: pullRequest.getReviewers().values().stream().anyMatch( "APPROVED"::equals );
+		return pullRequest.isReviewByAllReviewersRequested() && !reviewers.isEmpty()
+				? reviewers.stream().allMatch( "APPROVED"::equals )
+				: !reviewers.contains( "CHANGES_REQUESTED" ) && reviewers.contains( "APPROVED" );
 	}
 
 	private void safeReviewStates( final PullRequest pullRequest ) {
