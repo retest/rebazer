@@ -107,13 +107,13 @@ class GithubConnectorTest {
 
 	private static Stream<Arguments> reviewStates() {
 		return Stream.of( //
-				Arguments.of( "\"\"", "\"\"", "\"\"", false, false ),
-				Arguments.of( "\"\"", "\"\"", "\"\"", true, false ),
+				Arguments.of( null, null, null, false, false ), //
+				Arguments.of( null, null, null, true, false ),
 				Arguments.of( "APPROVED", "COMMENTED", "COMMENTED", false, true ),
-				Arguments.of( "APPROVED", "COMMENTED", "\"\"", true, false ),
-				Arguments.of( "CHANGES_REQUESTED", "COMMENTED", "\"\"", true, false ),
+				Arguments.of( "APPROVED", "COMMENTED", null, true, false ),
+				Arguments.of( "CHANGES_REQUESTED", "COMMENTED", null, true, false ),
 				Arguments.of( "APPROVED", "CHANGES_REQUESTED", "APPROVED", true, false ),
-				Arguments.of( "APPROVED", "COMMENTED", "\"\"", true, false ),
+				Arguments.of( "APPROVED", "COMMENTED", null, true, false ),
 				Arguments.of( "APPROVED", "APPROVED", "APPROVED", true, true ) );
 	}
 
