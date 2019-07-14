@@ -30,15 +30,13 @@ public class GithubConnector implements RepositoryConnector {
 
 	private static final String GITHUB_PREVIEW_JSON_MEDIATYPE = "application/vnd.github.antiope-preview+json";
 
-	private static final String BASE_URL = "https://api.github.com";
-
 	private final RestTemplate template;
 
 	public GithubConnector( final RepositoryConfig repoConfig, final RestTemplateBuilder builder ) {
 		final String basePath = "/repos/" + repoConfig.getTeam() + "/" + repoConfig.getRepo();
 
 		template = builder.basicAuthentication( repoConfig.getUser(), repoConfig.getPass() )
-				.rootUri( BASE_URL + basePath ).build();
+				.rootUri( repoConfig.getApiHost() + basePath ).build();
 	}
 
 	@Override

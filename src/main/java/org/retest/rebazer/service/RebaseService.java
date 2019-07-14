@@ -47,7 +47,7 @@ public class RebaseService {
 	private void setupRepo( final RepositoryConfig repoConfig ) {
 		final CredentialsProvider credential = repoCredential( repoConfig );
 		final File repoFolder = repoFolder( repoConfig );
-		final Git localRepo = setupLocalGitRepo( credential, repoFolder, repoConfig.getUrl() );
+		final Git localRepo = setupLocalGitRepo( credential, repoFolder, repoConfig.getGitRepoUrl() );
 
 		localRepo.getRepository().getConfig().setString( "user", null, "name", "rebazer" );
 		localRepo.getRepository().getConfig().setString( "user", null, "email", "rebazer@retest.de" );

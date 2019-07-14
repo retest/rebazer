@@ -17,14 +17,14 @@ class RepositoryHostingTypesTest {
 	void bitbucket_type_should_result_in_default_bitbucket_url() throws Exception {
 		final RepositoryHostingTypes repositoryHostingTypes = RepositoryHostingTypes.BITBUCKET;
 		final URL bitbucketURL = new URL( "https://bitbucket.org" );
-		assertThat( repositoryHostingTypes.defaultUrl ).isEqualTo( bitbucketURL );
+		assertThat( repositoryHostingTypes.defaultGitHost ).isEqualTo( bitbucketURL );
 	}
 
 	@Test
 	void github_type_should_result_in_default_github_url() throws Exception {
 		final RepositoryHostingTypes repositoryHostingTypes = RepositoryHostingTypes.GITHUB;
 		final URL githubURL = new URL( "https://github.com" );
-		assertThat( repositoryHostingTypes.defaultUrl ).isEqualTo( githubURL );
+		assertThat( repositoryHostingTypes.defaultGitHost ).isEqualTo( githubURL );
 	}
 
 	@Test

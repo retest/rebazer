@@ -45,14 +45,23 @@ public class RebazerConfig {
 	@EqualsAndHashCode
 	static class Host {
 		RepositoryHostingTypes type;
-		private URL url;
+		private URL gitHost;
+		private URL apiHost;
 		List<Team> teams;
 
-		public URL getUrl() {
-			if ( url != null ) {
-				return url;
+		public URL getGitHost() {
+			if ( gitHost != null ) {
+				return gitHost;
 			} else {
-				return type.getDefaultUrl();
+				return type.getDefaultGitHost();
+			}
+		}
+
+		public URL getApiHost() {
+			if ( apiHost != null ) {
+				return apiHost;
+			} else {
+				return type.getDefaultApiHost();
 			}
 		}
 
@@ -95,7 +104,7 @@ public class RebazerConfig {
 			for ( final Team team : host.teams ) {
 				for ( final Repo repo : team.repos ) {
 					configs.add( RepositoryConfig.builder() //
-							.type( host.type ).host( host.getUrl() ) //
+							.type( host.type ).gitHost( host.getGitHost() ).apiHost( host.getApiHost() ) //
 							.team( team.name ).repo( repo.name ) //
 							.user( team.getUser() ).pass( team.pass ) //
 							.masterBranch( repo.masterBranch ) //

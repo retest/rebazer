@@ -25,16 +25,14 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class BitbucketConnector implements RepositoryConnector {
 
-	private static final String BASE_URL_V_2 = "https://api.bitbucket.org/2.0";
-
 	private final RestTemplate template;
 	private final ObjectMapper objectMapper;
 
 	public BitbucketConnector( final RepositoryConfig repoConfig, final RestTemplateBuilder templateBuilder ) {
-		final String basePath = "/repositories/" + repoConfig.getTeam() + "/" + repoConfig.getRepo();
+		final String basePath = "/2.0/repositories/" + repoConfig.getTeam() + "/" + repoConfig.getRepo();
 
 		template = templateBuilder.basicAuthentication( repoConfig.getUser(), repoConfig.getPass() )
-				.rootUri( BASE_URL_V_2 + basePath ).build();
+				.rootUri( repoConfig.getApiHost() + basePath ).build();
 
 		objectMapper = new ObjectMapper().configure( DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false );
 	}

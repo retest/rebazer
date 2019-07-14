@@ -63,15 +63,15 @@ class RebazerConfigTest {
 
 	@Test
 	void host_getURL_can_handle_missing_URL() {
-		assertThat( host.getUrl() ).isNotNull();
+		assertThat( host.getGitHost() ).isNotNull();
 	}
 
 	@Test
 	void host_getURL_return_URL_if_exists() throws MalformedURLException {
 		final URL url = new URL( "http://test" );
-		host.setUrl( url );
+		host.setGitHost( url );
 
-		assertThat( host.getUrl() ).isEqualTo( url );
+		assertThat( host.getGitHost() ).isEqualTo( url );
 	}
 
 	@Test

@@ -15,8 +15,9 @@ rebazer:
   # Repo type, possible values GITHUB or BITBUCKET.
   - type: BITBUCKET
 
-    # optional, default is type-dependent (github.com, bitbucket.org).
-    url: https://bitbucket.org/
+    # optional, default is type-dependent (github.com, bitbucket.org; resp. api.github.com, api.bitbucket.org).
+    #gitHost: https://bitbucket.org/
+    #apiHost: https://api.bitbucket.org/
 
     teams:
     - name: your_company

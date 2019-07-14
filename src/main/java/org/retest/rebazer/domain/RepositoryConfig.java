@@ -14,7 +14,8 @@ import lombok.Value;
 public class RepositoryConfig {
 
 	private final RepositoryHostingTypes type;
-	private final URL host;
+	private final URL gitHost;
+	private final URL apiHost;
 	private final String team;
 	private final String repo;
 
@@ -24,7 +25,7 @@ public class RepositoryConfig {
 
 	@Override
 	public String toString() {
-		return "Repo [ " + host.getHost() + "/" + team + "/" + repo + " ]";
+		return "Repo [ " + gitHost.getHost() + "/" + team + "/" + repo + " ]";
 	}
 
 	public RepositoryConnector getConnector( final RestTemplateBuilder templateBuilder ) {
@@ -32,11 +33,11 @@ public class RepositoryConfig {
 	}
 
 	public String[] getQualifiers() {
-		return new String[] { host.getHost(), team, repo };
+		return new String[] { gitHost.getHost(), team, repo };
 	}
 
-	public String getUrl() {
-		return host.toString() + "/" + team + "/" + repo + ".git";
+	public String getGitRepoUrl() {
+		return gitHost.toString() + "/" + team + "/" + repo + ".git";
 	}
 
 }
