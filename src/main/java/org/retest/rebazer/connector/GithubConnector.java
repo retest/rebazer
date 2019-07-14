@@ -45,16 +45,7 @@ public class GithubConnector implements RepositoryConnector {
 		final String repositoryTimeAsString = jsonPath.read( "$.updated_at" );
 		final Date repositoryTime = PullRequestLastUpdateStore.parseStringToDate( repositoryTimeAsString );
 		final Date checksTime = PullRequestLastUpdateStore.parseStringToDate( newestChecksTime( pullRequest ) );
-		return PullRequest.builder() //
-				.id( pullRequest.getId() ) //
-				.title( pullRequest.getTitle() ) //
-				.creator( pullRequest.getCreator() ) //
-				.description( pullRequest.getDescription() ) //
-				.reviewers( pullRequest.getReviewers() ) //
-				.source( pullRequest.getSource() ) //
-				.destination( pullRequest.getDestination() ) //
-				.lastUpdate( repositoryTime.after( checksTime ) ? repositoryTime : checksTime ) //
-				.build();
+		return pullRequest.updateLastChange( repositoryTime.after( checksTime ) ? repositoryTime : checksTime );
 	}
 
 	@Override
@@ -118,7 +109,7 @@ public class GithubConnector implements RepositoryConnector {
 		return getGitHubChecks( pullRequest, "conclusion" ).stream().allMatch( "success"::equals );
 	}
 
-	public String newestChecksTime( final PullRequest pullRequest ) {
+	String newestChecksTime( final PullRequest pullRequest ) {
 		return getGitHubChecks( pullRequest, "completed_at" ).stream()//
 				.filter( time -> time != null && !time.isEmpty() )//
 				.max( Comparator.naturalOrder() )//

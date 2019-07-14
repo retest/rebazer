@@ -41,14 +41,7 @@ public class BitbucketConnector implements RepositoryConnector {
 	public PullRequest getLatestUpdate( final PullRequest pullRequest ) {
 		final DocumentContext jsonPath = jsonPathForPath( requestPath( pullRequest ) );
 		final Date repositoryTime = PullRequestLastUpdateStore.parseStringToDate( jsonPath.read( "$.updated_on" ) );
-		return PullRequest.builder() //
-				.id( pullRequest.getId() ) //
-				.title( pullRequest.getTitle() ) //
-				.description( pullRequest.getDescription() ) //
-				.source( pullRequest.getSource() ) //
-				.destination( pullRequest.getDestination() ) //
-				.lastUpdate( repositoryTime ) //
-				.build();
+		return pullRequest.updateLastChange( repositoryTime );
 	}
 
 	@Override
