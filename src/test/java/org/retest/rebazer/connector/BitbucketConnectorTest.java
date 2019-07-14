@@ -40,27 +40,14 @@ class BitbucketConnectorTest {
 
 	private static Stream<Arguments> reviewActions() {
 		return Stream.of( //
-				Arguments.of( "{participants: []}", "new_feature", "", false ),
-				Arguments.of( "{participants: []}", "new_feature @All", "Please pull these awesome changes", false ),
-				Arguments.of( "{participants: []}", "new_feature", "Please pull these awesome changes @All", false ),
-				Arguments.of( "{participants: [{\"approved\": false}, {\"approved\": false}]}", "new_feature",
-						"Please pull these awesome changes", false ),
-				Arguments.of( "{participants: [{\"approved\": false}, {\"approved\": false}]}", "new_feature @All",
-						"Please pull these awesome changes", false ),
-				Arguments.of( "{participants: [{\"approved\": false}, {\"approved\": false}]}", "new_feature",
-						"Please pull these awesome changes @All", false ),
-				Arguments.of( "{participants: [{\"approved\": false}, {\"approved\": true}]}", "new_feature",
-						"Please pull these awesome changes", true ),
-				Arguments.of( "{participants: [{\"approved\": true}, {\"approved\": false}]}", "new_feature @All",
-						"Please pull these awesome changes", false ),
-				Arguments.of( "{participants: [{\"approved\": true}, {\"approved\": false}]}", "new_feature",
-						"Please pull these awesome changes @All", false ),
-				Arguments.of( "{participants: [{\"approved\": true}, {\"approved\": true}]}", "new_feature @All",
-						"Please pull these awesome changes", true ),
-				Arguments.of( "{participants: [{\"approved\": true}, {\"approved\": true}]}", "new_feature",
-						"Please pull these awesome changes @All", true ),
-				Arguments.of( "{participants: [{\"approved\": true}, {\"approved\": true}]}", "new_feature @All",
-						"Please pull these awesome changes @All", true ) );
+				Arguments.of( "{participants: []}", false, false ), //
+				Arguments.of( "{participants: []}", true, false ), //
+				Arguments.of( "{participants: [{\"approved\": false}, {\"approved\": false}]}", false, false ),
+				Arguments.of( "{participants: [{\"approved\": false}, {\"approved\": false}]}", true, false ),
+				Arguments.of( "{participants: [{\"approved\": false}, {\"approved\": true}]}", false, true ),
+				Arguments.of( "{participants: [{\"approved\": false}, {\"approved\": true}]}", true, false ),
+				Arguments.of( "{participants: [{\"approved\": true}, {\"approved\": false}]}", true, false ),
+				Arguments.of( "{participants: [{\"approved\": true}, {\"approved\": true}]}", true, true ) );
 	}
 
 	@BeforeEach
@@ -104,11 +91,10 @@ class BitbucketConnectorTest {
 
 	@ParameterizedTest
 	@MethodSource( "reviewActions" )
-	void isApproved_should_handle_all_different_review_actions( final String actions, final String title,
-			final String descrition, final boolean result ) {
+	void isApproved_should_handle_all_different_review_actions( final String actions, final boolean allRequested,
+			final boolean result ) {
 		final PullRequest pullRequest = mock( PullRequest.class );
-		when( pullRequest.getTitle() ).thenReturn( title );
-		when( pullRequest.getDescription() ).thenReturn( descrition );
+		when( pullRequest.isReviewByAllReviewersRequested() ).thenReturn( allRequested );
 		when( template.getForObject( anyString(), eq( String.class ) ) ).thenReturn( actions );
 
 		assertThat( cut.isApproved( pullRequest ) ).isEqualTo( result );

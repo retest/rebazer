@@ -30,7 +30,7 @@ public class PullRequest {
 		return String.format( "Merged in %s (pull request #%d) by rebazer", source, id );
 	}
 
-	public String reviewByAllReviewersRequested() {
-		return title.concat( description );
+	public boolean isReviewByAllReviewersRequested() {
+		return title.concat( description ).contains( "@All" );
 	}
 }

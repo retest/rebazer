@@ -60,10 +60,9 @@ public class GithubConnector implements RepositoryConnector {
 
 	@Override
 	public boolean isApproved( final PullRequest pullRequest ) {
-		final String titleAndDescription = pullRequest.reviewByAllReviewersRequested();
 		safeReviewStates( pullRequest );
 
-		return titleAndDescription.contains( "@All" ) && !pullRequest.getReviewers().isEmpty()
+		return pullRequest.isReviewByAllReviewersRequested() && !pullRequest.getReviewers().isEmpty()
 				? pullRequest.getReviewers().values().stream().allMatch( "APPROVED"::equals )
 				: pullRequest.getReviewers().values().stream().anyMatch( "APPROVED"::equals );
 	}

@@ -57,9 +57,8 @@ public class BitbucketConnector implements RepositoryConnector {
 	public boolean isApproved( final PullRequest pullRequest ) {
 		final DocumentContext jsonPath = jsonPathForPath( requestPath( pullRequest ) );
 		final List<Boolean> reviewers = jsonPath.<List<Boolean>> read( "$.participants[*].approved" );
-		final String titleAndDescription = pullRequest.getTitle().concat( pullRequest.getDescription() );
 
-		return titleAndDescription.contains( "@All" ) && !reviewers.isEmpty()
+		return pullRequest.isReviewByAllReviewersRequested() && !reviewers.isEmpty()
 				? reviewers.stream().allMatch( approved -> approved )
 				: reviewers.stream().anyMatch( approved -> approved );
 	}
