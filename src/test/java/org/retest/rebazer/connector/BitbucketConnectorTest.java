@@ -38,7 +38,7 @@ class BitbucketConnectorTest {
 
 	BitbucketConnector cut;
 
-	private static Stream<Arguments> reviewActions() {
+	private static Stream<Arguments> reviewStates() {
 		return Stream.of( //
 				Arguments.of( "{participants: []}", false, false ), //
 				Arguments.of( "{participants: []}", true, false ), //
@@ -90,12 +90,12 @@ class BitbucketConnectorTest {
 	}
 
 	@ParameterizedTest
-	@MethodSource( "reviewActions" )
-	void isApproved_should_handle_all_different_review_actions( final String actions, final boolean allRequested,
+	@MethodSource( "reviewStates" )
+	void isApproved_should_handle_all_different_review_states( final String states, final boolean allRequested,
 			final boolean result ) {
 		final PullRequest pullRequest = mock( PullRequest.class );
 		when( pullRequest.isReviewByAllReviewersRequested() ).thenReturn( allRequested );
-		when( template.getForObject( anyString(), eq( String.class ) ) ).thenReturn( actions );
+		when( template.getForObject( anyString(), eq( String.class ) ) ).thenReturn( states );
 
 		assertThat( cut.isApproved( pullRequest ) ).isEqualTo( result );
 	}
