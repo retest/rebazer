@@ -12,9 +12,13 @@ import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
+import java.util.stream.Stream;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.retest.rebazer.config.RebazerConfig;
 import org.retest.rebazer.domain.PullRequest;
 import org.retest.rebazer.domain.RepositoryConfig;
@@ -33,6 +37,18 @@ class BitbucketConnectorTest {
 	RepositoryConfig repoConfig;
 
 	BitbucketConnector cut;
+
+	private static Stream<Arguments> reviewActions() {
+		return Stream.of( //
+				Arguments.of( "{participants: []}", false, false ), //
+				Arguments.of( "{participants: []}", true, false ), //
+				Arguments.of( "{participants: [{\"approved\": false}, {\"approved\": false}]}", false, false ),
+				Arguments.of( "{participants: [{\"approved\": false}, {\"approved\": false}]}", true, false ),
+				Arguments.of( "{participants: [{\"approved\": false}, {\"approved\": true}]}", false, true ),
+				Arguments.of( "{participants: [{\"approved\": false}, {\"approved\": true}]}", true, false ),
+				Arguments.of( "{participants: [{\"approved\": true}, {\"approved\": false}]}", true, false ),
+				Arguments.of( "{participants: [{\"approved\": true}, {\"approved\": true}]}", true, true ) );
+	}
 
 	@BeforeEach
 	void setUp() {
@@ -73,22 +89,15 @@ class BitbucketConnectorTest {
 		assertThat( cut.rebaseNeeded( pullRequest ) ).isTrue();
 	}
 
-	@Test
-	void isApproved_should_return_false_if_approved_is_false() {
+	@ParameterizedTest
+	@MethodSource( "reviewActions" )
+	void isApproved_should_handle_all_different_review_actions( final String actions, final boolean allRequested,
+			final boolean result ) {
 		final PullRequest pullRequest = mock( PullRequest.class );
-		final String json = "{participants: [{\"approved\": false}]}\"";
-		when( template.getForObject( anyString(), eq( String.class ) ) ).thenReturn( json );
+		when( pullRequest.isReviewByAllReviewersRequested() ).thenReturn( allRequested );
+		when( template.getForObject( anyString(), eq( String.class ) ) ).thenReturn( actions );
 
-		assertThat( cut.isApproved( pullRequest ) ).isFalse();
-	}
-
-	@Test
-	void isApproved_should_return_ture_if_approved_is_true() {
-		final PullRequest pullRequest = mock( PullRequest.class );
-		final String json = "{participants: [{\"approved\": true}]}\"";
-		when( template.getForObject( anyString(), eq( String.class ) ) ).thenReturn( json );
-
-		assertThat( cut.isApproved( pullRequest ) ).isTrue();
+		assertThat( cut.isApproved( pullRequest ) ).isEqualTo( result );
 	}
 
 	@Test
@@ -123,6 +132,8 @@ class BitbucketConnectorTest {
 		final int expectedId = (int) documentContext.read( "$.values[0].id" );
 		final List<PullRequest> expected = Arrays.asList( PullRequest.builder()//
 				.id( expectedId )//
+				.title( documentContext.read( "$.values[0].title" ) )
+				.description( documentContext.read( "$.values[0].description" ) )
 				.source( documentContext.read( "$.values[0].source.branch.name" ) )//
 				.destination( documentContext.read( "$.values[0].destination.branch.name" ) )//
 				.lastUpdate( lastUpdate )//

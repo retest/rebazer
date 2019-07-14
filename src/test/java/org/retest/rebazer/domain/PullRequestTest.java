@@ -4,9 +4,14 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.time.OffsetDateTime;
 import java.util.Date;
+import java.util.stream.Stream;
 
+import org.assertj.core.util.Maps;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 class PullRequestTest {
 
@@ -15,7 +20,8 @@ class PullRequestTest {
 	@BeforeEach
 	void setUp() {
 		final Date lastUpdate = Date.from( OffsetDateTime.parse( "2017-11-30T10:05:28Z" ).toInstant() );
-		pullRequest = new PullRequest( 1, "source", "destination", lastUpdate );
+		pullRequest = new PullRequest( 1, "title", 2, "description", Maps.newHashMap( 1, "CHANGES_REQUESTED" ),
+				"source", "destination", lastUpdate );
 	}
 
 	@Test
@@ -27,4 +33,23 @@ class PullRequestTest {
 	void mergeCommitMessage_should_return_corrct_string() {
 		assertThat( pullRequest.mergeCommitMessage() ).isEqualTo( "Merged in source (pull request #1) by rebazer" );
 	}
+
+	@ParameterizedTest
+	@MethodSource( "allReviewersRequestedTypes" )
+	void isReviewByAllReviewersRequested_should_handle_all_variants_correct( final String title,
+			final String description, final boolean result ) {
+
+		pullRequest = PullRequest.builder().title( title ).description( description ).build();
+
+		assertThat( pullRequest.isReviewByAllReviewersRequested() ).isEqualTo( result );
+	}
+
+	private static Stream<Arguments> allReviewersRequestedTypes() {
+		return Stream.of( //
+				Arguments.of( "new_feature", "Please pull these awesome changes", false ),
+				Arguments.of( "new_feature", "Please pull these awesome changes @All", true ),
+				Arguments.of( "new_feature @All", "Please pull these awesome changes", true ),
+				Arguments.of( "new_feature @All", "Please pull these awesome changes @All", true ) );
+	}
+
 }

@@ -11,9 +11,12 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Stream;
 
+import org.assertj.core.util.Maps;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -102,6 +105,38 @@ class GithubConnectorTest {
 						"2019-02-04T15:18:30Z", "2019-02-04T15:18:44Z" ) );
 	}
 
+	private static Stream<Arguments> reviewStates() {
+		return Stream.of( //
+				Arguments.of( "\"\"", "\"\"", "\"\"", false, false ),
+				Arguments.of( "\"\"", "\"\"", "\"\"", true, false ),
+				Arguments.of( "APPROVED", "COMMENTED", "COMMENTED", false, true ),
+				Arguments.of( "APPROVED", "COMMENTED", "\"\"", true, false ),
+				Arguments.of( "CHANGES_REQUESTED", "COMMENTED", "\"\"", true, false ),
+				Arguments.of( "APPROVED", "CHANGES_REQUESTED", "APPROVED", true, false ),
+				Arguments.of( "APPROVED", "COMMENTED", "\"\"", true, false ),
+				Arguments.of( "APPROVED", "APPROVED", "APPROVED", true, true ) );
+	}
+
+	private static Stream<Arguments> overrideDifferentStates() {
+		return Stream.of( //
+				Arguments.of( "[{\"user\": {\"id\": 2}, \"state\": \"COMMENTED\"}]", "COMMENTED" ),
+				Arguments.of(
+						"[{ \"user\": {\"id\": 2}, \"state\": \"APPROVED\"}, {\"user\": {\"id\": 2}, \"state\": \"COMMENTED\"}]",
+						"APPROVED" ),
+				Arguments.of(
+						"[{ \"user\": {\"id\": 2}, \"state\": \"CHANGES_REQUESTED\"}, {\"user\": {\"id\": 2}, \"state\": \"COMMENTED\"}]",
+						"CHANGES_REQUESTED" ),
+				Arguments.of(
+						"[{ \"user\": {\"id\": 2}, \"state\": \"APPROVED\"}, {\"user\": {\"id\": 2}, \"state\": \"CHANGES_REQUESTED\"}]",
+						"CHANGES_REQUESTED" ),
+				Arguments.of(
+						"[{ \"user\": {\"id\": 2}, \"state\": \"CHANGES_REQUESTED\"}, {\"user\": {\"id\": 2}, \"state\": \"APPROVED\"}]",
+						"APPROVED" ),
+				Arguments.of(
+						"[{ \"user\": {\"id\": 2}, \"state\": \"APPROVED\"}, {\"user\": {\"id\": 2}, \"state\": \"CHANGES_REQUESTED\"}, {\"user\": {\"id\": 2}, \"state\": \"APPROVED\"}]",
+						"APPROVED" ) );
+	}
+
 	@BeforeEach
 	void setUp() {
 		template = mock( RestTemplate.class );
@@ -141,20 +176,43 @@ class GithubConnectorTest {
 		assertThat( cut.rebaseNeeded( pullRequest ) ).isTrue();
 	}
 
-	@Test
-	void isApproved_should_return_false_if_approved_is_false() {
-		final String json = "{review: [{\"state\": \"CHANGES_REQUESTED\"}]}\"";
-		when( template.getForObject( anyString(), eq( String.class ) ) ).thenReturn( json );
+	@ParameterizedTest
+	@MethodSource( "reviewStates" )
+	void isApproved_should_handle_all_different_review_states( final String state1, final String state2,
+			final String state3, final boolean allRequested, final boolean result ) {
+		when( pullRequest.isReviewByAllReviewersRequested() ).thenReturn( allRequested );
 
-		assertThat( cut.isApproved( pullRequest ) ).isFalse();
+		final Map<Integer, String> reviewersState = new HashMap<>();
+		reviewersState.put( 1, state1 );
+		reviewersState.put( 2, state2 );
+		reviewersState.put( 3, state3 );
+
+		when( pullRequest.getReviewers() ).thenReturn( reviewersState );
+		when( template.getForObject( anyString(), eq( String.class ) ) ).thenReturn( "{\"review\": []}" );
+
+		assertThat( cut.isApproved( pullRequest ) ).isEqualTo( result );
+	}
+
+	@ParameterizedTest
+	@MethodSource( "overrideDifferentStates" )
+	void getReviewers_should_provide_always_the_newest_state( final String actions, final String result ) {
+		when( template.getForObject( anyString(), eq( String.class ) ) ).thenReturn( actions );
+		when( pullRequest.getReviewers() ).thenReturn( Maps.newHashMap( 2, null ) );
+
+		cut.isApproved( pullRequest );
+
+		assertThat( pullRequest.getReviewers().get( 2 ) ).isEqualTo( result );
 	}
 
 	@Test
-	void isApproved_should_return_true_if_approved_is_true() {
-		final String json = "{review: [{\"state\": \"APPROVED\"}]}\"";
-		when( template.getForObject( anyString(), eq( String.class ) ) ).thenReturn( json );
+	void isApproved_should_ignore_the_creater() {
+		final String action = "[{\"user\": {\"id\": 2}, \"state\": \"COMMENTED\"}]";
+		when( template.getForObject( anyString(), eq( String.class ) ) ).thenReturn( action );
+		when( pullRequest.getReviewers() ).thenReturn( new HashMap<Integer, String>() );
+		when( pullRequest.getCreator() ).thenReturn( 2 );
+		cut.isApproved( pullRequest );
 
-		assertThat( cut.isApproved( pullRequest ) ).isTrue();
+		assertThat( pullRequest.getReviewers().get( 2 ) ).isNull();
 	}
 
 	@Test
@@ -193,9 +251,16 @@ class GithubConnectorTest {
 		final Date lastUpdate =
 				PullRequestLastUpdateStore.parseStringToDate( documentContext.read( "$.[0].updated_at" ) );
 		final int expectedId = (int) documentContext.read( "$.[0].number" );
+		final List<Integer> reviewerId = documentContext.read( "$.[0].requested_reviewers[*].id" );
+		final Map<Integer, String> reviewers = Maps.newHashMap( reviewerId.get( 0 ), null );
+
 		final List<PullRequest> expected = Arrays.asList( PullRequest.builder()//
 				.id( expectedId )//
-				.source( documentContext.read( "$.[0].head.ref" ) )
+				.title( documentContext.read( "$.[0].title" ) ) //
+				.creator( documentContext.read( "$.[0].user.id" ) ) //
+				.description( documentContext.read( "$.[0].body" ) ) //
+				.reviewers( reviewers ) //
+				.source( documentContext.read( "$.[0].head.ref" ) ) //
 				.destination( documentContext.read( "$.[0].base.ref" ) )//
 				.lastUpdate( lastUpdate ).build() );
 		final List<PullRequest> actual = cut.getAllPullRequests();

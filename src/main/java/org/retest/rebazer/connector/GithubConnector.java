@@ -48,6 +48,10 @@ public class GithubConnector implements RepositoryConnector {
 		final Date checksTime = PullRequestLastUpdateStore.parseStringToDate( newestChecksTime( pullRequest ) );
 		return PullRequest.builder() //
 				.id( pullRequest.getId() ) //
+				.title( pullRequest.getTitle() ) //
+				.creator( pullRequest.getCreator() ) //
+				.description( pullRequest.getDescription() ) //
+				.reviewers( pullRequest.getReviewers() ) //
 				.source( pullRequest.getSource() ) //
 				.destination( pullRequest.getDestination() ) //
 				.lastUpdate( repositoryTime.after( checksTime ) ? repositoryTime : checksTime ) //
@@ -56,8 +60,28 @@ public class GithubConnector implements RepositoryConnector {
 
 	@Override
 	public boolean isApproved( final PullRequest pullRequest ) {
+		safeReviewStates( pullRequest );
+
+		return pullRequest.isReviewByAllReviewersRequested() && !pullRequest.getReviewers().isEmpty()
+				? pullRequest.getReviewers().values().stream().allMatch( "APPROVED"::equals )
+				: pullRequest.getReviewers().values().stream().anyMatch( "APPROVED"::equals );
+	}
+
+	private void safeReviewStates( final PullRequest pullRequest ) {
 		final DocumentContext jsonPath = jsonPathForPath( requestPath( pullRequest ) + "/reviews" );
-		return jsonPath.<List<String>> read( "$..state" ).stream().anyMatch( "APPROVED"::equals );
+		final List<String> reviews = jsonPath.<List<String>> read( "$..state" );
+		final Integer creator = pullRequest.getCreator();
+		for ( int i = 0; i < reviews.size(); i++ ) {
+			final String reviewsState = jsonPath.read( "$.[" + i + "].state" );
+			final int reviewer = jsonPath.read( "$.[" + i + "].user.id" );
+			if ( reviewer != creator ) {
+				if ( !reviewsState.equals( "COMMENTED" ) ) {
+					pullRequest.getReviewers().put( reviewer, reviewsState );
+				} else {
+					pullRequest.getReviewers().compute( reviewer, ( k, v ) -> v == null ? reviewsState : v );
+				}
+			}
+		}
 	}
 
 	@Override
@@ -115,12 +139,22 @@ public class GithubConnector implements RepositoryConnector {
 
 			if ( fullName.startsWith( "retest" ) ) {
 				final int id = jsonPath.read( "$.[" + i + "].number" );
+				final String title = jsonPath.read( "$.[" + i + "].title" );
+				final int creator = jsonPath.read( "$.[" + i + "].user.id" );
+				final String description = jsonPath.read( "$.[" + i + "].body" );
+				final List<Integer> reviewerId = jsonPath.read( "$.[" + i + "].requested_reviewers[*].id" );
+				final Map<Integer, String> reviewers = new HashMap<>();
+				reviewerId.stream().forEach( userId -> reviewers.put( userId, null ) );
 				final String source = jsonPath.read( "$.[" + i + "].head.ref" );
 				final String destination = jsonPath.read( "$.[" + i + "].base.ref" );
 				final Date lastUpdate =
 						PullRequestLastUpdateStore.parseStringToDate( jsonPath.read( "$.[" + i + "].updated_at" ) );
 				results.add( PullRequest.builder() //
 						.id( id ) //
+						.title( title ) //
+						.creator( creator ) //
+						.description( description ) //
+						.reviewers( reviewers ) //
 						.source( source ) //
 						.destination( destination ) //
 						.lastUpdate( lastUpdate ) //
