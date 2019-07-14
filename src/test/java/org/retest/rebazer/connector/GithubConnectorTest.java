@@ -110,6 +110,7 @@ class GithubConnectorTest {
 				Arguments.of( null, null, null, false, false ), //
 				Arguments.of( null, null, null, true, false ),
 				Arguments.of( "APPROVED", "COMMENTED", "COMMENTED", false, true ),
+				Arguments.of( "APPROVED", "CHANGES_REQUESTED", "COMMENTED", false, false ),
 				Arguments.of( "APPROVED", "COMMENTED", null, true, false ),
 				Arguments.of( "CHANGES_REQUESTED", "COMMENTED", null, true, false ),
 				Arguments.of( "APPROVED", "CHANGES_REQUESTED", "APPROVED", true, false ),
@@ -204,13 +205,13 @@ class GithubConnectorTest {
 	}
 
 	@Test
-	void isApproved_should_ignore_the_creater_and_nonexistent_reviewer() {
+	void isApproved_should_ignore_the_creater() {
 		final String action = "[{\"user\": {\"id\": 2}, \"state\": \"COMMENTED\"}]";
 		when( template.getForObject( anyString(), eq( String.class ) ) ).thenReturn( action );
 		when( pullRequest.getReviewers() ).thenReturn( new HashMap<Integer, String>() );
 		when( pullRequest.getCreator() ).thenReturn( 2 );
+		cut.isApproved( pullRequest );
 
-		assertThat( cut.isApproved( pullRequest ) ).isFalse();
 		assertThat( pullRequest.getReviewers().get( 2 ) ).isNull();
 	}
 
