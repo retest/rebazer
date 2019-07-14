@@ -113,7 +113,6 @@ class GithubConnectorTest {
 				Arguments.of( "APPROVED", "COMMENTED", null, true, false ),
 				Arguments.of( "CHANGES_REQUESTED", "COMMENTED", null, true, false ),
 				Arguments.of( "APPROVED", "CHANGES_REQUESTED", "APPROVED", true, false ),
-				Arguments.of( "APPROVED", "COMMENTED", null, true, false ),
 				Arguments.of( "APPROVED", "APPROVED", "APPROVED", true, true ) );
 	}
 
