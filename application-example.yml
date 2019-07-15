@@ -8,7 +8,7 @@ rebazer:
   # Delay between each polling interval, optional.
   #pollInterval: 60
   
-  # Regex to blacklist branch names that should not be processed.
+  # Regex to blacklist branch names that should not be processed, optional.
   #branchBlacklist: ^(master|develop|release|hotfix).*
   
   hosts:
