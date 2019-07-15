@@ -14,10 +14,14 @@ class RepositoryConfigTest {
 	RepositoryConfig repositoryConfig;
 
 	@BeforeEach
-	void setUp() throws Exception {
-		repositoryConfig = new RepositoryConfig( RepositoryHostingTypes.GITHUB,
-				RepositoryHostingTypes.GITHUB.getDefaultGitHost(), RepositoryHostingTypes.GITHUB.getDefaultApiHost(),
-				"team", "repository", "user", "pass", "master" );
+	void setUp() {
+		repositoryConfig = RepositoryConfig.builder() //
+				.type( RepositoryHostingTypes.GITHUB ) //
+				.gitHost( RepositoryHostingTypes.GITHUB.getDefaultGitHost() ) //
+				.apiHost( RepositoryHostingTypes.GITHUB.getDefaultApiHost() ) //
+				.team( "team" ).repo( "repository" ) //
+				.user( "user" ).pass( "pass" ) //
+				.masterBranch( "master" ).build();
 	}
 
 	@Test

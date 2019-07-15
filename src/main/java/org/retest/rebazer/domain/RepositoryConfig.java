@@ -6,11 +6,14 @@ import org.retest.rebazer.RepositoryHostingTypes;
 import org.retest.rebazer.connector.RepositoryConnector;
 import org.springframework.boot.web.client.RestTemplateBuilder;
 
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Value;
 
 @Value
 @Builder
+@AllArgsConstructor( access = AccessLevel.PRIVATE )
 public class RepositoryConfig {
 
 	private final RepositoryHostingTypes type;

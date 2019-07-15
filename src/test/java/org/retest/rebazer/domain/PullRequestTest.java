@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.time.OffsetDateTime;
 import java.util.Date;
+import java.util.Map;
 import java.util.stream.Stream;
 
 import org.assertj.core.util.Maps;
@@ -20,8 +21,13 @@ class PullRequestTest {
 	@BeforeEach
 	void setUp() {
 		final Date lastUpdate = Date.from( OffsetDateTime.parse( "2017-11-30T10:05:28Z" ).toInstant() );
-		pullRequest = new PullRequest( 1, "title", 2, "description", Maps.newHashMap( 1, "CHANGES_REQUESTED" ),
-				"source", "destination", lastUpdate );
+		final Map<Integer, String> reviewers = Maps.newHashMap( 1, "CHANGES_REQUESTED" );
+		pullRequest = PullRequest.builder() //
+				.id( 1 ).title( "title" ).description( "description" ) //
+				.creator( 2 ).reviewers( reviewers ) //
+				.source( "source" ).destination( "destination" ) //
+				.lastUpdate( lastUpdate ) //
+				.build();
 	}
 
 	@Test
