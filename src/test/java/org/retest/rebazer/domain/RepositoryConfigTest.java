@@ -2,8 +2,6 @@ package org.retest.rebazer.domain;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.net.URL;
-
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.retest.rebazer.RepositoryHostingTypes;
@@ -16,10 +14,14 @@ class RepositoryConfigTest {
 	RepositoryConfig repositoryConfig;
 
 	@BeforeEach
-	void setUp() throws Exception {
-		repositoryConfig = new RepositoryConfig( RepositoryHostingTypes.GITHUB,
-				new URL( RepositoryHostingTypes.GITHUB.getDefaultUrl().toString() ), "team", "repository", "user",
-				"pass", "master" );
+	void setUp() {
+		repositoryConfig = RepositoryConfig.builder() //
+				.type( RepositoryHostingTypes.GITHUB ) //
+				.gitHost( RepositoryHostingTypes.GITHUB.getDefaultGitHost() ) //
+				.apiHost( RepositoryHostingTypes.GITHUB.getDefaultApiHost() ) //
+				.team( "team" ).repo( "repository" ) //
+				.user( "user" ).pass( "pass" ) //
+				.masterBranch( "master" ).build();
 	}
 
 	@Test
@@ -29,13 +31,13 @@ class RepositoryConfigTest {
 
 	@Test
 	void getURL_should_return_correct_url() {
-		assertThat( repositoryConfig.getUrl() ).isEqualTo( "https://github.com/team/repository.git" );
+		assertThat( repositoryConfig.getGitRepoUrl() ).isEqualTo( "https://github.com/team/repository.git" );
 	}
 
 	@Test
 	void getQualifiers_should_return_correct_qualifiers() {
 		assertThat( repositoryConfig.getQualifiers() )
-				.containsExactly( RepositoryHostingTypes.GITHUB.getDefaultUrl().getHost(), "team", "repository" );
+				.containsExactly( RepositoryHostingTypes.GITHUB.getDefaultGitHost().getHost(), "team", "repository" );
 
 	}
 

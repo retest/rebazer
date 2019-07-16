@@ -8,15 +8,16 @@ rebazer:
   # Delay between each polling interval, optional.
   #pollInterval: 60
   
-  # Regex to blacklist branch names that should not be processed.
+  # Regex to blacklist branch names that should not be processed, optional.
   #branchBlacklist: ^(master|develop|release|hotfix).*
   
   hosts:
   # Repo type, possible values GITHUB or BITBUCKET.
   - type: BITBUCKET
 
-    # optional, default is type-dependent (github.com, bitbucket.org).
-    url: https://bitbucket.org/
+    # optional, default is type-dependent (github.com, bitbucket.org; resp. api.github.com, api.bitbucket.org).
+    #gitHost: https://bitbucket.org/
+    #apiHost: https://api.bitbucket.org/
 
     teams:
     - name: your_company

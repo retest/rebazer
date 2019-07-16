@@ -24,10 +24,10 @@ class RebazerConfigTest {
 
 	@BeforeEach
 	void setUp() {
-		cut = createCut();
+		cut = createNewRebazerConfig();
 	}
 
-	private RebazerConfig createCut() {
+	private RebazerConfig createNewRebazerConfig() {
 		repo = new Repo();
 		repo.name = "repoName";
 
@@ -40,16 +40,16 @@ class RebazerConfigTest {
 		host.type = RepositoryHostingTypes.GITHUB;
 		host.setTeams( Arrays.asList( team ) );
 
-		final RebazerConfig cut = new RebazerConfig();
-		cut.setHosts( Arrays.asList( host ) );
+		final RebazerConfig rebazerConfig = new RebazerConfig();
+		rebazerConfig.setHosts( Arrays.asList( host ) );
 
-		return cut;
+		return rebazerConfig;
 	}
 
 	@Test
 	void equals_should_be_steady() {
 		assertThat( cut.equals( cut ) ).isTrue();
-		assertThat( cut.equals( createCut() ) ).isTrue();
+		assertThat( cut.equals( createNewRebazerConfig() ) ).isTrue();
 		assertThat( cut.equals( null ) ).isFalse();
 		assertThat( cut.equals( new RebazerConfig() ) ).isFalse();
 	}
@@ -57,21 +57,21 @@ class RebazerConfigTest {
 	@Test
 	void hashCode_should_be_steady() {
 		assertThat( cut.hashCode() ).isEqualTo( cut.hashCode() );
-		assertThat( cut.hashCode() ).isEqualTo( createCut().hashCode() );
+		assertThat( cut.hashCode() ).isEqualTo( createNewRebazerConfig().hashCode() );
 		assertThat( cut.hashCode() ).isNotEqualTo( new RebazerConfig().hashCode() );
 	}
 
 	@Test
 	void host_getURL_can_handle_missing_URL() {
-		assertThat( host.getUrl() ).isNotNull();
+		assertThat( host.getGitHost() ).isNotNull();
 	}
 
 	@Test
 	void host_getURL_return_URL_if_exists() throws MalformedURLException {
 		final URL url = new URL( "http://test" );
-		host.setUrl( url );
+		host.setGitHost( url );
 
-		assertThat( host.getUrl() ).isEqualTo( url );
+		assertThat( host.getGitHost() ).isEqualTo( url );
 	}
 
 	@Test

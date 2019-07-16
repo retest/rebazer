@@ -3,12 +3,15 @@ package org.retest.rebazer.domain;
 import java.util.Date;
 import java.util.Map;
 
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Value;
 
 @Value
 @Builder
+@AllArgsConstructor( access = AccessLevel.PRIVATE )
 public class PullRequest {
 
 	private final Integer id;
@@ -32,5 +35,18 @@ public class PullRequest {
 
 	public boolean isReviewByAllReviewersRequested() {
 		return title.concat( description ).contains( "@All" );
+	}
+
+	public PullRequest updateLastChange( final Date newLastUpdate ) {
+		return PullRequest.builder() //
+				.id( id ) //
+				.title( title ) //
+				.creator( creator ) //
+				.description( description ) //
+				.reviewers( reviewers ) //
+				.source( source ) //
+				.destination( destination ) //
+				.lastUpdate( newLastUpdate ) //
+				.build();
 	}
 }

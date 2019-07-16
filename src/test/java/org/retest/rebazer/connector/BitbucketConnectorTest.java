@@ -5,6 +5,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.nio.file.Files;
@@ -19,6 +20,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.mockito.ArgumentCaptor;
 import org.retest.rebazer.config.RebazerConfig;
 import org.retest.rebazer.domain.PullRequest;
 import org.retest.rebazer.domain.RepositoryConfig;
@@ -149,6 +151,11 @@ class BitbucketConnectorTest {
 		final String json = "{\"updated_on\": \"2019-02-04T20:18:44Z\"}";
 		when( template.getForObject( anyString(), eq( String.class ) ) ).thenReturn( json );
 
-		assertThat( cut.getLatestUpdate( pullRequest ).getLastUpdate() ).isEqualTo( "2019-02-04T20:18:44Z" );
+		cut.getLatestUpdate( pullRequest );
+
+		final ArgumentCaptor<Date> parsedDate = ArgumentCaptor.forClass( Date.class );
+		verify( pullRequest ).updateLastChange( parsedDate.capture() );
+		assertThat( parsedDate.getValue() ).isEqualTo( "2019-02-04T20:18:44Z" );
+
 	}
 }

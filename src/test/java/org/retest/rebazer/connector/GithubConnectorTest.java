@@ -5,6 +5,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.nio.file.Files;
@@ -22,6 +23,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.mockito.ArgumentCaptor;
 import org.retest.rebazer.config.RebazerConfig;
 import org.retest.rebazer.domain.PullRequest;
 import org.retest.rebazer.domain.RepositoryConfig;
@@ -273,15 +275,18 @@ class GithubConnectorTest {
 		final String repositoryTime =
 				"{\"updated_at\": \"2019-01-04T15:00:50Z\",\"head\":{\"sha\":\"3ce2b596bcdb72f82425c809f56a0b56f089443e\"}}";
 		when( template.getForObject( anyString(), eq( String.class ) ) ).thenReturn( repositoryTime );
-
 		final String checksFinished =
 				"{\"check_runs\":[{\"completed_at\":\"2019-01-04T15:30:50Z\"},{\"completed_at\":\"2019-01-04T15:30:59Z\"},{\"completed_at\":\"2019-01-04T15:29:59Z\"}]}";
 		final ResponseEntity<String> resp = new ResponseEntity<>( checksFinished, HttpStatus.OK );
 		when( template.exchange( anyString(), any( HttpMethod.class ), any( HttpEntity.class ), eq( String.class ) ) )
 				.thenReturn( resp );
 
+		cut.getLatestUpdate( pullRequest );
+
 		assertThat( cut.newestChecksTime( pullRequest ) ).isEqualTo( "2019-01-04T15:30:59Z" );
-		assertThat( cut.getLatestUpdate( pullRequest ).getLastUpdate() ).hasSameTimeAs( "2019-01-04T15:30:59Z" );
+		final ArgumentCaptor<Date> parsedDate = ArgumentCaptor.forClass( Date.class );
+		verify( pullRequest ).updateLastChange( parsedDate.capture() );
+		assertThat( parsedDate.getValue() ).isEqualTo( "2019-01-04T15:30:59Z" );
 	}
 
 	@ParameterizedTest
@@ -309,7 +314,12 @@ class GithubConnectorTest {
 		when( template.exchange( anyString(), any( HttpMethod.class ), any( HttpEntity.class ), eq( String.class ) ) )
 				.thenReturn( resp );
 
+		cut.getLatestUpdate( pullRequest );
+
 		assertThat( cut.newestChecksTime( pullRequest ) ).isEqualTo( expectedChecksTime );
-		assertThat( cut.getLatestUpdate( pullRequest ).getLastUpdate() ).hasSameTimeAs( expectedTime );
+
+		final ArgumentCaptor<Date> parsedDate = ArgumentCaptor.forClass( Date.class );
+		verify( pullRequest ).updateLastChange( parsedDate.capture() );
+		assertThat( parsedDate.getValue() ).isEqualTo( expectedTime );
 	}
 }

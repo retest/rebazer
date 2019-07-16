@@ -30,15 +30,13 @@ public class GithubConnector implements RepositoryConnector {
 
 	private static final String GITHUB_PREVIEW_JSON_MEDIATYPE = "application/vnd.github.antiope-preview+json";
 
-	private static final String BASE_URL = "https://api.github.com";
-
 	private final RestTemplate template;
 
 	public GithubConnector( final RepositoryConfig repoConfig, final RestTemplateBuilder builder ) {
 		final String basePath = "/repos/" + repoConfig.getTeam() + "/" + repoConfig.getRepo();
 
 		template = builder.basicAuthentication( repoConfig.getUser(), repoConfig.getPass() )
-				.rootUri( BASE_URL + basePath ).build();
+				.rootUri( repoConfig.getApiHost() + basePath ).build();
 	}
 
 	@Override
@@ -47,16 +45,7 @@ public class GithubConnector implements RepositoryConnector {
 		final String repositoryTimeAsString = jsonPath.read( "$.updated_at" );
 		final Date repositoryTime = PullRequestLastUpdateStore.parseStringToDate( repositoryTimeAsString );
 		final Date checksTime = PullRequestLastUpdateStore.parseStringToDate( newestChecksTime( pullRequest ) );
-		return PullRequest.builder() //
-				.id( pullRequest.getId() ) //
-				.title( pullRequest.getTitle() ) //
-				.creator( pullRequest.getCreator() ) //
-				.description( pullRequest.getDescription() ) //
-				.reviewers( pullRequest.getReviewers() ) //
-				.source( pullRequest.getSource() ) //
-				.destination( pullRequest.getDestination() ) //
-				.lastUpdate( repositoryTime.after( checksTime ) ? repositoryTime : checksTime ) //
-				.build();
+		return pullRequest.updateLastChange( repositoryTime.after( checksTime ) ? repositoryTime : checksTime );
 	}
 
 	@Override
@@ -120,7 +109,7 @@ public class GithubConnector implements RepositoryConnector {
 		return getGitHubChecks( pullRequest, "conclusion" ).stream().allMatch( "success"::equals );
 	}
 
-	public String newestChecksTime( final PullRequest pullRequest ) {
+	String newestChecksTime( final PullRequest pullRequest ) {
 		return getGitHubChecks( pullRequest, "completed_at" ).stream()//
 				.filter( time -> time != null && !time.isEmpty() )//
 				.max( Comparator.naturalOrder() )//

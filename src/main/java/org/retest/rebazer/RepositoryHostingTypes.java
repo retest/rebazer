@@ -14,17 +14,20 @@ import lombok.SneakyThrows;
 
 public enum RepositoryHostingTypes {
 
-	BITBUCKET( "https://bitbucket.org" ),
-	GITHUB( "https://github.com" ),
+	BITBUCKET( "https://bitbucket.org", "https://api.bitbucket.org" ),
+	GITHUB( "https://github.com", "https://api.github.com" ),
 
 	;
 
 	@Getter
-	final URL defaultUrl;
+	final URL defaultGitHost;
+	@Getter
+	final URL defaultApiHost;
 
 	@SneakyThrows( MalformedURLException.class )
-	private RepositoryHostingTypes( final String defaultUrl ) {
-		this.defaultUrl = new URL( defaultUrl );
+	private RepositoryHostingTypes( final String defaultGitHostUrl, final String defaultApiHostUrl ) {
+		defaultGitHost = new URL( defaultGitHostUrl );
+		defaultApiHost = new URL( defaultApiHostUrl );
 	}
 
 	public RepositoryConnector getConnector( final RepositoryConfig repoConfig,
