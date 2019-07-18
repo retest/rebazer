@@ -207,13 +207,13 @@ class GithubConnectorTest {
 	}
 
 	@Test
-	void isApproved_should_ignore_the_creater() {
+	void isApproved_should_ignore_the_creater_and_nonexistent_reviewer() {
 		final String action = "[{\"user\": {\"id\": 2}, \"state\": \"COMMENTED\"}]";
 		when( template.getForObject( anyString(), eq( String.class ) ) ).thenReturn( action );
 		when( pullRequest.getReviewers() ).thenReturn( new HashMap<Integer, String>() );
 		when( pullRequest.getCreator() ).thenReturn( 2 );
-		cut.isApproved( pullRequest );
 
+		assertThat( cut.isApproved( pullRequest ) ).isFalse();
 		assertThat( pullRequest.getReviewers().get( 2 ) ).isNull();
 	}
 
