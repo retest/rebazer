@@ -18,9 +18,6 @@ cache:
     - "${HOME}/.sonar/cache/"
     - "${HOME}/.m2/"
 
-services:
-  - docker
-
 install: true
 
 script:
@@ -33,12 +30,6 @@ deploy:
     file:
       - "./target/rebazer-*.jar"
       - "./target/rebazer-*.deb"
-    skip_cleanup: true
-    on:
-      tags: true
-
-  - provider: script
-    script: mvn jib:build -Djib.to.auth.username=${DOCKER_USERNAME} -Djib.to.auth.password=${DOCKER_PASSWORD}
     skip_cleanup: true
     on:
       tags: true
