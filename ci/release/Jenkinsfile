@@ -1,0 +1,48 @@
+pipeline {
+	environment {
+		MVN_ARGS = "--batch-mode --errors --fail-fast"
+	}
+
+	tools {
+		jdk 'OpenJDK 11'
+		maven '3.6'
+	}
+
+	agent none
+
+	stages {
+		stage('Confirm Release') {
+			agent none
+			input {
+				message "Do you really want to release the REBAZER service from DEVELOP to PROD?"
+			}
+			steps {
+				echo "Starting release of REBAZER service ..."
+			}
+		}
+		stage('Start Release') {
+			agent {
+				label 'linux'
+			}
+			steps {
+				script {
+					def pom = readMavenPom file: 'pom.xml'
+					STABLE_VERSION = "v${pom.getVersion().replace("-SNAPSHOT","")}"
+				}
+				sshagent(['jenkins']) {
+					sh "mvn ${MVN_ARGS} release:prepare"
+					sh "git checkout master && git merge ${STABLE_VERSION} && git push"
+				}
+			}
+			post {
+				failure {
+					sshagent(['jenkins']) {
+						sh "mvn ${MVN_ARGS} release:rollback"
+						sh "git tag -d ${STABLE_VERSION}"
+						sh "git push origin :refs/tags/${STABLE_VERSION}"
+					}
+				}
+			}
+		}
+	}
+}
