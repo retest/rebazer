@@ -9,7 +9,7 @@ pipeline {
 		NAMESPACE="${name}"
 		DEPLOYMENT="${name}"
 		CONTAINER="${name}"
-		IMAGE="nexus.retest.org/${name}"
+		IMAGE="retest/${name}"
 	}
 
 	tools {
