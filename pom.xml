@@ -1,4 +1,4 @@
-<?xml version="1.0"?>
+<?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
@@ -9,9 +9,9 @@
 		<relativePath />
 	</parent>
 
-	<groupId>org.retest</groupId>
+	<groupId>de.retest.services</groupId>
 	<artifactId>rebazer</artifactId>
-	<version>0.9.4-SNAPSHOT</version>
+	<version>0.10-SNAPSHOT</version>
 
 	<name>rebazer</name>
 	<description>
@@ -21,9 +21,6 @@
 	</description>
 
 	<properties>
-		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<project.resources.sourceEncoding>UTF-8</project.resources.sourceEncoding>
-		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 		<git.repo.host>github.com</git.repo.host>
 		<git.repo.path>retest/rebazer</git.repo.path>
 		<java.version>11</java.version>
@@ -66,7 +63,6 @@
 			<artifactId>lombok</artifactId>
 			<optional>true</optional>
 		</dependency>
-
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-configuration-processor</artifactId>
@@ -74,6 +70,16 @@
 		</dependency>
 
 		<!-- Testing only -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-devtools</artifactId>
+			<optional>true</optional>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-test</artifactId>
+			<scope>test</scope>
+		</dependency>
 		<dependency>
 			<groupId>org.junit.jupiter</groupId>
 			<artifactId>junit-jupiter-engine</artifactId>
@@ -87,12 +93,6 @@
 		<dependency>
 			<groupId>org.mockito</groupId>
 			<artifactId>mockito-junit-jupiter</artifactId>
-			<scope>test</scope>
-		</dependency>
-
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-test</artifactId>
 			<scope>test</scope>
 		</dependency>
 	</dependencies>
@@ -116,14 +116,6 @@
 			</plugin>
 
 			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-release-plugin</artifactId>
-				<configuration>
-					<goals>install</goals>
-					<tagNameFormat>v@{project.version}</tagNameFormat>
-				</configuration>
-			</plugin>
-			<plugin>
 				<groupId>com.google.cloud.tools</groupId>
 				<artifactId>jib-maven-plugin</artifactId>
 				<version>1.5.0</version>
@@ -131,11 +123,53 @@
 					<to>
 						<image>docker.io/retest/${project.artifactId}</image>
 						<tags>
-							<tag>${project.version}</tag>
+							<tag>${git_branch_for_tag}</tag>
+							<tag>${git.commit.id.describe}</tag>
 						</tags>
 					</to>
+					<args>
+						<arg>-Dspring.devtools.restart.enabled=false</arg>
+					</args>
 				</configuration>
 			</plugin>
+			<plugin>
+				<groupId>pl.project13.maven</groupId>
+				<artifactId>git-commit-id-plugin</artifactId>
+			</plugin>
+			<plugin>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>build-helper-maven-plugin</artifactId>
+				<executions>
+					<execution>
+						<id>regex-properties</id>
+						<phase>generate-sources</phase><!-- after git-commit-id-plugin -->
+						<goals>
+							<goal>regex-properties</goal>
+						</goals>
+						<configuration>
+							<regexPropertySettings>
+								<regexPropertySetting>
+									<name>git_branch_for_tag</name>
+									<value>branch-${git.branch}</value>
+									<regex>/</regex>
+									<replacement>-</replacement>
+									<failIfNoMatch>false</failIfNoMatch>
+								</regexPropertySetting>
+							</regexPropertySettings>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-release-plugin</artifactId>
+				<configuration>
+					<tagNameFormat>v@{project.version}</tagNameFormat>
+					<preparationGoals>validate</preparationGoals>
+					<resume>false</resume>
+				</configuration>
+			</plugin>
+
 		</plugins>
 	</build>
 
