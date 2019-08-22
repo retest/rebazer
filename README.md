@@ -1,7 +1,7 @@
 # <a href="https://retest.dev"><img src="https://assets.retest.org/retest/ci/logos/retest-wordmark-screen.svg" width="300"/></a> rebazer
 
 [![Build Status](https://travis-ci.com/retest/rebazer.svg?branch=develop)](https://travis-ci.com/retest/rebazer)
-[![Sonarcloud Status](https://sonarcloud.io/api/project_badges/measure?project=org.retest%3Arebazer&metric=alert_status)](https://sonarcloud.io/dashboard?id=org.retest%3Arebazer)
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=de.retest.services%3Arebazer&metric=alert_status)](https://sonarcloud.io/dashboard?id=de.retest.services%3Arebazer)
 [![license](https://img.shields.io/badge/license-AGPL-brightgreen.svg)](https://github.com/retest/rebazer/blob/master/LICENSE)
 [![PRs welcome](https://img.shields.io/badge/PRs-welcome-ff69b4.svg)](https://github.com/retest/rebazer/issues?q=is%3Aissue+is%3Aopen+label%3A%22help+wanted%22)
 [![code with hearth by retest](https://img.shields.io/badge/%3C%2F%3E%20with%20%E2%99%A5%20by-retest-C1D82F.svg)](https://retest.de/en/)
