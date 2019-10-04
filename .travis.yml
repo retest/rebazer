@@ -24,7 +24,7 @@ cache:
 install: true
 
 script:
-  - mvn clean org.jacoco:jacoco-maven-plugin:prepare-agent verify sonar:sonar -P deb
+  - mvn ${MVN_ARGS} clean org.jacoco:jacoco-maven-plugin:prepare-agent verify sonar:sonar -P deb
 
 deploy:
   - provider: releases
