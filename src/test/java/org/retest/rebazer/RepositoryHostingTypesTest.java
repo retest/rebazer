@@ -2,6 +2,7 @@ package org.retest.rebazer;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import java.net.URL;
 
@@ -32,6 +33,8 @@ class RepositoryHostingTypesTest {
 		final RepositoryHostingTypes repositoryHostingTypes = RepositoryHostingTypes.BITBUCKET;
 		final RestTemplateBuilder restTemplateBuilder = new RestTemplateBuilder();
 		final RepositoryConfig repositoryConfig = mock( RepositoryConfig.class );
+		when( repositoryConfig.getUser() ).thenReturn( "user" );
+		when( repositoryConfig.getPass() ).thenReturn( "password" );
 		final RepositoryConnector connector =
 				repositoryHostingTypes.getConnector( repositoryConfig, restTemplateBuilder );
 		assertThat( connector ).isInstanceOf( BitbucketConnector.class );
@@ -42,6 +45,8 @@ class RepositoryHostingTypesTest {
 		final RepositoryHostingTypes repositoryHostingTypes = RepositoryHostingTypes.GITHUB;
 		final RestTemplateBuilder restTemplateBuilder = new RestTemplateBuilder();
 		final RepositoryConfig repositoryConfig = mock( RepositoryConfig.class );
+		when( repositoryConfig.getUser() ).thenReturn( "user" );
+		when( repositoryConfig.getPass() ).thenReturn( "password" );
 		final RepositoryConnector connector =
 				repositoryHostingTypes.getConnector( repositoryConfig, restTemplateBuilder );
 		assertThat( connector ).isInstanceOf( GithubConnector.class );
