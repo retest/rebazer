@@ -135,6 +135,7 @@ public class BitbucketConnector implements RepositoryConnector {
 	}
 
 	private DocumentContext getLastPage( final PullRequest pullRequest ) {
+		// TODO See RET-1860 Get the actual last page, not just the last of 10 or increase the number of commits in json to display all
 		DocumentContext document = jsonPathForPath( requestPath( pullRequest ) + "/commits" );
 
 		try {
