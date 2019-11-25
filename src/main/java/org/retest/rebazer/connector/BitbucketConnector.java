@@ -135,7 +135,7 @@ public class BitbucketConnector implements RepositoryConnector {
 	}
 
 	private DocumentContext getLastPage( final PullRequest pullRequest ) {
-		DocumentContext document = jsonPathForPath( requestPath( pullRequest ) + "/commits" );
+		DocumentContext document = jsonPathForPath( requestPath( pullRequest ) + "/commits?pagelen=100" );
 
 		try {
 			BitbucketPullRequestResponse response =
