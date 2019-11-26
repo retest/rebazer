@@ -1,13 +1,11 @@
 package org.retest.rebazer.connector;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.retest.rebazer.domain.BitbucketPullRequestResponse;
 import org.retest.rebazer.domain.PullRequest;
 import org.retest.rebazer.domain.RepositoryConfig;
 import org.retest.rebazer.service.PullRequestLastUpdateStore;
@@ -64,7 +62,7 @@ public class BitbucketConnector implements RepositoryConnector {
 	}
 
 	String getLastParentCommitId( final PullRequest pullRequest ) {
-		final DocumentContext document = getLastPage( pullRequest );
+		final DocumentContext document = jsonPathForPath( requestPath( pullRequest ) + "/commits?pagelen=100" );
 		final List<String> parentIds = document.read( "$.values[*].parents[0].hash" );
 		return parentIds.get( parentIds.size() - 1 );
 	}
@@ -132,24 +130,5 @@ public class BitbucketConnector implements RepositoryConnector {
 		contentNode.set( "content", messageNode );
 
 		template.postForObject( requestPath( pullRequest ) + "/comments", contentNode, String.class );
-	}
-
-	private DocumentContext getLastPage( final PullRequest pullRequest ) {
-		DocumentContext document = jsonPathForPath( requestPath( pullRequest ) + "/commits?pagelen=100" );
-
-		try {
-			BitbucketPullRequestResponse response =
-					objectMapper.readValue( document.jsonString(), BitbucketPullRequestResponse.class );
-
-			while ( response.getNext() != null ) {
-				final String url = response.getNext();
-				document = jsonPathForPath( url );
-				response = objectMapper.readValue( document.jsonString(), BitbucketPullRequestResponse.class );
-			}
-		} catch ( final IOException e ) {
-			log.error( "Error parsing JSON.", e );
-		}
-
-		return document;
 	}
 }
