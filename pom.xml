@@ -24,7 +24,6 @@
 		<git.repo.host>github.com</git.repo.host>
 		<git.repo.path>retest/rebazer</git.repo.path>
 		<java.version>11</java.version>
-		<mockito.version>2.28.2</mockito.version><!-- overwrite mockito version to be compatible with java 11 -->
 	</properties>
 
 	<dependencies>
