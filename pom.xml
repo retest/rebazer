@@ -71,11 +71,6 @@
 		<!-- Testing only -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-devtools</artifactId>
-			<optional>true</optional>
-		</dependency>
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-test</artifactId>
 			<scope>test</scope>
 		</dependency>
@@ -115,51 +110,6 @@
 			</plugin>
 
 			<plugin>
-				<groupId>com.google.cloud.tools</groupId>
-				<artifactId>jib-maven-plugin</artifactId>
-				<version>1.8.0</version>
-				<configuration>
-					<to>
-						<image>docker.io/retest/${project.artifactId}</image>
-						<tags>
-							<tag>${git_branch_for_tag}</tag>
-							<tag>${git.commit.id.describe}</tag>
-						</tags>
-					</to>
-					<args>
-						<arg>-Dspring.devtools.restart.enabled=false</arg>
-					</args>
-				</configuration>
-			</plugin>
-			<plugin>
-				<groupId>pl.project13.maven</groupId>
-				<artifactId>git-commit-id-plugin</artifactId>
-			</plugin>
-			<plugin>
-				<groupId>org.codehaus.mojo</groupId>
-				<artifactId>build-helper-maven-plugin</artifactId>
-				<executions>
-					<execution>
-						<id>regex-properties</id>
-						<phase>generate-sources</phase><!-- after git-commit-id-plugin -->
-						<goals>
-							<goal>regex-properties</goal>
-						</goals>
-						<configuration>
-							<regexPropertySettings>
-								<regexPropertySetting>
-									<name>git_branch_for_tag</name>
-									<value>branch-${git.branch}</value>
-									<regex>/</regex>
-									<replacement>-</replacement>
-									<failIfNoMatch>false</failIfNoMatch>
-								</regexPropertySetting>
-							</regexPropertySettings>
-						</configuration>
-					</execution>
-				</executions>
-			</plugin>
-			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-release-plugin</artifactId>
 				<configuration>
@@ -171,6 +121,73 @@
 
 		</plugins>
 	</build>
+
+	<profiles>
+		<profile>
+			<id>default</id>
+			<activation>
+				<activeByDefault>true</activeByDefault>
+			</activation>
+			<dependencies>
+				<dependency>
+					<groupId>org.springframework.boot</groupId>
+					<artifactId>spring-boot-devtools</artifactId>
+				</dependency>
+			</dependencies>
+		</profile>
+		<profile>
+			<id>jib</id>
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>com.google.cloud.tools</groupId>
+						<artifactId>jib-maven-plugin</artifactId>
+						<version>1.8.0</version>
+						<configuration>
+							<to>
+								<image>nexus.retest.org/${project.artifactId}</image>
+								<tags>
+									<tag>${git_branch_for_tag}</tag>
+									<tag>${git.commit.id.describe}</tag>
+								</tags>
+							</to>
+							<container>
+								<user>nonroot:nonroot</user>
+							</container>
+						</configuration>
+					</plugin>
+					<plugin>
+						<groupId>pl.project13.maven</groupId>
+						<artifactId>git-commit-id-plugin</artifactId>
+					</plugin>
+					<plugin>
+						<groupId>org.codehaus.mojo</groupId>
+						<artifactId>build-helper-maven-plugin</artifactId>
+						<executions>
+							<execution>
+								<id>regex-properties</id>
+								<phase>generate-sources</phase><!-- after git-commit-id-plugin -->
+								<goals>
+									<goal>regex-properties</goal>
+								</goals>
+								<configuration>
+									<regexPropertySettings>
+										<regexPropertySetting>
+											<name>git_branch_for_tag</name>
+											<value>branch-${git.branch}</value>
+											<regex>/</regex>
+											<replacement>-</replacement>
+											<failIfNoMatch>false</failIfNoMatch>
+										</regexPropertySetting>
+									</regexPropertySettings>
+								</configuration>
+							</execution>
+						</executions>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
+	</profiles>
 
 	<organization>
 		<name>ReTest GmbH</name>

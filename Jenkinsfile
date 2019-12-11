@@ -36,7 +36,7 @@ pipeline {
 
 		stage('Package') {
 		   steps {
-   				sh "mvn ${MVN_ARGS} compile jib:build -Djib.to.auth.username=${CREDENTIALS_USR} -Djib.to.auth.password=${CREDENTIALS_PSW}"
+   				sh "mvn -Pjib ${MVN_ARGS} compile jib:build -Djib.to.auth.username=${CREDENTIALS_USR} -Djib.to.auth.password=${CREDENTIALS_PSW}"
    			}
 		}
 
