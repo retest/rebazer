@@ -1,9 +1,0 @@
-#!/bin/bash
-
-if [ -f /etc/default/rebazer ]; then
-   source /etc/default/rebazer
-fi
-
-ARGS="--spring.config.location=classpath:/,file:/etc/rebazer/ --rebazer.workspace=${WORKSPACE}"
-
-/usr/bin/java -jar /usr/share/rebazer/rebazer*.jar ${ARGS}

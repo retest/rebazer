@@ -1,7 +1,0 @@
-/var/log/rebazer/*.log {
-        rotate 7
-        weekly
-        compress
-        delaycompress
-        sharedscripts
-}

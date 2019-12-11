@@ -1,5 +1,0 @@
-#!/bin/sh
-
-systemctl daemon-reload 
-systemctl start [[name]].service 
-systemctl enable [[name]].service
