@@ -23,7 +23,7 @@ cache:
 install: true
 
 script:
-  - mvn ${MVN_ARGS} clean org.jacoco:jacoco-maven-plugin:prepare-agent verify sonar:sonar -P deb
+  - mvn ${MVN_ARGS} clean org.jacoco:jacoco-maven-plugin:prepare-agent verify sonar:sonar
 
 deploy:
   - provider: releases
@@ -31,7 +31,6 @@ deploy:
     file_glob: true
     file:
       - "./target/rebazer-*.jar"
-      - "./target/rebazer-*.deb"
     skip_cleanup: true
     on:
       tags: true
