@@ -15,6 +15,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
@@ -115,9 +116,69 @@ class RebazerServiceTest {
 
 	@Test
 	void handlePullRequest_test() {
-		// TODO implement tests for logic in handlePullRequest()
+		when( repoConnector.greenBuildExists( pullRequest ) ).thenReturn( true );
+		when( repoConnector.isApproved( pullRequest ) ).thenReturn( true );
 
 		cut.handlePullRequest( repoConnector, repoConfig, pullRequest );
+
+		verify( repoConnector ).merge( pullRequest );
+		verify( repoConnector ).isApproved( pullRequest );
+		verify( repoConnector ).rebaseNeeded( pullRequest );
+		verify( pullRequestLastUpdateStore ).resetAllInThisRepo( repoConfig );
+		verify( repoConnector ).greenBuildExists( pullRequest );
+		verify( cut ).handlePullRequest( repoConnector, repoConfig, pullRequest );
+		verifyNoMoreInteractions( cut, pullRequestLastUpdateStore, repoConnector );
+	}
+
+	@Test
+	void handlePullRequest_rebase_needed() {
+		when( repoConnector.greenBuildExists( pullRequest ) ).thenReturn( true );
+		when( repoConnector.rebaseNeeded( pullRequest ) ).thenReturn( true );
+		when( rebaseService.rebase( repoConfig, pullRequest ) ).thenReturn( false );
+
+		cut.handlePullRequest( repoConnector, repoConfig, pullRequest );
+
+		verify( repoConnector ).addComment( Mockito.any( PullRequest.class ), Mockito.anyString() );
+		verify( repoConnector ).greenBuildExists( pullRequest );
+		verify( repoConnector ).rebaseNeeded( pullRequest );
+		verify( pullRequestLastUpdateStore ).setHandled( repoConfig, null );
+		verify( repoConnector ).getLatestUpdate( pullRequest );
+		verify( cut ).handlePullRequest( repoConnector, repoConfig, pullRequest );
+		verifyNoMoreInteractions( cut, pullRequestLastUpdateStore, repoConnector );
+	}
+
+	@Test
+	void handlePullRequest_isChangeDetection_and_isHandled() {
+		when( rebazerConfig.isChangeDetection() ).thenReturn( true );
+		when( pullRequestLastUpdateStore.isHandled( repoConfig, pullRequest ) ).thenReturn( true );
+
+		cut.handlePullRequest( repoConnector, repoConfig, pullRequest );
+
+		verify( pullRequestLastUpdateStore ).getLastDate( repoConfig, pullRequest );
+		verify( pullRequestLastUpdateStore ).isHandled( repoConfig, pullRequest );
+		verify( cut ).handlePullRequest( repoConnector, repoConfig, pullRequest );
+		verifyNoMoreInteractions( cut, pullRequestLastUpdateStore );
+	}
+
+	@Test
+	void handlePullRequest_greenBuildExists_false() {
+		cut.handlePullRequest( repoConnector, repoConfig, pullRequest );
+
+		verify( repoConnector ).greenBuildExists( pullRequest );
+		verify( pullRequestLastUpdateStore ).setHandled( repoConfig, repoConnector.getLatestUpdate( pullRequest ) );
+		verify( cut ).handlePullRequest( repoConnector, repoConfig, pullRequest );
+		verifyNoMoreInteractions( cut, pullRequestLastUpdateStore );
+	}
+
+	@Test
+	void handlePullRequest_isApproved_false() {
+		when( repoConnector.greenBuildExists( pullRequest ) ).thenReturn( true );
+
+		cut.handlePullRequest( repoConnector, repoConfig, pullRequest );
+
+		verify( pullRequestLastUpdateStore ).setHandled( repoConfig, pullRequest );
+		verify( cut ).handlePullRequest( repoConnector, repoConfig, pullRequest );
+		verifyNoMoreInteractions( cut, pullRequestLastUpdateStore );
 	}
 
 	@Test
