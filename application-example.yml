@@ -9,7 +9,7 @@ rebazer:
   #pollInterval: 60
   
   # Regex to blacklist branch names that should not be processed, optional.
-  #branchBlacklist: ^(master|develop|release|hotfix).*
+  #branchBlacklist: ^(main|master|develop|release|hotfix).*
   
   hosts:
   # Repo type, possible values GITHUB or BITBUCKET.
@@ -25,9 +25,9 @@ rebazer:
       pass: dont_use_this_pass_at_home
       repos:
       - name: the_repo_name
-        masterBranch: develop # optional value, default is "master"
+        mainBranch: develop # optional value, default is "main"
       - name: other_repo
-        masterBranch: trunk
+        mainBranch: trunk
 
   - type: GITHUB
     teams:

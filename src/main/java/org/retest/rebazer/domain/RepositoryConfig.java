@@ -24,7 +24,7 @@ public class RepositoryConfig {
 
 	private final String user;
 	private final String pass;
-	private final String masterBranch;
+	private final String mainBranch;
 
 	@Override
 	public String toString() {

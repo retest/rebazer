@@ -21,7 +21,7 @@ class RepositoryConfigTest {
 				.apiHost( RepositoryHostingTypes.GITHUB.getDefaultApiHost() ) //
 				.team( "team" ).repo( "repository" ) //
 				.user( "user" ).pass( "pass" ) //
-				.masterBranch( "master" ).build();
+				.mainBranch( "develop" ).build();
 	}
 
 	@Test

@@ -36,7 +36,7 @@ public class RebazerConfig {
 
 	private boolean changeDetection = false;
 
-	private String branchBlacklist = "^(master|develop|release|hotfix).*";
+	private String branchBlacklist = "^(main|master|develop|release|hotfix).*";
 
 	@Getter( AccessLevel.NONE )
 	private List<Host> hosts;
@@ -88,7 +88,12 @@ public class RebazerConfig {
 	@EqualsAndHashCode
 	static class Repo {
 		String name;
-		String masterBranch = "master";
+		String mainBranch = "main";
+		/**
+		 * @deprecated use `mainBranch` instead.
+		 */
+		@Deprecated(since = "v0.12", forRemoval = true)
+		String masterBranch = null;
 	}
 
 	/**
@@ -107,7 +112,7 @@ public class RebazerConfig {
 							.type( host.type ).gitHost( host.getGitHost() ).apiHost( host.getApiHost() ) //
 							.team( team.name ).repo( repo.name ) //
 							.user( team.getUser() ).pass( team.pass ) //
-							.masterBranch( repo.masterBranch ) //
+							.mainBranch( repo.masterBranch == null ? repo.mainBranch : repo.masterBranch ) //NOSONAR
 							.build() );
 				}
 			}
