@@ -1,8 +1,8 @@
 # <a href="https://retest.dev"><img src="https://assets.retest.org/retest/ci/logos/retest-wordmark-screen.svg" width="300"/></a> rebazer
 
-[![Build Status](https://travis-ci.com/retest/rebazer.svg?branch=develop)](https://travis-ci.com/retest/rebazer)
+[![Build Status](https://github.com/retest/rebazer/workflows/build/badge.svg)](https://github.com/retest/rebazer/actions?query=workflow%3Abuild)
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=de.retest.services%3Arebazer&metric=alert_status)](https://sonarcloud.io/dashboard?id=de.retest.services%3Arebazer)
-[![license](https://img.shields.io/badge/license-AGPL-brightgreen.svg)](https://github.com/retest/rebazer/blob/master/LICENSE)
+[![license](https://img.shields.io/badge/license-AGPL-brightgreen.svg)](https://github.com/retest/rebazer/blob/main/LICENSE)
 [![PRs welcome](https://img.shields.io/badge/PRs-welcome-ff69b4.svg)](https://github.com/retest/rebazer/issues?q=is%3Aissue+is%3Aopen+label%3A%22help+wanted%22)
 [![code with hearth by retest](https://img.shields.io/badge/%3C%2F%3E%20with%20%E2%99%A5%20by-retest-C1D82F.svg)](https://retest.de/)
 
@@ -70,7 +70,7 @@ An example in-depth can be found in [application-example.yml](./application-exam
 | `rebazer.pollInterval`                            | Delay in seconds between checks for changes on configured repos | `60`            |
 | `rebazer.hosts[ ].url`                            | Base URL to the hosting platform api              | Depents on `..hosts[ ].type`, e.g. https://api.github.com |
 | `rebazer.hosts[ ].teams[ ].user`                  | User for the specific team to access repositories | Same as `..teams[ ].name`     |
-| `rebazer.hosts[ ].teams[ ].repos[ ].masterBranch` | Branch to reset git repo on cleanup after rebase  | `master`                      |
+| `rebazer.hosts[ ].teams[ ].repos[ ].mainBranch`   | Branch to reset git repo on cleanup after rebase  | `main`                      |
 
 
 ## Deployment

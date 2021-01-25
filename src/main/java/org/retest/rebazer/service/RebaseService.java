@@ -54,7 +54,7 @@ public class RebaseService {
 
 		credentials.put( repoConfig, credential );
 		localGitRepos.put( repoConfig, localRepo );
-		cleaner.cleanUp( localRepo, repoConfig.getMasterBranch() );
+		cleaner.cleanUp( localRepo, repoConfig.getMainBranch() );
 	}
 
 	private static CredentialsProvider repoCredential( final RepositoryConfig repoConfig ) {
@@ -140,7 +140,6 @@ public class RebaseService {
 				case UP_TO_DATE:
 					log.warn( "Why rebasing up to date {}?", pullRequest );
 					return true;
-
 				case FAST_FORWARD:
 					log.warn( "Why creating {} without changes?", pullRequest );
 					localRepo.push().setCredentialsProvider( credential ).setForce( true ).call();
@@ -161,7 +160,7 @@ public class RebaseService {
 							"For " + pullRequest + " rebase causes an unexpected result: " + rebaseResult.getStatus() );
 			}
 		} finally {
-			cleaner.cleanUp( localRepo, repoConfig.getMasterBranch() );
+			cleaner.cleanUp( localRepo, repoConfig.getMainBranch() );
 		}
 	}
 
